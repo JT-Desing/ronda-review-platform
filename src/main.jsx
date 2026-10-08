@@ -30,6 +30,7 @@ const Icon = ({ name, size = 18 }) => {
     square: <rect x="4" y="4" width="16" height="16" rx="2"/>,
     type: <><path d="M5 5h14M12 5v14M8 19h8"/></>,
     undo: <><path d="M9 7 4 12l5 5"/><path d="M20 17a7 7 0 0 0-7-7H4"/></>,
+    redo: <><path d="m15 7 5 5-5 5"/><path d="M4 17a7 7 0 0 1 7-7h9"/></>,
     check: <path d="m5 12 4 4L19 6"/>,
     more: <><circle className="fill" cx="5" cy="12" r="1.5"/><circle className="fill" cx="12" cy="12" r="1.5"/><circle className="fill" cx="19" cy="12" r="1.5"/></>,
     image: <><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/></>,
@@ -118,6 +119,7 @@ function MediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, me
   const [playing, setPlaying] = useState(false);
   const [muted,setMuted]=useState(false);
   const [marks, setMarks] = useState([]);
+  const [redoMarks,setRedoMarks]=useState([]);
   const videoRef = useRef(null);
   const stageRef = useRef(null);
   const colors = ['#ff725e','#f2bd5c','#8ebd72','#67a9d4','#b89be8','#f1eee7'];
@@ -129,7 +131,10 @@ function MediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, me
   };
   const seek=value=>{const next=Math.max(0,Math.min(duration,currentTime+value));setCurrentTime(next);if(videoRef.current)videoRef.current.currentTime=next;};
   const toggleFullscreen=()=>{if(!document.fullscreenElement)stageRef.current?.requestFullscreen?.();else document.exitFullscreen?.();};
-  useEffect(()=>{const handler=e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;const key=e.key.toLowerCase();if(key===' '){e.preventDefault();togglePlayback();}if(key==='j')seek(-5);if(key==='l')seek(5);if(key==='arrowleft')seek(-1/24);if(key==='arrowright')seek(1/24);if(key==='m'){setMuted(value=>!value);}if(key==='f')toggleFullscreen();if(key==='d')setActiveTool(tool=>tool?'': 'pen');if(['1','2','3','4'].includes(key))setActiveTool(['pen','arrow','square','type'][Number(key)-1]);};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);});
+  const updateMarks=next=>{setMarks(next);setRedoMarks([]);};
+  const undoMark=()=>setMarks(current=>{if(!current.length)return current;setRedoMarks(redo=>[current.at(-1),...redo]);return current.slice(0,-1)});
+  const redoMark=()=>setRedoMarks(current=>{if(!current.length)return current;setMarks(marksNow=>[...marksNow,current[0]]);return current.slice(1)});
+  useEffect(()=>{const handler=e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;const key=e.key.toLowerCase();if((e.ctrlKey||e.metaKey)&&key==='z'){e.preventDefault();e.shiftKey?redoMark():undoMark();return;}if((e.ctrlKey||e.metaKey)&&key==='y'){e.preventDefault();redoMark();return;}if(key===' '){e.preventDefault();togglePlayback();}if(key==='j')seek(-5);if(key==='l')seek(5);if(key==='arrowleft')seek(-1/24);if(key==='arrowright')seek(1/24);if(key==='m'){setMuted(value=>!value);}if(key==='f')toggleFullscreen();if(key==='d')setActiveTool(tool=>tool?'': 'pen');if(['1','2','3','4'].includes(key))setActiveTool(['pen','arrow','square','type'][Number(key)-1]);};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);});
   return <section className="media-section">
     <div className="media-stage" ref={stageRef}>
       <div className="film-frame">
@@ -140,14 +145,14 @@ function MediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, me
           <div className="product"><div className="cap"/><div className="bottle"><span>AMARA</span><small>BOTANICAL SERUM</small></div></div>
           <div className="scene-copy"><span>02 / RITUAL</span><strong>La calma<br/>también se cultiva.</strong></div>
         </div>}
-        <AnnotationLayer activeTool={activeTool} activeColor={activeColor} marks={marks} setMarks={setMarks}/>
+        <AnnotationLayer activeTool={activeTool} activeColor={activeColor} marks={marks} setMarks={updateMarks}/>
         <div className="frame-badge">{stamp.time} · F{stamp.frame}</div>
       </div>
       <div className="annotation-tools" aria-label="Herramientas de anotación">
         {['pen','arrow','square','type'].map((tool,index) => <button key={tool} title={`${['Lápiz','Flecha','Rectángulo','Texto'][index]} · ${index+1}`} onClick={()=>setActiveTool(tool)} className={activeTool===tool?'active':''} aria-label={`${['Lápiz','Flecha','Rectángulo','Texto'][index]} (${index+1})`}><Icon name={tool}/><kbd>{index+1}</kbd></button>)}
         <span className="tool-divider"/>
         <div className="color-options">{colors.map(c=><button key={c} aria-label={`Color ${c}`} onClick={()=>setActiveColor(c)} className={activeColor===c?'selected':''} style={{'--swatch':c}}/>)}</div>
-        <span className="tool-divider"/><button onClick={()=>setMarks(marks.slice(0,-1))} aria-label="Deshacer"><Icon name="undo"/></button>
+        <span className="tool-divider"/><button onClick={undoMark} disabled={!marks.length} title="Deshacer · Ctrl/⌘ + Z" aria-label="Deshacer última anotación"><Icon name="undo"/></button><button onClick={redoMark} disabled={!redoMarks.length} title="Rehacer · Ctrl/⌘ + Shift + Z" aria-label="Rehacer anotación"><Icon name="redo"/></button>
       </div>
     </div>
     <div className="player-controls">
@@ -254,7 +259,7 @@ function NotificationCenter({onNavigate}) {
 }
 
 function ShortcutHelp({onClose}) {
-  const shortcuts=[['Espacio','Reproducir / pausar'],['J / L','Retroceder / avanzar 5 s'],['← / →','Mover un fotograma'],['1–4','Lápiz, flecha, rectángulo y texto'],['D','Activar u ocultar dibujo'],['M','Silenciar'],['F','Pantalla completa'],['C','Escribir comentario'],['Ctrl/⌘ + Enter','Publicar comentario'],['Esc','Cerrar paneles']];
+  const shortcuts=[['Ctrl/⌘ + Z','Deshacer última anotación'],['Ctrl/⌘ + Shift + Z','Rehacer anotación'],['Espacio','Reproducir / pausar'],['J / L','Retroceder / avanzar 5 s'],['← / →','Mover un fotograma'],['1–4','Lápiz, flecha, rectángulo y texto'],['D','Activar u ocultar dibujo'],['M','Silenciar'],['F','Pantalla completa'],['C','Escribir comentario'],['Ctrl/⌘ + Enter','Publicar comentario'],['Esc','Cerrar paneles']];
   return <div className="modal-layer"><button className="modal-scrim" aria-label="Cerrar atajos" onClick={onClose}/><section className="modal shortcut-modal" role="dialog" aria-modal="true" aria-labelledby="shortcut-title"><div className="modal-title"><div><span className="eyebrow">COMANDOS RÁPIDOS</span><h2 id="shortcut-title">Atajos de revisión</h2></div><button aria-label="Cerrar" onClick={onClose}><Icon name="x"/></button></div><div className="shortcut-grid">{shortcuts.map(([keys,label])=><div key={keys}><kbd>{keys}</kbd><span>{label}</span></div>)}</div></section></div>;
 }
 

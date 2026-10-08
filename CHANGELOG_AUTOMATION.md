@@ -27,6 +27,7 @@ Este archivo documenta cambios realizados por el ciclo automatizado de Ronda.
 - Se añadieron atajos de reproducción, navegación por fotograma, herramientas, sonido, pantalla completa y comentarios.
 - El botón `?` abre una guía visual de comandos; `Esc` cierra paneles y modales.
 - La paleta completa permanece disponible en móvil mediante desplazamiento horizontal.
+- `Ctrl/⌘ + Z` deshace la última anotación y `Ctrl/⌘ + Shift + Z` o `Ctrl/⌘ + Y` la restaura, sin interferir con la edición de texto.
 
 ## Contenedor y despliegue por túnel
 
