@@ -98,3 +98,13 @@ Este archivo documenta cambios realizados por el ciclo automatizado de Ronda.
 - Se añadió una prueba de guardar, recuperar y eliminar; la suite alcanza 10/10 pruebas.
 - Archivos: `src/state/migration.js`, `src/state/RondaContext.test.js`, `src/main.jsx` y `src/styles.css`.
 - Siguiente prioridad: anclar el borrador a su timecode original y ofrecer descarte explícito antes de evolucionar hacia almacenamiento de blobs.
+
+## Estados vacíos accionables en comentarios
+
+- Hipótesis: distinguir una revisión nueva, un filtro vacío y una búsqueda sin coincidencias reduce confusión y ayuda a continuar sin abandonar el panel.
+- Criterios de aceptación: cada causa muestra copy específico y, cuando corresponde, permite limpiar la búsqueda o volver a todos los comentarios.
+- Una revisión sin feedback invita a pausar en un cuadro y dejar la primera indicación.
+- Los filtros sin elementos ofrecen `Ver todos`; las búsquedas fallidas muestran el término y `Limpiar búsqueda`.
+- La lógica se aisló en dominio y quedó cubierta por dos pruebas; la suite alcanza 12/12 pruebas.
+- Archivos: `src/domain/comments.js`, `src/domain/comments.test.js`, `src/main.jsx` y `src/styles.css`.
+- Siguiente prioridad: anclar el borrador recuperado a su fotograma original para evitar publicaciones temporales accidentales.
