@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
+import { RondaProvider, selectUnreadNotifications, selectVersionStatus, useRonda } from './state/RondaContext.jsx';
+import { REVIEW_DECISION } from './domain/review.js';
 
 const formatTime = value => {
   const seconds = Math.max(0, Number(value) || 0);
@@ -35,6 +37,7 @@ const Icon = ({ name, size = 18 }) => {
     chevron: <path d="m9 18 6-6-6-6"/>,
     plus: <path d="M12 5v14M5 12h14"/>,
     x: <path d="m6 6 12 12M18 6 6 18"/>,
+    bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></>,
   };
   return <svg aria-hidden="true" className="icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 };
@@ -128,7 +131,7 @@ function MediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, me
         <div className="frame-badge">{stamp.time} · F{stamp.frame}</div>
       </div>
       <div className="annotation-tools" aria-label="Herramientas de anotación">
-        {['pen','arrow','square','type'].map(tool => <button key={tool} onClick={()=>setActiveTool(tool)} className={activeTool===tool?'active':''} aria-label={tool}><Icon name={tool}/></button>)}
+        {['pen','arrow','square','type'].map(tool => <button key={tool} disabled={tool!=='pen'} title={tool==='pen'?'Lápiz':'Disponible en la próxima iteración'} onClick={()=>setActiveTool(tool)} className={activeTool===tool?'active':''} aria-label={tool==='pen'?'Lápiz':`${tool} próximamente`}><Icon name={tool}/></button>)}
         <span className="tool-divider"/>
         <div className="color-options">{colors.map(c=><button key={c} aria-label={`Color ${c}`} onClick={()=>setActiveColor(c)} className={activeColor===c?'selected':''} style={{'--swatch':c}}/>)}</div>
         <span className="tool-divider"/><button onClick={()=>setMarks(marks.slice(0,-1))} aria-label="Deshacer"><Icon name="undo"/></button>
@@ -148,32 +151,36 @@ function CommentCard({ item, selected, onSelect, onResolve, onDelete }) {
     <div className="comment-line" style={{'--author':item.color}}/>
     <div className="comment-head">
       <span className="avatar" style={{background:item.color}}>{item.initials}</span>
-      <span className="comment-author"><strong>{item.author}</strong><small>{item.id > 1000 ? 'ahora' : `hace ${item.id * 4} min`}</small></span>
+      <span className="comment-author"><strong>{item.author}</strong><small>{item.author==='Julian Torres' ? 'ahora' : 'reciente'}</small></span>
       <button aria-label="Más opciones"><Icon name="more"/></button>
     </div>
     <button className="time-pill"><span>{item.time}</span><small>F{item.frame}</small></button>
     <p>{item.text}</p>
     <div className="comment-foot">
       <span>{item.replies ? `${item.replies} respuestas` : 'Responder'}</span>
-      <div className="comment-actions">{item.author==='Julian T.' && <button aria-label="Eliminar comentario" onClick={e=>{e.stopPropagation();onDelete(item.id)}}><Icon name="x" size={14}/></button>}<button onClick={e=>{e.stopPropagation();onResolve(item.id)}} className={item.status==='resolved'?'done':''}><Icon name="check" size={15}/>{item.status==='resolved'?'Resuelto':'Resolver'}</button></div>
+      <div className="comment-actions">{item.author==='Julian Torres' && onDelete && <button aria-label="Eliminar comentario" onClick={e=>{e.stopPropagation();onDelete(item.id)}}><Icon name="x" size={14}/></button>}<button onClick={e=>{e.stopPropagation();onResolve(item.id)}} className={item.status==='resolved'?'done':''}><Icon name="check" size={15}/>{item.status==='resolved'?'Resuelto':'Resolver'}</button></div>
     </div>
   </article>;
 }
 
 function CommentsPanel({ onClose, currentTime }) {
-  const [comments, setComments] = useState(()=>{ try { return JSON.parse(localStorage.getItem('ronda-comments')) || seedComments; } catch { return seedComments; }});
-  const [selected, setSelected] = useState(1);
+  const { state, act } = useRonda();
+  const comments = Object.values(state.comments).filter(comment=>comment.versionId==='version-amara-v3').map(comment=>{
+    const author=state.members[comment.authorId] || {name:'Invitado',initials:'IN'};
+    const stamp=formatTime(comment.timeSeconds || 0);
+    return {...comment,author:author.name,initials:author.initials,color:comment.priority==='blocking'?'#ff725e':'#67a9d4',time:stamp.time,replies:0};
+  });
+  const [selected, setSelected] = useState('comment-1');
   const [filter, setFilter] = useState('Todos');
   const [draft, setDraft] = useState('');
   const visible = useMemo(()=>filter==='Todos'?comments:comments.filter(c=>c.status==='open'),[comments,filter]);
-  const resolve = id => setComments(comments.map(c=>c.id===id?{...c,status:c.status==='resolved'?'open':'resolved'}:c));
-  useEffect(()=>localStorage.setItem('ronda-comments',JSON.stringify(comments)),[comments]);
+  const resolve = id => act(state.comments[id]?.status==='resolved'?'comment/reopen':'comment/resolve',{id});
   const stamp = formatTime(currentTime);
-  const add = () => { if(!draft.trim()) return; setComments([...comments,{id:Date.now(),author:'Julian T.',initials:'JT',color:'#67a9d4',time:stamp.time,frame:stamp.frame,text:draft,replies:0,status:'open'}]); setDraft(''); };
+  const add = () => { if(!draft.trim()) return; act('comment/add',{projectId:'project-amara',versionId:'version-amara-v3',authorId:state.currentUserId,assigneeId:state.currentUserId,priority:'normal',text:draft.trim(),timeSeconds:currentTime,frame:stamp.frame}); setDraft(''); };
   return <aside className="comments-panel">
     <div className="panel-head"><div><strong>Comentarios</strong><span>{comments.filter(c=>c.status==='open').length} abiertos</span></div><button className="mobile-close" aria-label="Cerrar comentarios" onClick={onClose}><Icon name="x"/></button></div>
     <div className="filters"><button className={filter==='Todos'?'active':''} onClick={()=>setFilter('Todos')}>Todos</button><button className={filter==='Abiertos'?'active':''} onClick={()=>setFilter('Abiertos')}>Abiertos</button><button><Icon name="search" size={16}/></button></div>
-    <div className="comments-scroll">{visible.map(c=><CommentCard key={c.id} item={c} selected={selected===c.id} onSelect={()=>setSelected(c.id)} onResolve={resolve} onDelete={id=>setComments(comments.filter(item=>item.id!==id))}/>)}</div>
+    <div className="comments-scroll">{visible.map(c=><CommentCard key={c.id} item={c} selected={selected===c.id} onSelect={()=>setSelected(c.id)} onResolve={resolve}/>)}</div>
     <div className="composer">
       <div className="composer-input"><textarea value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')add()}} placeholder={`Comenta sobre ${stamp.time}…`}/><span>F{stamp.frame} · Público · Ctrl/⌘ + Enter</span></div>
       <button className="send" aria-label="Publicar comentario" onClick={add} disabled={!draft.trim()}><Icon name="send"/></button>
@@ -182,7 +189,7 @@ function CommentsPanel({ onClose, currentTime }) {
 }
 
 function ShareDialog({ onClose, onNotify }) {
-  const reviewUrl = `${location.origin}/review/amaraa-v3`;
+  const reviewUrl = `${location.origin}${import.meta.env.BASE_URL}#review/amaraa-v3`;
   const copy = async () => { try { await navigator.clipboard.writeText(reviewUrl); onNotify('Enlace copiado'); } catch { onNotify('Selecciona y copia el enlace'); } };
   return <div className="modal-layer" role="presentation"><button className="modal-scrim" aria-label="Cerrar" onClick={onClose}/><section className="modal" role="dialog" aria-modal="true" aria-labelledby="share-title"><div className="modal-title"><div><span className="eyebrow">ENLACE DE REVISIÓN</span><h2 id="share-title">Compartir con clientes</h2></div><button aria-label="Cerrar" onClick={onClose}><Icon name="x"/></button></div><p>Quien tenga el enlace podrá ver esta versión y dejar comentarios sin crear una cuenta.</p><label>Enlace público<div className="copy-field"><input readOnly value={reviewUrl}/><button onClick={copy}>Copiar</button></div></label><div className="permission-row"><span><strong>Permitir comentarios</strong><small>Los invitados pueden anotar y responder</small></span><input type="checkbox" defaultChecked aria-label="Permitir comentarios"/></div><div className="permission-row"><span><strong>Permitir descargas</strong><small>El archivo original permanece protegido</small></span><input type="checkbox" aria-label="Permitir descargas"/></div><button className="modal-primary" onClick={()=>{copy();onClose()}}>Copiar enlace de revisión</button></section></div>;
 }
@@ -214,9 +221,18 @@ const activities=[
 ];
 
 function ActivityView() {
+  const {state,act}=useRonda();
   const [filter,setFilter]=useState('Todo');
-  const visible=filter==='Todo'?activities:activities.filter(a=>filter==='Comentarios'?a.type==='comment':a.type==='approval');
-  return <div className="dashboard-page narrow"><DashboardHeader title="Actividad" subtitle="Un registro claro de comentarios, versiones y decisiones."/><div className="view-toolbar"><div className="segmented">{['Todo','Comentarios','Aprobaciones'].map(item=><button key={item} className={filter===item?'active':''} onClick={()=>setFilter(item)}>{item}</button>)}</div><button className="quiet-button"><Icon name="check" size={15}/> Marcar todo como leído</button></div><section className="activity-list">{visible.map((item,i)=><article className="activity-item" key={i}><span className="avatar" style={{background:item.color}}>{item.initials}</span><div><p><strong>{item.who}</strong> {item.action}</p><button>{item.where}</button><blockquote>{item.detail}</blockquote></div><time>{item.time}</time></article>)}</section></div>;
+  const live=state.activity.map(event=>{const actor=state.members[event.actorId];const isComment=event.kind.startsWith('comment');return {who:actor?.name||'Equipo',initials:actor?.initials||'EQ',color:'#67a9d4',action:event.kind==='comment.created'?'creó un comentario':event.kind==='comment.resolved'?'resolvió un comentario':event.kind==='comment.reopened'?'reabrió un comentario':'registró una decisión',where:'Campaña Amara · Spot principal',detail:isComment?(state.comments[event.commentId]?.text||'Actividad de comentario'):(event.decision==='approved'?'Aprobó la versión':'Solicitó cambios'),time:'Ahora',type:isComment?'comment':'approval'};});
+  const all=[...live,...activities];
+  const visible=filter==='Todo'?all:all.filter(a=>filter==='Comentarios'?a.type==='comment':a.type==='approval');
+  return <div className="dashboard-page narrow"><DashboardHeader title="Actividad" subtitle="Un registro claro de comentarios, versiones y decisiones."/><div className="view-toolbar"><div className="segmented">{['Todo','Comentarios','Aprobaciones'].map(item=><button key={item} className={filter===item?'active':''} onClick={()=>setFilter(item)}>{item}</button>)}</div><button className="quiet-button" onClick={()=>act('notification/readAll',{})}><Icon name="check" size={15}/> Marcar todo como leído</button></div><section className="activity-list">{visible.map((item,i)=><article className="activity-item" key={`${item.time}-${i}`}><span className="avatar" style={{background:item.color}}>{item.initials}</span><div><p><strong>{item.who}</strong> {item.action}</p><button>{item.where}</button><blockquote>{item.detail}</blockquote></div><time>{item.time}</time></article>)}</section></div>;
+}
+
+function NotificationCenter({onNavigate}) {
+  const {state,act}=useRonda(); const [open,setOpen]=useState(false);
+  const unread=selectUnreadNotifications(state);
+  return <div className="notification-center"><button className="notification-trigger" aria-label={`${unread.length} notificaciones sin leer`} onClick={()=>setOpen(!open)}><Icon name="bell" size={17}/>{unread.length>0&&<b>{unread.length}</b>}</button>{open&&<div className="notification-popover"><header><strong>Notificaciones</strong><button onClick={()=>act('notification/readAll',{})}>Marcar leídas</button></header>{unread.length===0?<p>Estás al día.</p>:unread.map(item=><button key={item.id} onClick={()=>{act('notification/read',{id:item.id});onNavigate('review');setOpen(false)}}><strong>Nueva actividad asignada</strong><span>Campaña Amara · abrir revisión</span></button>)}</div>}</div>;
 }
 
 const initialMembers=[
@@ -228,8 +244,8 @@ const initialMembers=[
 
 function TeamView({onNotify}) {
   const [members,setMembers]=useState(initialMembers); const [invite,setInvite]=useState(false); const [email,setEmail]=useState('');
-  const sendInvite=()=>{if(!email.includes('@')){onNotify('Escribe un correo válido');return;}setMembers([...members,{name:email.split('@')[0],email,initials:email.slice(0,2).toUpperCase(),role:'Revisor',status:'Invitación enviada',color:'#ff725e'}]);setEmail('');setInvite(false);onNotify('Invitación preparada')};
-  return <div className="dashboard-page"><DashboardHeader title="Equipo" subtitle="Gestiona quién crea proyectos, edita contenido y revisa entregas." action="Invitar persona" onAction={()=>setInvite(true)}/><section className="team-summary"><div><span className="stacked-avatars">{members.slice(0,4).map(m=><i key={m.email} style={{background:m.color}}>{m.initials}</i>)}</span><span><strong>{members.length} personas</strong><small>3 activas · {members.length-3} pendiente</small></span></div><p><strong>Plan Studio</strong><span>5 puestos incluidos</span></p></section><section className="member-table"><header><span>Persona</span><span>Rol</span><span>Estado</span><span></span></header>{members.map((m,index)=><div className="member-row" key={m.email}><span className="member-person"><i className="avatar" style={{background:m.color}}>{m.initials}</i><span><strong>{m.name}</strong><small>{m.email}</small></span></span><select value={m.role} onChange={e=>setMembers(members.map((x,i)=>i===index?{...x,role:e.target.value}:x))}><option>Administrador</option><option>Editor</option><option>Revisor</option></select><span className={`member-status ${m.status==='Activo'?'active':''}`}>{m.status}</span><button aria-label={`Opciones de ${m.name}`}><Icon name="more"/></button></div>)}</section>{invite&&<div className="inline-invite"><div><strong>Invitar al espacio</strong><small>Recibirá acceso como revisor.</small></div><input autoFocus value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendInvite()} placeholder="nombre@empresa.com"/><button onClick={sendInvite}>Enviar invitación</button><button aria-label="Cancelar" onClick={()=>setInvite(false)}><Icon name="x"/></button></div>}</div>;
+  const sendInvite=()=>{const normalized=email.trim().toLowerCase();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)){onNotify('Escribe un correo válido');return;}if(members.some(member=>member.email.toLowerCase()===normalized)){onNotify('Esa persona ya pertenece al equipo');return;}if(members.length>=5){onNotify('Plan Studio completo: 5 de 5 puestos');return;}setMembers([...members,{name:normalized.split('@')[0],email:normalized,initials:normalized.slice(0,2).toUpperCase(),role:'Revisor',status:'Invitación enviada',color:'#ff725e'}]);setEmail('');setInvite(false);onNotify('Invitación preparada')};
+  return <div className="dashboard-page"><DashboardHeader title="Equipo" subtitle="Gestiona quién crea proyectos, edita contenido y revisa entregas." action="Invitar persona" onAction={()=>setInvite(true)}/><section className="team-summary"><div><span className="stacked-avatars">{members.slice(0,4).map(m=><i key={m.email} style={{background:m.color}}>{m.initials}</i>)}</span><span><strong>{members.length} personas</strong><small>3 activas · {members.length-3} pendiente</small></span></div><p><strong>Plan Studio</strong><span>{members.length}/5 puestos utilizados</span></p></section><section className="member-table"><header><span>Persona</span><span>Rol</span><span>Estado</span><span></span></header>{members.map((m,index)=><div className="member-row" key={m.email}><span className="member-person"><i className="avatar" style={{background:m.color}}>{m.initials}</i><span><strong>{m.name}</strong><small>{m.email}</small></span></span><select value={m.role} onChange={e=>setMembers(members.map((x,i)=>i===index?{...x,role:e.target.value}:x))}><option>Administrador</option><option>Editor</option><option>Revisor</option></select><span className={`member-status ${m.status==='Activo'?'active':''}`}>{m.status}</span><button aria-label={`Opciones de ${m.name}`}><Icon name="more"/></button></div>)}</section>{invite&&<div className="inline-invite"><div><strong>Invitar al espacio</strong><small>Recibirá acceso como revisor.</small></div><input type="email" autoFocus value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendInvite()} placeholder="nombre@empresa.com"/><button onClick={sendInvite}>Enviar invitación</button><button aria-label="Cancelar" onClick={()=>setInvite(false)}><Icon name="x"/></button></div>}</div>;
 }
 
 function SettingsView({onNotify}) {
@@ -238,18 +254,21 @@ function SettingsView({onNotify}) {
 }
 
 function App() {
+  const {state,act}=useRonda();
   const [collapsed, setCollapsed] = useState(false);
   const [currentView, setCurrentView] = useState('projects');
   const [activeTool, setActiveTool] = useState('pen');
   const [activeColor, setActiveColor] = useState('#ff725e');
   const [commentsOpen, setCommentsOpen] = useState(false);
-  const [approval, setApproval] = useState('En revisión');
   const [shareOpen, setShareOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(14.08);
   const [version, setVersion] = useState(3);
   const [toast, setToast] = useState('');
   const [media, setMedia] = useState(null);
   const fileInput = useRef(null);
+  const versionStatus=selectVersionStatus(state,'version-amara-v3');
+  const approval=versionStatus==='approved'?'Aprobado':versionStatus==='changes_requested'?'Cambios solicitados':'En revisión';
+  const openCount=Object.values(state.comments).filter(c=>c.versionId==='version-amara-v3'&&c.status==='open').length;
   useEffect(()=>{ if(!toast)return; const timer=setTimeout(()=>setToast(''),2200); return()=>clearTimeout(timer); },[toast]);
   const loadMedia = event => { const file=event.target.files?.[0]; if(!file)return; const type=file.type.startsWith('video/')?'video':file.type.startsWith('image/')?'image':null; if(!type){setToast('Formato no compatible');return;} if(media?.url)URL.revokeObjectURL(media.url); setCurrentTime(0); setMedia({name:file.name,type,url:URL.createObjectURL(file),duration:type==='image'?1:0,setDuration:duration=>setMedia(current=>({...current,duration}))}); setToast(`${type==='video'?'Video':'Imagen'} cargado`); };
   return <div className="app-shell">
@@ -264,8 +283,9 @@ function App() {
         <div className="breadcrumb"><button onClick={()=>setCurrentView('projects')}>Campaña Amara</button><Icon name="chevron" size={14}/><div><strong>Spot principal · 30s</strong><span>Última edición hace 6 min</span></div></div>
         <div className="top-actions">
           <div className="presence"><span>SC</span><span>LM</span><span>+2</span></div>
+          <NotificationCenter onNavigate={setCurrentView}/>
           <button className="secondary" aria-label="Compartir revisión" onClick={()=>setShareOpen(true)}><Icon name="share" size={17}/><span>Compartir</span></button>
-          <div className="approval-menu"><button className={`approval ${approval==='Aprobado'?'approved':''}`} onClick={()=>{const next=approval==='Aprobado'?'En revisión':'Aprobado';setApproval(next);setToast(next==='Aprobado'?'Versión aprobada':'Versión reabierta')}}><Icon name="check" size={16}/>{approval}</button></div>
+          <div className="approval-menu"><button className={`approval ${approval==='Aprobado'?'approved':''}`} onClick={()=>{const blockers=Object.values(state.comments).filter(c=>c.versionId==='version-amara-v3'&&c.status==='open'&&c.priority==='blocking');if(blockers.length){setToast(`Resuelve ${blockers.length} comentario bloqueante antes de aprobar`);return;}act('review/decide',{versionId:'version-amara-v3',reviewerId:state.currentUserId,decision:REVIEW_DECISION.APPROVED});setToast('Tu aprobación quedó registrada')}}><Icon name="check" size={16}/>{approval}</button></div>
         </div>
       </header>
       <div className="review-layout">
@@ -279,7 +299,7 @@ function App() {
         </div>
         <CommentsPanel onClose={()=>setCommentsOpen(false)} currentTime={currentTime}/>
       </div>
-      <button className="mobile-comments" onClick={()=>setCommentsOpen(true)}>3 comentarios <span>2 abiertos</span></button>
+      <button className="mobile-comments" onClick={()=>setCommentsOpen(true)}>{Object.values(state.comments).filter(c=>c.versionId==='version-amara-v3').length} comentarios <span>{openCount} abiertos</span></button>
       {commentsOpen && <div className="comments-drawer"><div className="drawer-scrim" onClick={()=>setCommentsOpen(false)}/><CommentsPanel onClose={()=>setCommentsOpen(false)} currentTime={currentTime}/></div>}
       </>}
       {shareOpen && <ShareDialog onClose={()=>setShareOpen(false)} onNotify={setToast}/>} 
@@ -292,4 +312,4 @@ function App() {
 const rootElement = document.getElementById('root');
 const root = import.meta.hot?.data.root ?? createRoot(rootElement);
 if (import.meta.hot) import.meta.hot.data.root = root;
-root.render(<App/>);
+root.render(<RondaProvider><App/></RondaProvider>);
