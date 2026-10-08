@@ -32,6 +32,7 @@ const Icon = ({ name, size = 18 }) => {
     undo: <><path d="M9 7 4 12l5 5"/><path d="M20 17a7 7 0 0 0-7-7H4"/></>,
     check: <path d="m5 12 4 4L19 6"/>,
     more: <><circle className="fill" cx="5" cy="12" r="1.5"/><circle className="fill" cx="12" cy="12" r="1.5"/><circle className="fill" cx="19" cy="12" r="1.5"/></>,
+    image: <><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/></>,
     send: <><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></>,
     spark: <><path d="m12 3 1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4L12 3Z"/><path d="m19 15 .7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7L19 15Z"/></>,
     chevron: <path d="m9 18 6-6-6-6"/>,
@@ -95,21 +96,30 @@ function AnnotationLayer({ activeTool, activeColor, marks, setMarks }) {
         ctx.strokeStyle = mark.color; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();
         mark.points.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.stroke();
       }
+      if (mark.tool === 'square' && mark.points.length > 1) {
+        const [start,end]=[mark.points[0],mark.points.at(-1)]; ctx.strokeStyle=mark.color;ctx.lineWidth=4;ctx.strokeRect(start.x,start.y,end.x-start.x,end.y-start.y);
+      }
+      if (mark.tool === 'arrow' && mark.points.length > 1) {
+        const [start,end]=[mark.points[0],mark.points.at(-1)]; const angle=Math.atan2(end.y-start.y,end.x-start.x);ctx.strokeStyle=mark.color;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.lineTo(end.x,end.y);ctx.lineTo(end.x-14*Math.cos(angle-Math.PI/6),end.y-14*Math.sin(angle-Math.PI/6));ctx.moveTo(end.x,end.y);ctx.lineTo(end.x-14*Math.cos(angle+Math.PI/6),end.y-14*Math.sin(angle+Math.PI/6));ctx.stroke();
+      }
+      if (mark.tool === 'type') { ctx.fillStyle=mark.color;ctx.font='600 18px system-ui';ctx.fillText(mark.text,mark.points[0].x,mark.points[0].y); }
     });
   };
   useEffect(draw, [marks, activeColor, activeTool]);
   useEffect(() => { const handle = () => draw(); window.addEventListener('resize', handle); return () => window.removeEventListener('resize', handle); });
   const point = e => { const r = canvas.current.getBoundingClientRect(); return { x: e.clientX-r.left, y: e.clientY-r.top }; };
-  return <canvas ref={canvas} className={`annotation-layer ${activeTool === 'pen' ? 'drawing' : ''}`}
-    onPointerDown={e => { if(activeTool !== 'pen') return; e.currentTarget.setPointerCapture(e.pointerId); drawing.current=true; points.current=[point(e)]; draw(); }}
+  return <canvas ref={canvas} className={`annotation-layer ${activeTool ? 'drawing' : ''}`}
+    onPointerDown={e => { if(!activeTool) return; const start=point(e); if(activeTool==='type'){const text=window.prompt('Texto de la anotación');if(text?.trim())setMarks([...marks,{tool:'type',color:activeColor,text:text.trim(),points:[start]}]);return;} e.currentTarget.setPointerCapture(e.pointerId); drawing.current=true; points.current=[start]; draw(); }}
     onPointerMove={e => { if(!drawing.current) return; points.current.push(point(e)); draw(); }}
     onPointerUp={() => { if(!drawing.current) return; drawing.current=false; setMarks([...marks,{tool:'pen',color:activeColor,points:[...points.current]}]); points.current=[]; }} />;
 }
 
 function MediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, media, currentTime, setCurrentTime }) {
   const [playing, setPlaying] = useState(false);
+  const [muted,setMuted]=useState(false);
   const [marks, setMarks] = useState([]);
   const videoRef = useRef(null);
+  const stageRef = useRef(null);
   const colors = ['#ff725e','#f2bd5c','#8ebd72','#67a9d4','#b89be8','#f1eee7'];
   const stamp = formatTime(currentTime);
   const duration = media?.duration || 36.42;
@@ -117,10 +127,13 @@ function MediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, me
     if (!videoRef.current) { setPlaying(!playing); return; }
     if (videoRef.current.paused) videoRef.current.play(); else videoRef.current.pause();
   };
+  const seek=value=>{const next=Math.max(0,Math.min(duration,currentTime+value));setCurrentTime(next);if(videoRef.current)videoRef.current.currentTime=next;};
+  const toggleFullscreen=()=>{if(!document.fullscreenElement)stageRef.current?.requestFullscreen?.();else document.exitFullscreen?.();};
+  useEffect(()=>{const handler=e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;const key=e.key.toLowerCase();if(key===' '){e.preventDefault();togglePlayback();}if(key==='j')seek(-5);if(key==='l')seek(5);if(key==='arrowleft')seek(-1/24);if(key==='arrowright')seek(1/24);if(key==='m'){setMuted(value=>!value);}if(key==='f')toggleFullscreen();if(key==='d')setActiveTool(tool=>tool?'': 'pen');if(['1','2','3','4'].includes(key))setActiveTool(['pen','arrow','square','type'][Number(key)-1]);};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);});
   return <section className="media-section">
-    <div className="media-stage">
+    <div className="media-stage" ref={stageRef}>
       <div className="film-frame">
-        {media?.type === 'video' && <video ref={videoRef} className="uploaded-media" src={media.url} onTimeUpdate={e=>setCurrentTime(e.currentTarget.currentTime)} onLoadedMetadata={e=>media.setDuration(e.currentTarget.duration)} onPlay={()=>setPlaying(true)} onPause={()=>setPlaying(false)}/>} 
+        {media?.type === 'video' && <video ref={videoRef} className="uploaded-media" src={media.url} muted={muted} onTimeUpdate={e=>setCurrentTime(e.currentTarget.currentTime)} onLoadedMetadata={e=>media.setDuration(e.currentTarget.duration)} onPlay={()=>setPlaying(true)} onPause={()=>setPlaying(false)}/>} 
         {media?.type === 'image' && <img className="uploaded-media" src={media.url} alt={media.name}/>} 
         {!media && <div className="scene-art" role="img" aria-label="Fotograma de una campaña de producto cosmético">
           <div className="scene-grain"/><div className="sun-disc"/><div className="product-shadow"/>
@@ -131,7 +144,7 @@ function MediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, me
         <div className="frame-badge">{stamp.time} · F{stamp.frame}</div>
       </div>
       <div className="annotation-tools" aria-label="Herramientas de anotación">
-        {['pen','arrow','square','type'].map(tool => <button key={tool} disabled={tool!=='pen'} title={tool==='pen'?'Lápiz':'Disponible en la próxima iteración'} onClick={()=>setActiveTool(tool)} className={activeTool===tool?'active':''} aria-label={tool==='pen'?'Lápiz':`${tool} próximamente`}><Icon name={tool}/></button>)}
+        {['pen','arrow','square','type'].map((tool,index) => <button key={tool} title={`${['Lápiz','Flecha','Rectángulo','Texto'][index]} · ${index+1}`} onClick={()=>setActiveTool(tool)} className={activeTool===tool?'active':''} aria-label={`${['Lápiz','Flecha','Rectángulo','Texto'][index]} (${index+1})`}><Icon name={tool}/><kbd>{index+1}</kbd></button>)}
         <span className="tool-divider"/>
         <div className="color-options">{colors.map(c=><button key={c} aria-label={`Color ${c}`} onClick={()=>setActiveColor(c)} className={activeColor===c?'selected':''} style={{'--swatch':c}}/>)}</div>
         <span className="tool-divider"/><button onClick={()=>setMarks(marks.slice(0,-1))} aria-label="Deshacer"><Icon name="undo"/></button>
@@ -141,7 +154,7 @@ function MediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, me
       <button className="play" onClick={togglePlayback} aria-label={playing?'Pausar':'Reproducir'}><Icon name={playing?'pause':'play'} size={20}/></button>
       <span className="timecode"><strong>{stamp.time}</strong><span>/ {formatTime(duration).time}</span></span>
       <div className="scrubber"><input aria-label="Posición del video" type="range" min="0" max={duration || 1} step="0.01" value={Math.min(currentTime,duration || 1)} onChange={e=>{const value=Number(e.target.value);setCurrentTime(value);if(videoRef.current)videoRef.current.currentTime=value}}/><div className="scrubber-fill" style={{width:`${Math.min(100,currentTime/(duration||1)*100)}%`}}/><i className="marker m1"/><i className="marker m2"/><i className="marker m3"/><span className="playhead" style={{left:`${Math.min(100,currentTime/(duration||1)*100)}%`}}/></div>
-      <button aria-label="Volumen"><Icon name="volume"/></button><span className="fps">24 FPS</span><button aria-label="Pantalla completa"><Icon name="maximize"/></button>
+      <button aria-label={muted?'Activar sonido':'Silenciar'} onClick={()=>setMuted(!muted)} className={muted?'active':''}><Icon name="volume"/></button><span className="fps">24 FPS</span><button aria-label="Pantalla completa (F)" onClick={toggleFullscreen}><Icon name="maximize"/></button>
     </div>
   </section>;
 }
@@ -156,6 +169,7 @@ function CommentCard({ item, selected, onSelect, onResolve, onDelete }) {
     </div>
     <button className="time-pill"><span>{item.time}</span><small>F{item.frame}</small></button>
     <p>{item.text}</p>
+    {!!item.attachments?.length && <div className="comment-attachments">{item.attachments.map(file=><button key={file.id} onClick={e=>{e.stopPropagation();window.open(file.dataUrl,'_blank','noopener,noreferrer')}} aria-label={`Abrir referencia ${file.name}`}><img src={file.dataUrl} alt={file.name}/><span>{file.name}</span></button>)}</div>}
     <div className="comment-foot">
       <span>{item.replies ? `${item.replies} respuestas` : 'Responder'}</span>
       <div className="comment-actions">{item.author==='Julian Torres' && onDelete && <button aria-label="Eliminar comentario" onClick={e=>{e.stopPropagation();onDelete(item.id)}}><Icon name="x" size={14}/></button>}<button onClick={e=>{e.stopPropagation();onResolve(item.id)}} className={item.status==='resolved'?'done':''}><Icon name="check" size={15}/>{item.status==='resolved'?'Resuelto':'Resolver'}</button></div>
@@ -173,17 +187,21 @@ function CommentsPanel({ onClose, currentTime }) {
   const [selected, setSelected] = useState('comment-1');
   const [filter, setFilter] = useState('Todos');
   const [draft, setDraft] = useState('');
+  const [attachments,setAttachments]=useState([]);
+  const [attachmentError,setAttachmentError]=useState('');
+  const attachmentInput=useRef(null);
   const visible = useMemo(()=>filter==='Todos'?comments:comments.filter(c=>c.status==='open'),[comments,filter]);
   const resolve = id => act(state.comments[id]?.status==='resolved'?'comment/reopen':'comment/resolve',{id});
   const stamp = formatTime(currentTime);
-  const add = () => { if(!draft.trim()) return; act('comment/add',{projectId:'project-amara',versionId:'version-amara-v3',authorId:state.currentUserId,assigneeId:state.currentUserId,priority:'normal',text:draft.trim(),timeSeconds:currentTime,frame:stamp.frame}); setDraft(''); };
+  const addFiles=async files=>{setAttachmentError('');const candidates=[...files].filter(file=>file.type.startsWith('image/')).slice(0,3-attachments.length);for(const file of candidates){if(file.size>2*1024*1024){setAttachmentError('Cada referencia debe pesar menos de 2 MB.');continue;}const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file)});setAttachments(current=>[...current,{id:`ref-${Date.now()}-${file.name}`,name:file.name,dataUrl}].slice(0,3));}};
+  const add = () => { if(!draft.trim()&&!attachments.length) return; act('comment/add',{projectId:'project-amara',versionId:'version-amara-v3',authorId:state.currentUserId,assigneeId:state.currentUserId,priority:'normal',text:draft.trim()||'Referencia visual adjunta',attachments,timeSeconds:currentTime,frame:stamp.frame}); setDraft('');setAttachments([]); };
   return <aside className="comments-panel">
     <div className="panel-head"><div><strong>Comentarios</strong><span>{comments.filter(c=>c.status==='open').length} abiertos</span></div><button className="mobile-close" aria-label="Cerrar comentarios" onClick={onClose}><Icon name="x"/></button></div>
     <div className="filters"><button className={filter==='Todos'?'active':''} onClick={()=>setFilter('Todos')}>Todos</button><button className={filter==='Abiertos'?'active':''} onClick={()=>setFilter('Abiertos')}>Abiertos</button><button><Icon name="search" size={16}/></button></div>
     <div className="comments-scroll">{visible.map(c=><CommentCard key={c.id} item={c} selected={selected===c.id} onSelect={()=>setSelected(c.id)} onResolve={resolve}/>)}</div>
     <div className="composer">
-      <div className="composer-input"><textarea value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')add()}} placeholder={`Comenta sobre ${stamp.time}…`}/><span>F{stamp.frame} · Público · Ctrl/⌘ + Enter</span></div>
-      <button className="send" aria-label="Publicar comentario" onClick={add} disabled={!draft.trim()}><Icon name="send"/></button>
+      <div className="composer-input">{!!attachments.length&&<div className="reference-strip">{attachments.map(file=><span key={file.id}><img src={file.dataUrl} alt=""/><button aria-label={`Quitar ${file.name}`} onClick={()=>setAttachments(current=>current.filter(item=>item.id!==file.id))}>×</button></span>)}</div>}<textarea value={draft} onChange={e=>setDraft(e.target.value)} onPaste={e=>{if(e.clipboardData.files.length){e.preventDefault();addFiles(e.clipboardData.files)}}} onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')add()}} placeholder={`Comenta o pega una captura sobre ${stamp.time}…`}/><div className="composer-meta"><span>F{stamp.frame} · Ctrl/⌘ + Enter</span><input ref={attachmentInput} className="visually-hidden" type="file" accept="image/*" multiple onChange={e=>{addFiles(e.target.files);e.target.value=''}}/><button onClick={()=>attachmentInput.current?.click()} title="Agregar imagen o captura"><Icon name="image" size={15}/> Referencia</button></div>{attachmentError&&<small className="attachment-error">{attachmentError}</small>}</div>
+      <button className="send" aria-label="Publicar comentario" onClick={add} disabled={!draft.trim()&&!attachments.length}><Icon name="send"/></button>
     </div>
   </aside>;
 }
@@ -235,6 +253,11 @@ function NotificationCenter({onNavigate}) {
   return <div className="notification-center"><button className="notification-trigger" aria-label={`${unread.length} notificaciones sin leer`} onClick={()=>setOpen(!open)}><Icon name="bell" size={17}/>{unread.length>0&&<b>{unread.length}</b>}</button>{open&&<div className="notification-popover"><header><strong>Notificaciones</strong><button onClick={()=>act('notification/readAll',{})}>Marcar leídas</button></header>{unread.length===0?<p>Estás al día.</p>:unread.map(item=><button key={item.id} onClick={()=>{act('notification/read',{id:item.id});onNavigate('review');setOpen(false)}}><strong>Nueva actividad asignada</strong><span>Campaña Amara · abrir revisión</span></button>)}</div>}</div>;
 }
 
+function ShortcutHelp({onClose}) {
+  const shortcuts=[['Espacio','Reproducir / pausar'],['J / L','Retroceder / avanzar 5 s'],['← / →','Mover un fotograma'],['1–4','Lápiz, flecha, rectángulo y texto'],['D','Activar u ocultar dibujo'],['M','Silenciar'],['F','Pantalla completa'],['C','Escribir comentario'],['Ctrl/⌘ + Enter','Publicar comentario'],['Esc','Cerrar paneles']];
+  return <div className="modal-layer"><button className="modal-scrim" aria-label="Cerrar atajos" onClick={onClose}/><section className="modal shortcut-modal" role="dialog" aria-modal="true" aria-labelledby="shortcut-title"><div className="modal-title"><div><span className="eyebrow">COMANDOS RÁPIDOS</span><h2 id="shortcut-title">Atajos de revisión</h2></div><button aria-label="Cerrar" onClick={onClose}><Icon name="x"/></button></div><div className="shortcut-grid">{shortcuts.map(([keys,label])=><div key={keys}><kbd>{keys}</kbd><span>{label}</span></div>)}</div></section></div>;
+}
+
 const initialMembers=[
   {name:'Julian Torres',email:'julian@nebulastudio.co',initials:'JT',role:'Administrador',status:'Activo',color:'#67a9d4'},
   {name:'Sofía Castillo',email:'sofia@nebulastudio.co',initials:'SC',role:'Editor',status:'Activo',color:'#f2bd5c'},
@@ -261,6 +284,7 @@ function App() {
   const [activeColor, setActiveColor] = useState('#ff725e');
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [shortcutsOpen,setShortcutsOpen]=useState(false);
   const [currentTime, setCurrentTime] = useState(14.08);
   const [version, setVersion] = useState(3);
   const [toast, setToast] = useState('');
@@ -270,6 +294,7 @@ function App() {
   const approval=versionStatus==='approved'?'Aprobado':versionStatus==='changes_requested'?'Cambios solicitados':'En revisión';
   const openCount=Object.values(state.comments).filter(c=>c.versionId==='version-amara-v3'&&c.status==='open').length;
   useEffect(()=>{ if(!toast)return; const timer=setTimeout(()=>setToast(''),2200); return()=>clearTimeout(timer); },[toast]);
+  useEffect(()=>{const handler=e=>{if(e.key==='Escape'){setShareOpen(false);setShortcutsOpen(false);setCommentsOpen(false);}if(e.key==='?'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))setShortcutsOpen(value=>!value);if(e.key.toLowerCase()==='c'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){e.preventDefault();document.querySelector('.composer textarea')?.focus();}};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler)},[]);
   const loadMedia = event => { const file=event.target.files?.[0]; if(!file)return; const type=file.type.startsWith('video/')?'video':file.type.startsWith('image/')?'image':null; if(!type){setToast('Formato no compatible');return;} if(media?.url)URL.revokeObjectURL(media.url); setCurrentTime(0); setMedia({name:file.name,type,url:URL.createObjectURL(file),duration:type==='image'?1:0,setDuration:duration=>setMedia(current=>({...current,duration}))}); setToast(`${type==='video'?'Video':'Imagen'} cargado`); };
   return <div className="app-shell">
     <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} currentView={currentView} onNavigate={setCurrentView}/>
@@ -283,6 +308,7 @@ function App() {
         <div className="breadcrumb"><button onClick={()=>setCurrentView('projects')}>Campaña Amara</button><Icon name="chevron" size={14}/><div><strong>Spot principal · 30s</strong><span>Última edición hace 6 min</span></div></div>
         <div className="top-actions">
           <div className="presence"><span>SC</span><span>LM</span><span>+2</span></div>
+          <button className="shortcut-trigger" aria-label="Ver atajos de teclado" title="Atajos (?)" onClick={()=>setShortcutsOpen(true)}>?</button>
           <NotificationCenter onNavigate={setCurrentView}/>
           <button className="secondary" aria-label="Compartir revisión" onClick={()=>setShareOpen(true)}><Icon name="share" size={17}/><span>Compartir</span></button>
           <div className="approval-menu"><button className={`approval ${approval==='Aprobado'?'approved':''}`} onClick={()=>{const blockers=Object.values(state.comments).filter(c=>c.versionId==='version-amara-v3'&&c.status==='open'&&c.priority==='blocking');if(blockers.length){setToast(`Resuelve ${blockers.length} comentario bloqueante antes de aprobar`);return;}act('review/decide',{versionId:'version-amara-v3',reviewerId:state.currentUserId,decision:REVIEW_DECISION.APPROVED});setToast('Tu aprobación quedó registrada')}}><Icon name="check" size={16}/>{approval}</button></div>
@@ -303,6 +329,7 @@ function App() {
       {commentsOpen && <div className="comments-drawer"><div className="drawer-scrim" onClick={()=>setCommentsOpen(false)}/><CommentsPanel onClose={()=>setCommentsOpen(false)} currentTime={currentTime}/></div>}
       </>}
       {shareOpen && <ShareDialog onClose={()=>setShareOpen(false)} onNotify={setToast}/>} 
+      {shortcutsOpen && <ShortcutHelp onClose={()=>setShortcutsOpen(false)}/>} 
       {toast && <div className="toast" role="status">{toast}</div>}
     </main>
     <MobileNav currentView={currentView} onNavigate={setCurrentView}/>

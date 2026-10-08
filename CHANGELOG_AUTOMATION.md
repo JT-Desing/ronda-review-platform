@@ -18,3 +18,12 @@ Este archivo documenta cambios realizados por el ciclo automatizado de Ronda.
 - Se corrigió el enlace compartido para funcionar bajo la ruta de GitHub Pages.
 - Las herramientas de anotación todavía no implementadas se muestran deshabilitadas para evitar acciones engañosas.
 - La invitación al equipo valida correos, duplicados y el límite de cinco puestos del plan Studio.
+
+## Referencias visuales y comandos rápidos
+
+- Los comentarios aceptan hasta tres imágenes o capturas de referencia, mediante selector de archivos o pegado desde el portapapeles.
+- Las referencias muestran vista previa, se pueden quitar antes de publicar y permanecen vinculadas al comentario.
+- Flecha, rectángulo y texto ya son herramientas funcionales junto al lápiz.
+- Se añadieron atajos de reproducción, navegación por fotograma, herramientas, sonido, pantalla completa y comentarios.
+- El botón `?` abre una guía visual de comandos; `Esc` cierra paneles y modales.
+- La paleta completa permanece disponible en móvil mediante desplazamiento horizontal.
