@@ -64,3 +64,15 @@ Este archivo documenta cambios realizados por el ciclo automatizado de Ronda.
 - Archivos: `src/main.jsx` y `src/styles.css`.
 - Verificación: pruebas unitarias 3/3, compilación de producción, `git diff --check`, búsqueda sin coincidencias y respuesta persistida verificadas en navegador.
 - Siguiente prioridad: sincronizar respuestas y presencia con un backend en tiempo real; hoy ambas capacidades siguen siendo locales o simuladas.
+
+## Recuperación segura de comentarios anteriores
+
+- Hipótesis: una migración silenciosa, repetible y verificable evita conteos inflados y saltos a fotogramas incorrectos para usuarios que ya utilizaron el prototipo.
+- Criterios de aceptación: no duplicar observaciones equivalentes, conservar timecode, autor y respuestas disponibles, tolerar JSON dañado y producir el mismo resultado en ejecuciones repetidas.
+- La carga normaliza tanto datos antiguos como estados ya guardados, elimina duplicados por texto y fotograma, y repara segundos inconsistentes desde el fotograma a 24 FPS.
+- Los autores no vinculados conservan su nombre anterior; dejan de mostrarse automáticamente como invitados.
+- Se eliminó el marcador lateral no atómico: si el navegador cierra antes de persistir, la importación puede repetirse sin perder datos ni crecer en cada arranque.
+- Los errores de almacenamiento ya no desmontan la sesión activa; el producto continúa en memoria mientras se prepara un aviso explícito de persistencia para un ciclo futuro.
+- Se añadieron cinco pruebas de migración para mapeo, deduplicación, reparación temporal, repetición y JSON corrupto.
+- Archivos: `src/state/migration.js`, `src/state/RondaContext.jsx`, `src/state/RondaContext.test.js` y `src/main.jsx`.
+- Siguiente prioridad: informar en la interfaz cuando el navegador no pueda persistir por cuota o privacidad, y mover adjuntos a almacenamiento de blobs.

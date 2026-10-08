@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useReducer } from 'react';
 import { COMMENT_STATUS, getPlanUsage, getVersionStatus } from '../domain/review.js';
 import { createSeedState, STATE_VERSION, STORAGE_KEY } from '../data/seed.js';
+import { migrateLegacyComments, normalizeRondaState } from './migration.js';
 
 const RondaContext = createContext(null);
 
@@ -36,22 +37,10 @@ export function rondaReducer(state, action) {
   }
 }
 
-function migrateLegacyComments(state, storage) {
-  if (!storage || storage.getItem('ronda-comments-migrated')) return state;
-  try {
-    const legacy = JSON.parse(storage.getItem('ronda-comments'));
-    if (!Array.isArray(legacy) || !legacy.length) return state;
-    const comments = { ...state.comments };
-    legacy.forEach(item => { const id = `legacy-${item.id}`; const frame = item.frame ?? 0; comments[id] = { id, projectId: 'project-amara', versionId: 'version-amara-v3', authorId: item.author === 'Julian T.' ? 'member-julian' : null, assigneeId: null, priority: 'normal', status: item.status ?? 'open', text: item.text, timeSeconds: item.timeSeconds ?? frame / 24, frame, createdAt: new Date().toISOString() }; });
-    storage.setItem('ronda-comments-migrated', 'true');
-    return { ...state, comments };
-  } catch { return state; }
-}
-
 export function loadRondaState(storage = typeof localStorage === 'undefined' ? null : localStorage) {
   const seed = createSeedState();
   if (!storage) return seed;
-  try { const saved = JSON.parse(storage.getItem(STORAGE_KEY)); if (saved?.schemaVersion === STATE_VERSION) return saved; } catch { /* recover with seed */ }
+  try { const saved = JSON.parse(storage.getItem(STORAGE_KEY)); if (saved?.schemaVersion === STATE_VERSION && saved.comments && saved.members && saved.projects && saved.versions && Array.isArray(saved.activity) && saved.notifications) return normalizeRondaState(saved); } catch { /* recover with seed */ }
   return migrateLegacyComments(seed, storage);
 }
 
@@ -67,7 +56,7 @@ export const selectPlanUsage = state => getPlanUsage({ plan: state.workspace.pla
 export function RondaProvider({ children, storage }) {
   const resolvedStorage = storage ?? (typeof localStorage === 'undefined' ? null : localStorage);
   const [state, dispatch] = useReducer(rondaReducer, resolvedStorage, loadRondaState);
-  useEffect(() => { if (resolvedStorage) resolvedStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }, [resolvedStorage, state]);
+  useEffect(() => { if (resolvedStorage) { try { resolvedStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* keep the in-memory session usable when browser storage is unavailable */ } } }, [resolvedStorage, state]);
   const act = useCallback((type, payload) => dispatch(createRondaAction(type, payload)), []);
   const value = useMemo(() => ({ state, dispatch, act }), [state, act]);
   return <RondaContext.Provider value={value}>{children}</RondaContext.Provider>;

@@ -183,7 +183,7 @@ function CommentCard({ item, selected, onSelect, onResolve, onReply, onJump, mem
 function CommentsPanel({ onClose, currentTime, setCurrentTime }) {
   const { state, act } = useRonda();
   const comments = Object.values(state.comments).filter(comment=>comment.versionId==='version-amara-v3').map(comment=>{
-    const author=state.members[comment.authorId] || {name:'Invitado',initials:'IN'};
+    const author=state.members[comment.authorId] || {name:comment.authorSnapshot||'Autor anterior',initials:(comment.authorSnapshot||'AA').split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase()};
     const stamp=formatTime(comment.timeSeconds ?? (comment.frame || 0) / 24);
     return {...comment,author:author.name,initials:author.initials,color:comment.priority==='blocking'?'#ff725e':'#67a9d4',time:stamp.time,replies:comment.replies||[]};
   });
