@@ -108,3 +108,13 @@ Este archivo documenta cambios realizados por el ciclo automatizado de Ronda.
 - La lógica se aisló en dominio y quedó cubierta por dos pruebas; la suite alcanza 12/12 pruebas.
 - Archivos: `src/domain/comments.js`, `src/domain/comments.test.js`, `src/main.jsx` y `src/styles.css`.
 - Siguiente prioridad: anclar el borrador recuperado a su fotograma original para evitar publicaciones temporales accidentales.
+
+## Aislamiento de borradores por contexto
+
+- Hipótesis: cambiar de versión o identidad nunca debe copiar el texto de un borrador hacia otra revisión o persona.
+- Criterios de aceptación: cada clave recupera su propio texto, una clave nueva comienza vacía y volver al contexto anterior restaura su edición sin sobrescribir otros datos.
+- El estado usa un caché indexado por espacio, proyecto, versión y usuario; el cambio de contexto resuelve clave y valor de forma conjunta.
+- El selector V1–V3 ya separa los borradores, aunque los datos de versiones anteriores continúan siendo demostrativos.
+- Se añadió una prueba específica de aislamiento; la suite alcanza 13/13 pruebas.
+- Archivos: `src/state/migration.js`, `src/state/RondaContext.test.js` y `src/main.jsx`.
+- Siguiente prioridad: conservar junto al borrador el fotograma original y permitir reasignarlo explícitamente.

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSeedState } from '../data/seed.js';
-import { loadSessionDraft, migrateLegacyComments, normalizeRondaState, persistRondaState, saveSessionDraft } from './migration.js';
+import { loadSessionDraft, migrateLegacyComments, normalizeRondaState, persistRondaState, readDraftForContext, saveSessionDraft } from './migration.js';
 
 const memoryStorage = values => ({
   values: { ...values },
@@ -59,4 +59,12 @@ test('guarda, recupera y elimina el borrador de la sesión', () => {
   assert.equal(loadSessionDraft(storage,'draft'),'Ajustar contraste');
   assert.equal(saveSessionDraft(storage,'draft',''),true);
   assert.equal(loadSessionDraft(storage,'draft'),'');
+});
+
+test('aísla borradores al cambiar de usuario o versión', () => {
+  const storage=memoryStorage({'draft-A':'Texto de A','draft-B':'Texto de B'});
+  const cache={'draft-A':'Edición local de A'};
+  assert.equal(readDraftForContext(cache,storage,'draft-A'),'Edición local de A');
+  assert.equal(readDraftForContext(cache,storage,'draft-B'),'Texto de B');
+  assert.equal(storage.getItem('draft-B'),'Texto de B');
 });

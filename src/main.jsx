@@ -4,7 +4,7 @@ import './styles.css';
 import { RondaProvider, selectUnreadNotifications, selectVersionStatus, useRonda } from './state/RondaContext.jsx';
 import { REVIEW_DECISION } from './domain/review.js';
 import { getCommentEmptyState } from './domain/comments.js';
-import { loadSessionDraft, saveSessionDraft } from './state/migration.js';
+import { readDraftForContext, saveSessionDraft } from './state/migration.js';
 
 const formatTime = value => {
   const seconds = Math.max(0, Number(value) || 0);
@@ -305,8 +305,12 @@ function SettingsView({onNotify}) {
 
 function App() {
   const {state,act,persistenceError,retryPersistence}=useRonda();
-  const draftKey=`ronda:draft:${state.workspace.id}:project-amara:version-amara-v3:${state.currentUserId}`;
-  const [commentDraft,setCommentDraft]=useState(()=>loadSessionDraft(typeof sessionStorage==='undefined'?null:sessionStorage,draftKey));
+  const [version, setVersion] = useState(3);
+  const draftKey=`ronda:draft:${state.workspace.id}:project-amara:version-amara-v${version}:${state.currentUserId}`;
+  const draftStorage=typeof sessionStorage==='undefined'?null:sessionStorage;
+  const [draftCache,setDraftCache]=useState({});
+  const commentDraft=readDraftForContext(draftCache,draftStorage,draftKey);
+  const setCommentDraft=value=>setDraftCache(current=>({...current,[draftKey]:typeof value==='function'?value(readDraftForContext(current,draftStorage,draftKey)):value}));
   const recoveredDraft=useRef(Boolean(commentDraft));
   const [collapsed, setCollapsed] = useState(false);
   const [currentView, setCurrentView] = useState('projects');
@@ -316,7 +320,6 @@ function App() {
   const [shareOpen, setShareOpen] = useState(false);
   const [shortcutsOpen,setShortcutsOpen]=useState(false);
   const [currentTime, setCurrentTime] = useState(14.08);
-  const [version, setVersion] = useState(3);
   const [toast, setToast] = useState('');
   const [media, setMedia] = useState(null);
   const [remoteCursor,setRemoteCursor]=useState(null);
@@ -324,7 +327,8 @@ function App() {
   const versionStatus=selectVersionStatus(state,'version-amara-v3');
   const approval=versionStatus==='approved'?'Aprobado':versionStatus==='changes_requested'?'Cambios solicitados':'En revisión';
   const openCount=Object.values(state.comments).filter(c=>c.versionId==='version-amara-v3'&&c.status==='open').length;
-  useEffect(()=>{saveSessionDraft(typeof sessionStorage==='undefined'?null:sessionStorage,draftKey,commentDraft)},[draftKey,commentDraft]);
+  useEffect(()=>{recoveredDraft.current=Boolean(commentDraft)},[draftKey]);
+  useEffect(()=>{saveSessionDraft(draftStorage,draftKey,commentDraft)},[draftStorage,draftKey,commentDraft]);
   useEffect(()=>{ if(!toast)return; const timer=setTimeout(()=>setToast(''),2200); return()=>clearTimeout(timer); },[toast]);
   useEffect(()=>{const handler=e=>{if(e.key==='Escape'){setShareOpen(false);setShortcutsOpen(false);setCommentsOpen(false);}if(e.key==='?'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))setShortcutsOpen(value=>!value);if(e.key.toLowerCase()==='c'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){e.preventDefault();document.querySelector('.composer textarea')?.focus();}};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler)},[]);
   const loadMedia = event => { const file=event.target.files?.[0]; if(!file)return; const type=file.type.startsWith('video/')?'video':file.type.startsWith('image/')?'image':null; if(!type){setToast('Formato no compatible');return;} if(media?.url)URL.revokeObjectURL(media.url); setCurrentTime(0); setMedia({name:file.name,type,url:URL.createObjectURL(file),duration:type==='image'?1:0,setDuration:duration=>setMedia(current=>({...current,duration}))}); setToast(`${type==='video'?'Video':'Imagen'} cargado`); };

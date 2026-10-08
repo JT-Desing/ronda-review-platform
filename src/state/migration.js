@@ -59,3 +59,7 @@ export function saveSessionDraft(storage, key, value) {
     return true;
   } catch { return false; }
 }
+
+export function readDraftForContext(cache, storage, key) {
+  return Object.prototype.hasOwnProperty.call(cache, key) ? cache[key] : loadSessionDraft(storage, key);
+}
