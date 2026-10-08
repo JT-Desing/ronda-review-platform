@@ -36,3 +36,12 @@ Este archivo documenta cambios realizados por el ciclo automatizado de Ronda.
 - Docker Compose incluye el servicio `ronda` y un perfil opcional `tunnel` mediante Cloudflare Tunnel.
 - El hostname previsto es `ronda.repolite.link` y su origen interno es `http://ronda:8080`.
 - El token se carga exclusivamente desde `.env`, que permanece fuera del repositorio.
+
+## Centro de actividad operativo
+
+- La actividad ahora puede filtrarse simultáneamente por tipo, proyecto, persona, período y estado sin leer.
+- Se agregó búsqueda por contenido, proyecto o participante y una acción para limpiar todos los filtros.
+- Los eventos se agrupan en Hoy, Ayer y Esta semana, con estado leído persistente.
+- Las métricas resumen eventos pendientes, comentarios, decisiones y proyectos activos.
+- Cada evento enlaza con su proyecto o sala de revisión y existe un estado vacío accionable.
+- La vista responde en escritorio, tablet y móvil sin convertir los filtros en una tabla horizontal.
