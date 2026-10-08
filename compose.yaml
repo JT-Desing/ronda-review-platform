@@ -1,0 +1,29 @@
+services:
+  ronda:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ronda-review-platform:local
+    container_name: ronda-review-platform
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - ronda-network
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: ronda-cloudflare-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      ronda:
+        condition: service_healthy
+    networks:
+      - ronda-network
+    profiles:
+      - tunnel
+
+networks:
+  ronda-network:
+    name: ronda-network

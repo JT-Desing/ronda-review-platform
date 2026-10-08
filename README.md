@@ -33,3 +33,18 @@ Abrir `http://localhost:5173`.
 - `design-preview.html`: catálogo visual autocontenido.
 
 El nombre **Ronda** es provisional y requiere validación de marca y dominio antes de uso comercial.
+# Docker y URL fija
+
+La aplicación queda servida por Nginx en `http://localhost:8080`:
+
+```bash
+docker compose up -d --build ronda
+```
+
+Para publicar `https://ronda.repolite.link`, crea un túnel con nombre en Cloudflare Zero Trust, agrega el hostname público `ronda.repolite.link` con servicio `http://ronda:8080`, copia `.env.example` como `.env`, completa `CLOUDFLARE_TUNNEL_TOKEN` y ejecuta:
+
+```bash
+docker compose --profile tunnel up -d --build
+```
+
+El token nunca debe subirse al repositorio. `.env` está ignorado por Git.

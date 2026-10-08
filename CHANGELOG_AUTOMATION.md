@@ -27,3 +27,11 @@ Este archivo documenta cambios realizados por el ciclo automatizado de Ronda.
 - Se añadieron atajos de reproducción, navegación por fotograma, herramientas, sonido, pantalla completa y comentarios.
 - El botón `?` abre una guía visual de comandos; `Esc` cierra paneles y modales.
 - La paleta completa permanece disponible en móvil mediante desplazamiento horizontal.
+
+## Contenedor y despliegue por túnel
+
+- Se añadió una imagen Docker multi-stage con Node 24 para compilación y Nginx para producción.
+- Nginx sirve la SPA y sus rutas en el puerto `8080`, con caché para assets y cabeceras básicas de seguridad.
+- Docker Compose incluye el servicio `ronda` y un perfil opcional `tunnel` mediante Cloudflare Tunnel.
+- El hostname previsto es `ronda.repolite.link` y su origen interno es `http://ronda:8080`.
+- El token se carga exclusivamente desde `.env`, que permanece fuera del repositorio.
