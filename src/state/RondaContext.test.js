@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSeedState } from '../data/seed.js';
-import { migrateLegacyComments, normalizeRondaState, persistRondaState } from './migration.js';
+import { loadSessionDraft, migrateLegacyComments, normalizeRondaState, persistRondaState, saveSessionDraft } from './migration.js';
 
 const memoryStorage = values => ({
   values: { ...values },
@@ -51,4 +51,12 @@ test('un JSON antiguo corrupto no impide recuperar el estado inicial', () => {
 test('informa cuando el navegador rechaza la persistencia sin lanzar', () => {
   const storage={setItem(){const error=new Error('full');error.name='QuotaExceededError';throw error}};
   assert.deepEqual(persistRondaState(storage,'ronda-state:v1',createSeedState()),{ok:false,reason:'quota'});
+});
+
+test('guarda, recupera y elimina el borrador de la sesión', () => {
+  const storage=memoryStorage({}); storage.removeItem=function(key){delete this.values[key]};
+  assert.equal(saveSessionDraft(storage,'draft','Ajustar contraste'),true);
+  assert.equal(loadSessionDraft(storage,'draft'),'Ajustar contraste');
+  assert.equal(saveSessionDraft(storage,'draft',''),true);
+  assert.equal(loadSessionDraft(storage,'draft'),'');
 });

@@ -87,3 +87,14 @@ Este archivo documenta cambios realizados por el ciclo automatizado de Ronda.
 - Se añadió una prueba de regresión para `QuotaExceededError`; la suite alcanza 9/9 pruebas.
 - Archivos: `src/state/migration.js`, `src/state/RondaContext.jsx`, `src/state/RondaContext.test.js`, `src/main.jsx` y `src/styles.css`.
 - Siguiente prioridad: recuperar borradores con `sessionStorage` y trasladar imágenes de referencia a almacenamiento de blobs.
+
+## Recuperación de borradores de comentario
+
+- Hipótesis: conservar el texto durante la pestaña evita perder una observación al recargar, cambiar de vista o cerrar el panel móvil accidentalmente.
+- Criterios de aceptación: restaurar texto por espacio, proyecto, versión y usuario; compartirlo entre panel desktop y drawer móvil; eliminarlo al publicar o vaciar; no persistir imágenes.
+- El borrador usa una única fuente de estado en la aplicación, evitando que las dos presentaciones del panel se sobrescriban.
+- `sessionStorage` recupera únicamente texto y muestra una confirmación discreta dentro del compositor; las referencias visuales siguen excluidas para proteger cuota y privacidad.
+- Los errores de `sessionStorage` se toleran sin impedir escribir o publicar.
+- Se añadió una prueba de guardar, recuperar y eliminar; la suite alcanza 10/10 pruebas.
+- Archivos: `src/state/migration.js`, `src/state/RondaContext.test.js`, `src/main.jsx` y `src/styles.css`.
+- Siguiente prioridad: anclar el borrador a su timecode original y ofrecer descarte explícito antes de evolucionar hacia almacenamiento de blobs.

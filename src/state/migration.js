@@ -46,3 +46,16 @@ export function persistRondaState(storage, key, state) {
     return { ok: false, reason: error?.name === 'QuotaExceededError' ? 'quota' : 'blocked' };
   }
 }
+
+export function loadSessionDraft(storage, key) {
+  if (!storage) return '';
+  try { return String(storage.getItem(key) ?? ''); } catch { return ''; }
+}
+
+export function saveSessionDraft(storage, key, value) {
+  if (!storage) return false;
+  try {
+    if (value) storage.setItem(key, value); else storage.removeItem(key);
+    return true;
+  } catch { return false; }
+}

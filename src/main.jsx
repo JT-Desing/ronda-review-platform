@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import './styles.css';
 import { RondaProvider, selectUnreadNotifications, selectVersionStatus, useRonda } from './state/RondaContext.jsx';
 import { REVIEW_DECISION } from './domain/review.js';
+import { loadSessionDraft, saveSessionDraft } from './state/migration.js';
 
 const formatTime = value => {
   const seconds = Math.max(0, Number(value) || 0);
@@ -181,7 +182,7 @@ function CommentCard({ item, selected, onSelect, onResolve, onReply, onJump, mem
   </article>;
 }
 
-function CommentsPanel({ onClose, currentTime, setCurrentTime }) {
+function CommentsPanel({ onClose, currentTime, setCurrentTime, draft, setDraft, recoveredDraft }) {
   const { state, act } = useRonda();
   const comments = Object.values(state.comments).filter(comment=>comment.versionId==='version-amara-v3').map(comment=>{
     const author=state.members[comment.authorId] || {name:comment.authorSnapshot||'Autor anterior',initials:(comment.authorSnapshot||'AA').split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase()};
@@ -191,7 +192,6 @@ function CommentsPanel({ onClose, currentTime, setCurrentTime }) {
   const [selected, setSelected] = useState('comment-1');
   const [filter, setFilter] = useState('Todos');
   const [search,setSearch]=useState('');
-  const [draft, setDraft] = useState('');
   const [attachments,setAttachments]=useState([]);
   const [attachmentError,setAttachmentError]=useState('');
   const attachmentInput=useRef(null);
@@ -199,14 +199,14 @@ function CommentsPanel({ onClose, currentTime, setCurrentTime }) {
   const resolve = id => act(state.comments[id]?.status==='resolved'?'comment/reopen':'comment/resolve',{id});
   const stamp = formatTime(currentTime);
   const addFiles=async files=>{setAttachmentError('');const candidates=[...files].filter(file=>file.type.startsWith('image/')).slice(0,3-attachments.length);for(const file of candidates){if(file.size>2*1024*1024){setAttachmentError('Cada referencia debe pesar menos de 2 MB.');continue;}const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file)});setAttachments(current=>[...current,{id:`ref-${Date.now()}-${file.name}`,name:file.name,dataUrl}].slice(0,3));}};
-  const add = () => { if(!draft.trim()&&!attachments.length) return; act('comment/add',{projectId:'project-amara',versionId:'version-amara-v3',authorId:state.currentUserId,assigneeId:state.currentUserId,priority:'normal',text:draft.trim()||'Referencia visual adjunta',attachments,timeSeconds:currentTime,frame:stamp.frame}); setDraft('');setAttachments([]); };
+  const add = () => { if(!draft.trim()&&!attachments.length) return; act('comment/add',{projectId:'project-amara',versionId:'version-amara-v3',authorId:state.currentUserId,assigneeId:state.currentUserId,priority:'normal',text:draft.trim()||'Referencia visual adjunta',attachments,timeSeconds:currentTime,frame:stamp.frame}); setDraft('');setAttachments([]);recoveredDraft.current=false; };
   const replyTo=(id,text)=>{const current=state.comments[id];act('comment/update',{id,changes:{replies:[...(current.replies||[]),{id:`reply-${Date.now()}`,authorId:state.currentUserId,text,createdAt:new Date().toISOString()}]}})};
   return <aside className="comments-panel">
     <div className="panel-head"><div><span className="panel-kicker">REVISIÓN</span><strong>Comentarios</strong><small>{comments.filter(c=>c.status==='open').length} pendientes de {comments.length}</small></div><button className="mobile-close" aria-label="Cerrar comentarios" onClick={onClose}><Icon name="x"/></button></div>
     <div className="comment-toolbar"><div className="comment-tabs" role="tablist" aria-label="Filtrar comentarios">{['Todos','Abiertos','Resueltos'].map(item=><button key={item} role="tab" aria-selected={filter===item} className={filter===item?'active':''} onClick={()=>setFilter(item)}>{item}<span>{item==='Todos'?comments.length:comments.filter(c=>c.status===(item==='Abiertos'?'open':'resolved')).length}</span></button>)}</div><label className="comment-search"><Icon name="search" size={14}/><input aria-label="Buscar comentarios" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar"/></label></div>
     <div className="comments-scroll">{visible.map(c=><CommentCard key={c.id} item={c} members={state.members} selected={selected===c.id} onSelect={()=>setSelected(c.id)} onResolve={resolve} onReply={replyTo} onJump={item=>{setSelected(item.id);setCurrentTime?.(item.timeSeconds ?? (item.frame||0)/24)}}/>)}{visible.length===0&&<div className="comments-empty"><strong>Sin resultados</strong><span>Prueba otra búsqueda o filtro.</span></div>}</div>
     <div className="composer">
-      <div className="composer-input">{!!attachments.length&&<div className="reference-strip">{attachments.map(file=><span key={file.id}><img src={file.dataUrl} alt=""/><button aria-label={`Quitar ${file.name}`} onClick={()=>setAttachments(current=>current.filter(item=>item.id!==file.id))}>×</button></span>)}</div>}<textarea value={draft} onChange={e=>setDraft(e.target.value)} onPaste={e=>{if(e.clipboardData.files.length){e.preventDefault();addFiles(e.clipboardData.files)}}} onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')add()}} placeholder={`Comenta o pega una captura sobre ${stamp.time}…`}/><div className="composer-meta"><span>F{stamp.frame} · Ctrl/⌘ + Enter</span><input ref={attachmentInput} className="visually-hidden" type="file" accept="image/*" multiple onChange={e=>{addFiles(e.target.files);e.target.value=''}}/><button onClick={()=>attachmentInput.current?.click()} title="Agregar imagen o captura"><Icon name="image" size={15}/> Referencia</button></div>{attachmentError&&<small className="attachment-error">{attachmentError}</small>}</div>
+      <div className="composer-input">{recoveredDraft.current&&draft&&<small className="draft-recovered" role="status">Borrador recuperado</small>}{!!attachments.length&&<div className="reference-strip">{attachments.map(file=><span key={file.id}><img src={file.dataUrl} alt=""/><button aria-label={`Quitar ${file.name}`} onClick={()=>setAttachments(current=>current.filter(item=>item.id!==file.id))}>×</button></span>)}</div>}<textarea value={draft} onChange={e=>{recoveredDraft.current=false;setDraft(e.target.value)}} onPaste={e=>{if(e.clipboardData.files.length){e.preventDefault();addFiles(e.clipboardData.files)}}} onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')add()}} placeholder={`Comenta o pega una captura sobre ${stamp.time}…`}/><div className="composer-meta"><span>F{stamp.frame} · Ctrl/⌘ + Enter</span><input ref={attachmentInput} className="visually-hidden" type="file" accept="image/*" multiple onChange={e=>{addFiles(e.target.files);e.target.value=''}}/><button onClick={()=>attachmentInput.current?.click()} title="Agregar imagen o captura"><Icon name="image" size={15}/> Referencia</button></div>{attachmentError&&<small className="attachment-error">{attachmentError}</small>}</div>
       <button className="send" aria-label="Publicar comentario" onClick={add} disabled={!draft.trim()&&!attachments.length}><Icon name="send"/></button>
     </div>
   </aside>;
@@ -303,6 +303,9 @@ function SettingsView({onNotify}) {
 
 function App() {
   const {state,act,persistenceError,retryPersistence}=useRonda();
+  const draftKey=`ronda:draft:${state.workspace.id}:project-amara:version-amara-v3:${state.currentUserId}`;
+  const [commentDraft,setCommentDraft]=useState(()=>loadSessionDraft(typeof sessionStorage==='undefined'?null:sessionStorage,draftKey));
+  const recoveredDraft=useRef(Boolean(commentDraft));
   const [collapsed, setCollapsed] = useState(false);
   const [currentView, setCurrentView] = useState('projects');
   const [activeTool, setActiveTool] = useState('pen');
@@ -319,6 +322,7 @@ function App() {
   const versionStatus=selectVersionStatus(state,'version-amara-v3');
   const approval=versionStatus==='approved'?'Aprobado':versionStatus==='changes_requested'?'Cambios solicitados':'En revisión';
   const openCount=Object.values(state.comments).filter(c=>c.versionId==='version-amara-v3'&&c.status==='open').length;
+  useEffect(()=>{saveSessionDraft(typeof sessionStorage==='undefined'?null:sessionStorage,draftKey,commentDraft)},[draftKey,commentDraft]);
   useEffect(()=>{ if(!toast)return; const timer=setTimeout(()=>setToast(''),2200); return()=>clearTimeout(timer); },[toast]);
   useEffect(()=>{const handler=e=>{if(e.key==='Escape'){setShareOpen(false);setShortcutsOpen(false);setCommentsOpen(false);}if(e.key==='?'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))setShortcutsOpen(value=>!value);if(e.key.toLowerCase()==='c'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){e.preventDefault();document.querySelector('.composer textarea')?.focus();}};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler)},[]);
   const loadMedia = event => { const file=event.target.files?.[0]; if(!file)return; const type=file.type.startsWith('video/')?'video':file.type.startsWith('image/')?'image':null; if(!type){setToast('Formato no compatible');return;} if(media?.url)URL.revokeObjectURL(media.url); setCurrentTime(0); setMedia({name:file.name,type,url:URL.createObjectURL(file),duration:type==='image'?1:0,setDuration:duration=>setMedia(current=>({...current,duration}))}); setToast(`${type==='video'?'Video':'Imagen'} cargado`); };
@@ -351,10 +355,10 @@ function App() {
             <button className="ai-button"><Icon name="spark"/><span><strong>Resumir cambios</strong><small>Organizar con IA</small></span></button>
           </div>
         </div>
-        <CommentsPanel onClose={()=>setCommentsOpen(false)} currentTime={currentTime} setCurrentTime={setCurrentTime}/>
+        <CommentsPanel onClose={()=>setCommentsOpen(false)} currentTime={currentTime} setCurrentTime={setCurrentTime} draft={commentDraft} setDraft={setCommentDraft} recoveredDraft={recoveredDraft}/>
       </div>
       <button className="mobile-comments" onClick={()=>setCommentsOpen(true)}>{Object.values(state.comments).filter(c=>c.versionId==='version-amara-v3').length} comentarios <span>{openCount} abiertos</span></button>
-      {commentsOpen && <div className="comments-drawer"><div className="drawer-scrim" onClick={()=>setCommentsOpen(false)}/><CommentsPanel onClose={()=>setCommentsOpen(false)} currentTime={currentTime} setCurrentTime={setCurrentTime}/></div>}
+      {commentsOpen && <div className="comments-drawer"><div className="drawer-scrim" onClick={()=>setCommentsOpen(false)}/><CommentsPanel onClose={()=>setCommentsOpen(false)} currentTime={currentTime} setCurrentTime={setCurrentTime} draft={commentDraft} setDraft={setCommentDraft} recoveredDraft={recoveredDraft}/></div>}
       </>}
       {shareOpen && <ShareDialog onClose={()=>setShareOpen(false)} onNotify={setToast}/>} 
       {shortcutsOpen && <ShortcutHelp onClose={()=>setShortcutsOpen(false)}/>} 
