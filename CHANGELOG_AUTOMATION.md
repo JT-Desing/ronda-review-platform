@@ -118,3 +118,16 @@ Este archivo documenta cambios realizados por el ciclo automatizado de Ronda.
 - Se añadió una prueba específica de aislamiento; la suite alcanza 13/13 pruebas.
 - Archivos: `src/state/migration.js`, `src/state/RondaContext.test.js` y `src/main.jsx`.
 - Siguiente prioridad: conservar junto al borrador el fotograma original y permitir reasignarlo explícitamente.
+
+## Herramientas de anotación fiables
+
+- Hipótesis: cada gesto debe conservar la herramienta elegida y permanecer alineado al medio al redimensionar, especialmente en tablet y pantalla completa.
+- Criterios de aceptación: lápiz, flecha, rectángulo y texto conservan tipo y color; cancelaciones no crean marcas; resize mantiene posición; undo/redo opera por anotación; controles anuncian selección.
+- Se corrigió el defecto que convertía flechas y rectángulos en trazos libres al soltar el puntero.
+- Las coordenadas ahora se almacenan normalizadas y se renderizan con `devicePixelRatio`, por lo que conservan su posición al cambiar tamaño u orientación.
+- El ciclo Pointer Events ignora punteros secundarios, botones no primarios y gestos cancelados; la herramienta y el color quedan fijados al comenzar el gesto.
+- Texto dejó de usar `prompt()` y ahora se escribe directamente sobre el fotograma con Enter para confirmar y Escape para cancelar.
+- Herramientas y colores exponen `aria-pressed`, nombres comprensibles, foco visible y objetivos táctiles de 44 px.
+- Se añadieron tres pruebas del modelo de anotaciones; la suite alcanza 16/16 pruebas. Flecha, rectángulo, undo y redo se verificaron también en el despliegue sin errores de consola.
+- Archivos: `src/domain/annotations.js`, `src/domain/annotations.test.js`, `src/main.jsx` y `src/styles.css`.
+- Siguiente prioridad: asociar las anotaciones a versión y fotograma para que no permanezcan visibles durante todo el video.

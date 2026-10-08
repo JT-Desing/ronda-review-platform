@@ -4,6 +4,7 @@ import './styles.css';
 import { RondaProvider, selectUnreadNotifications, selectVersionStatus, useRonda } from './state/RondaContext.jsx';
 import { REVIEW_DECISION } from './domain/review.js';
 import { getCommentEmptyState } from './domain/comments.js';
+import { finalizeAnnotation, toNormalizedPoint } from './domain/annotations.js';
 import { readDraftForContext, saveSessionDraft } from './state/migration.js';
 
 const formatTime = value => {
@@ -83,39 +84,46 @@ function MobileNav({ currentView, onNavigate }) {
 
 function AnnotationLayer({ activeTool, activeColor, marks, setMarks }) {
   const canvas = useRef(null);
-  const drawing = useRef(false);
-  const points = useRef([]);
+  const draft = useRef(null);
+  const activePointer = useRef(null);
+  const [textEditor,setTextEditor]=useState(null);
+  const [textValue,setTextValue]=useState('');
   const draw = () => {
     const el = canvas.current;
     if (!el) return;
     const ctx = el.getContext('2d');
     const ratio = window.devicePixelRatio || 1;
     const box = el.getBoundingClientRect();
-    if (el.width !== box.width * ratio || el.height !== box.height * ratio) {
-      el.width = box.width * ratio; el.height = box.height * ratio; ctx.scale(ratio, ratio);
-    }
+    const width=Math.round(box.width*ratio); const height=Math.round(box.height*ratio);
+    if (el.width !== width || el.height !== height) { el.width=width;el.height=height; }
+    ctx.setTransform(ratio,0,0,ratio,0,0);
     ctx.clearRect(0, 0, box.width, box.height);
-    [...marks, ...(drawing.current && points.current.length ? [{ tool: activeTool, color: activeColor, points: points.current }] : [])].forEach(mark => {
+    [...marks, ...(draft.current?.points.length ? [draft.current] : [])].forEach(mark => {
+      const pixels=mark.points.map(point=>({x:point.x*box.width,y:point.y*box.height}));
       if (mark.tool === 'pen') {
         ctx.strokeStyle = mark.color; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();
-        mark.points.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.stroke();
+        pixels.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.stroke();
       }
       if (mark.tool === 'square' && mark.points.length > 1) {
-        const [start,end]=[mark.points[0],mark.points.at(-1)]; ctx.strokeStyle=mark.color;ctx.lineWidth=4;ctx.strokeRect(start.x,start.y,end.x-start.x,end.y-start.y);
+        const [start,end]=[pixels[0],pixels.at(-1)]; ctx.strokeStyle=mark.color;ctx.lineWidth=4;ctx.strokeRect(start.x,start.y,end.x-start.x,end.y-start.y);
       }
       if (mark.tool === 'arrow' && mark.points.length > 1) {
-        const [start,end]=[mark.points[0],mark.points.at(-1)]; const angle=Math.atan2(end.y-start.y,end.x-start.x);ctx.strokeStyle=mark.color;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.lineTo(end.x,end.y);ctx.lineTo(end.x-14*Math.cos(angle-Math.PI/6),end.y-14*Math.sin(angle-Math.PI/6));ctx.moveTo(end.x,end.y);ctx.lineTo(end.x-14*Math.cos(angle+Math.PI/6),end.y-14*Math.sin(angle+Math.PI/6));ctx.stroke();
+        const [start,end]=[pixels[0],pixels.at(-1)]; const angle=Math.atan2(end.y-start.y,end.x-start.x);ctx.strokeStyle=mark.color;ctx.lineWidth=4;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.lineTo(end.x,end.y);ctx.lineTo(end.x-14*Math.cos(angle-Math.PI/6),end.y-14*Math.sin(angle-Math.PI/6));ctx.moveTo(end.x,end.y);ctx.lineTo(end.x-14*Math.cos(angle+Math.PI/6),end.y-14*Math.sin(angle+Math.PI/6));ctx.stroke();
       }
-      if (mark.tool === 'type') { ctx.fillStyle=mark.color;ctx.font='600 18px system-ui';ctx.fillText(mark.text,mark.points[0].x,mark.points[0].y); }
+      if (mark.tool === 'type') { ctx.fillStyle=mark.color;ctx.font='600 18px system-ui';ctx.fillText(mark.text,pixels[0].x,pixels[0].y); }
     });
   };
-  useEffect(draw, [marks, activeColor, activeTool]);
-  useEffect(() => { const handle = () => draw(); window.addEventListener('resize', handle); return () => window.removeEventListener('resize', handle); });
-  const point = e => { const r = canvas.current.getBoundingClientRect(); return { x: e.clientX-r.left, y: e.clientY-r.top }; };
-  return <canvas ref={canvas} className={`annotation-layer ${activeTool ? 'drawing' : ''}`}
-    onPointerDown={e => { if(!activeTool) return; const start=point(e); if(activeTool==='type'){const text=window.prompt('Texto de la anotación');if(text?.trim())setMarks([...marks,{tool:'type',color:activeColor,text:text.trim(),points:[start]}]);return;} e.currentTarget.setPointerCapture(e.pointerId); drawing.current=true; points.current=[start]; draw(); }}
-    onPointerMove={e => { if(!drawing.current) return; points.current.push(point(e)); draw(); }}
-    onPointerUp={() => { if(!drawing.current) return; drawing.current=false; setMarks([...marks,{tool:'pen',color:activeColor,points:[...points.current]}]); points.current=[]; }} />;
+  useEffect(draw, [marks]);
+  useEffect(() => { const observer=new ResizeObserver(draw);if(canvas.current)observer.observe(canvas.current);return()=>observer.disconnect(); },[marks]);
+  const point = e => toNormalizedPoint(e,canvas.current.getBoundingClientRect());
+  const cancel=e=>{if(e&&activePointer.current!==e.pointerId)return;draft.current=null;activePointer.current=null;draw()};
+  const finish=e=>{if(!draft.current||activePointer.current!==e.pointerId)return;draft.current.points.push(point(e));const mark=finalizeAnnotation(draft.current.tool,draft.current.color,draft.current.points);draft.current=null;activePointer.current=null;if(mark)setMarks(current=>[...current,mark]);else draw()};
+  const closeText=commit=>{if(commit&&textEditor){const mark=finalizeAnnotation('type',textEditor.color,[textEditor.point],textValue);if(mark)setMarks(current=>[...current,mark]);}setTextEditor(null);setTextValue('')};
+  return <><canvas ref={canvas} className={`annotation-layer ${activeTool ? 'drawing' : ''}`}
+    onPointerDown={e => { if(!activeTool||activePointer.current!==null||e.isPrimary===false||(e.pointerType==='mouse'&&e.button!==0)) return; const start=point(e); if(activeTool==='type'){setTextEditor({point:start,color:activeColor});setTextValue('');return;} activePointer.current=e.pointerId;e.currentTarget.setPointerCapture?.(e.pointerId);draft.current={tool:activeTool,color:activeColor,points:[start]};draw(); }}
+    onPointerMove={e => { if(!draft.current||activePointer.current!==e.pointerId) return;const next=point(e);if(draft.current.tool==='pen')draft.current.points.push(next);else draft.current.points=[draft.current.points[0],next];draw(); }}
+    onPointerUp={finish} onPointerCancel={cancel} onLostPointerCapture={e=>{if(draft.current)finish(e)}} />
+    {textEditor&&<input className="annotation-text-input" autoFocus aria-label="Texto de la anotación" value={textValue} onChange={e=>setTextValue(e.target.value)} onKeyDown={e=>{e.stopPropagation();if(e.key==='Enter')closeText(true);if(e.key==='Escape')closeText(false)}} placeholder="Escribe y pulsa Enter · Esc cancela" style={{left:`${textEditor.point.x*100}%`,top:`${textEditor.point.y*100}%`,color:textEditor.color}}/>}</>;
 }
 
 function MediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, media, currentTime, setCurrentTime, remoteCursor }) {
@@ -154,9 +162,9 @@ function MediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, me
         <div className="frame-badge">{stamp.time} · F{stamp.frame}</div>
       </div>
       <div className="annotation-tools" aria-label="Herramientas de anotación">
-        {['pen','arrow','square','type'].map((tool,index) => <button key={tool} title={`${['Lápiz','Flecha','Rectángulo','Texto'][index]} · ${index+1}`} onClick={()=>setActiveTool(tool)} className={activeTool===tool?'active':''} aria-label={`${['Lápiz','Flecha','Rectángulo','Texto'][index]} (${index+1})`}><Icon name={tool}/><kbd>{index+1}</kbd></button>)}
+        {['pen','arrow','square','type'].map((tool,index) => <button key={tool} title={`${['Lápiz','Flecha','Rectángulo','Texto'][index]} · ${index+1}`} onClick={()=>setActiveTool(tool)} className={activeTool===tool?'active':''} aria-pressed={activeTool===tool} aria-label={`${['Lápiz','Flecha','Rectángulo','Texto'][index]} (${index+1})`}><Icon name={tool}/><kbd>{index+1}</kbd></button>)}
         <span className="tool-divider"/>
-        <div className="color-options">{colors.map(c=><button key={c} aria-label={`Color ${c}`} onClick={()=>setActiveColor(c)} className={activeColor===c?'selected':''} style={{'--swatch':c}}/>)}</div>
+        <div className="color-options">{colors.map((c,index)=><button key={c} aria-label={`Color ${['coral','ámbar','verde','azul','violeta','blanco'][index]}`} aria-pressed={activeColor===c} title={c} onClick={()=>setActiveColor(c)} className={activeColor===c?'selected':''} style={{'--swatch':c}}/>)}</div>
         <span className="tool-divider"/><button onClick={undoMark} disabled={!marks.length} title="Deshacer · Ctrl/⌘ + Z" aria-label="Deshacer última anotación"><Icon name="undo"/></button><button onClick={redoMark} disabled={!redoMarks.length} title="Rehacer · Ctrl/⌘ + Shift + Z" aria-label="Rehacer anotación"><Icon name="redo"/></button>
       </div>
     </div>
