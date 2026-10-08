@@ -41,6 +41,8 @@ La aplicación queda servida por Nginx en `http://localhost:8080`:
 docker compose up -d --build ronda
 ```
 
+El puerto del host es configurable con `RONDA_PORT` en `.env`; el contenedor siempre escucha en `8080`. Esto permite mantener Ronda disponible aunque otro servicio local esté usando temporalmente el puerto 8080.
+
 Para publicar `https://ronda.repolite.link`, crea un túnel con nombre en Cloudflare Zero Trust, agrega el hostname público `ronda.repolite.link` con servicio `http://ronda:8080`, copia `.env.example` como `.env`, completa `CLOUDFLARE_TUNNEL_TOKEN` y ejecuta:
 
 ```bash
