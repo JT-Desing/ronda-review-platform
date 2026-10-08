@@ -1,7 +1,7 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useReducer } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react';
 import { COMMENT_STATUS, getPlanUsage, getVersionStatus } from '../domain/review.js';
 import { createSeedState, STATE_VERSION, STORAGE_KEY } from '../data/seed.js';
-import { migrateLegacyComments, normalizeRondaState } from './migration.js';
+import { migrateLegacyComments, normalizeRondaState, persistRondaState } from './migration.js';
 
 const RondaContext = createContext(null);
 
@@ -56,9 +56,11 @@ export const selectPlanUsage = state => getPlanUsage({ plan: state.workspace.pla
 export function RondaProvider({ children, storage }) {
   const resolvedStorage = storage ?? (typeof localStorage === 'undefined' ? null : localStorage);
   const [state, dispatch] = useReducer(rondaReducer, resolvedStorage, loadRondaState);
-  useEffect(() => { if (resolvedStorage) { try { resolvedStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* keep the in-memory session usable when browser storage is unavailable */ } } }, [resolvedStorage, state]);
+  const [persistenceError,setPersistenceError]=useState(null);
+  const save=useCallback(()=>{const result=persistRondaState(resolvedStorage,STORAGE_KEY,state);setPersistenceError(result.ok?null:result.reason);return result.ok},[resolvedStorage,state]);
+  useEffect(() => { save(); }, [save]);
   const act = useCallback((type, payload) => dispatch(createRondaAction(type, payload)), []);
-  const value = useMemo(() => ({ state, dispatch, act }), [state, act]);
+  const value = useMemo(() => ({ state, dispatch, act, persistenceError, retryPersistence:save }), [state, act, persistenceError, save]);
   return <RondaContext.Provider value={value}>{children}</RondaContext.Provider>;
 }
 

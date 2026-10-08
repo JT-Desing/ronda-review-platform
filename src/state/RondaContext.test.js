@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSeedState } from '../data/seed.js';
-import { migrateLegacyComments, normalizeRondaState } from './migration.js';
+import { migrateLegacyComments, normalizeRondaState, persistRondaState } from './migration.js';
 
 const memoryStorage = values => ({
   values: { ...values },
@@ -46,4 +46,9 @@ test('un JSON antiguo corrupto no impide recuperar el estado inicial', () => {
   const storage = memoryStorage({ 'ronda-comments': '{malformado' });
   const state = migrateLegacyComments(createSeedState(), storage);
   assert.deepEqual(Object.keys(state.comments), ['comment-1', 'comment-2']);
+});
+
+test('informa cuando el navegador rechaza la persistencia sin lanzar', () => {
+  const storage={setItem(){const error=new Error('full');error.name='QuotaExceededError';throw error}};
+  assert.deepEqual(persistRondaState(storage,'ronda-state:v1',createSeedState()),{ok:false,reason:'quota'});
 });

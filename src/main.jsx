@@ -40,6 +40,7 @@ const Icon = ({ name, size = 18 }) => {
     plus: <path d="M12 5v14M5 12h14"/>,
     x: <path d="m6 6 12 12M18 6 6 18"/>,
     bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></>,
+    alert: <><path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 9v5M12 17.5h.01"/></>,
   };
   return <svg aria-hidden="true" className="icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 };
@@ -301,7 +302,7 @@ function SettingsView({onNotify}) {
 }
 
 function App() {
-  const {state,act}=useRonda();
+  const {state,act,persistenceError,retryPersistence}=useRonda();
   const [collapsed, setCollapsed] = useState(false);
   const [currentView, setCurrentView] = useState('projects');
   const [activeTool, setActiveTool] = useState('pen');
@@ -325,6 +326,7 @@ function App() {
   return <div className="app-shell">
     <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} currentView={currentView} onNavigate={setCurrentView}/>
     <main className={`workspace ${currentView!=='review'?'dashboard-workspace':''}`}>
+      {persistenceError&&<div className="persistence-alert" role="alert"><Icon name="alert" size={16}/><span><strong>Los cambios están solo en este dispositivo</strong><small>{persistenceError==='quota'?'El almacenamiento del navegador está lleno. Quita algunas referencias pesadas o libera espacio.':'El navegador bloqueó el almacenamiento local.'}</small></span><button onClick={retryPersistence}>Reintentar</button></div>}
       {currentView==='projects' && <ProjectsView onOpen={()=>setCurrentView('review')} onNotify={setToast}/>} 
       {currentView==='activity' && <ActivityView onNavigate={setCurrentView}/>}
       {currentView==='team' && <TeamView onNotify={setToast}/>} 

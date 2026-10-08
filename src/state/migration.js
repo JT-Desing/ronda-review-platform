@@ -36,3 +36,13 @@ export function migrateLegacyComments(state, storage) {
     return normalizeRondaState({ ...state, comments });
   } catch { return normalizeRondaState(state); }
 }
+
+export function persistRondaState(storage, key, state) {
+  if (!storage) return { ok: false, reason: 'unavailable' };
+  try {
+    storage.setItem(key, JSON.stringify(state));
+    return { ok: true, reason: null };
+  } catch (error) {
+    return { ok: false, reason: error?.name === 'QuotaExceededError' ? 'quota' : 'blocked' };
+  }
+}

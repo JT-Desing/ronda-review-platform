@@ -76,3 +76,14 @@ Este archivo documenta cambios realizados por el ciclo automatizado de Ronda.
 - Se añadieron cinco pruebas de migración para mapeo, deduplicación, reparación temporal, repetición y JSON corrupto.
 - Archivos: `src/state/migration.js`, `src/state/RondaContext.jsx`, `src/state/RondaContext.test.js` y `src/main.jsx`.
 - Siguiente prioridad: informar en la interfaz cuando el navegador no pueda persistir por cuota o privacidad, y mover adjuntos a almacenamiento de blobs.
+
+## Estado visible de persistencia local
+
+- Hipótesis: avisar de forma persistente cuando el navegador rechaza el guardado evita que el equipo confunda cambios disponibles en memoria con cambios recuperables después de recargar.
+- Criterios de aceptación: la sesión no se rompe, distingue cuota agotada de almacenamiento bloqueado, mantiene el aviso hasta guardar y ofrece un reintento manual.
+- El proveedor de estado ahora expone el fallo de persistencia y una acción de reintento en lugar de silenciarlo.
+- Una franja accesible explica que los cambios siguen disponibles durante la sesión y recomienda reducir referencias pesadas cuando la cuota está llena.
+- El aviso desaparece únicamente después de que una escritura posterior finaliza correctamente.
+- Se añadió una prueba de regresión para `QuotaExceededError`; la suite alcanza 9/9 pruebas.
+- Archivos: `src/state/migration.js`, `src/state/RondaContext.jsx`, `src/state/RondaContext.test.js`, `src/main.jsx` y `src/styles.css`.
+- Siguiente prioridad: recuperar borradores con `sessionStorage` y trasladar imágenes de referencia a almacenamiento de blobs.
