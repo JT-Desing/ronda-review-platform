@@ -1,0 +1,17 @@
+{
+  "meta": { "name": "Ronda Review System", "version": "0.1.0", "theme": "dark" },
+  "color": {
+    "canvas": "#0D0E0C", "surface1": "#121310", "surface2": "#181A16", "surface3": "#20221D",
+    "line": "#2D3029", "lineStrong": "#41453B", "text": "#F1EEE7", "muted": "#979C8E", "faint": "#686D62",
+    "accent": "#F2BD5C", "coral": "#FF725E", "success": "#8EBD72", "info": "#67A9D4", "creative": "#B89BE8"
+  },
+  "space": { "1": "4px", "2": "8px", "3": "12px", "4": "16px", "5": "20px", "6": "24px", "8": "32px" },
+  "radius": { "small": "6px", "medium": "10px", "large": "14px", "pill": "999px" },
+  "type": {
+    "ui": "Aptos, Segoe UI Variable, Segoe UI, sans-serif",
+    "editorial": "Georgia, serif", "mono": "ui-monospace, SFMono-Regular, Consolas, monospace",
+    "size": { "caption": "10px", "bodySmall": "12px", "body": "14px", "title": "20px", "display": "48px" }
+  },
+  "motion": { "fast": "120ms", "normal": "200ms", "easing": "cubic-bezier(.2,.8,.2,1)" },
+  "layout": { "sidebar": "212px", "commentsPanel": "350px", "contentMax": "960px", "touchTarget": "44px" }
+}
