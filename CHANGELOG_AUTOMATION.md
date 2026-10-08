@@ -45,3 +45,10 @@ Este archivo documenta cambios realizados por el ciclo automatizado de Ronda.
 - Las métricas resumen eventos pendientes, comentarios, decisiones y proyectos activos.
 - Cada evento enlaza con su proyecto o sala de revisión y existe un estado vacío accionable.
 - La vista responde en escritorio, tablet y móvil sin convertir los filtros en una tabla horizontal.
+
+## Presencia colaborativa
+
+- El indicador superior muestra cuántas personas están viendo la revisión y despliega su nombre, actividad y timecode actual.
+- Los avatares visibles funcionan como accesos directos y `+N` abre la lista completa de participantes.
+- Seleccionar una persona lleva el reproductor a su fotograma y muestra su cursor identificado sobre el contenido.
+- La implementación actual simula presencia local; el modelo visual y de interacción queda preparado para sincronización por WebSockets.

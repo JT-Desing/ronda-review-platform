@@ -115,7 +115,7 @@ function AnnotationLayer({ activeTool, activeColor, marks, setMarks }) {
     onPointerUp={() => { if(!drawing.current) return; drawing.current=false; setMarks([...marks,{tool:'pen',color:activeColor,points:[...points.current]}]); points.current=[]; }} />;
 }
 
-function MediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, media, currentTime, setCurrentTime }) {
+function MediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, media, currentTime, setCurrentTime, remoteCursor }) {
   const [playing, setPlaying] = useState(false);
   const [muted,setMuted]=useState(false);
   const [marks, setMarks] = useState([]);
@@ -131,6 +131,7 @@ function MediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, me
   };
   const seek=value=>{const next=Math.max(0,Math.min(duration,currentTime+value));setCurrentTime(next);if(videoRef.current)videoRef.current.currentTime=next;};
   const toggleFullscreen=()=>{if(!document.fullscreenElement)stageRef.current?.requestFullscreen?.();else document.exitFullscreen?.();};
+  useEffect(()=>{if(videoRef.current&&Math.abs(videoRef.current.currentTime-currentTime)>.2)videoRef.current.currentTime=currentTime},[currentTime]);
   const updateMarks=next=>{setMarks(next);setRedoMarks([]);};
   const undoMark=()=>setMarks(current=>{if(!current.length)return current;setRedoMarks(redo=>[current.at(-1),...redo]);return current.slice(0,-1)});
   const redoMark=()=>setRedoMarks(current=>{if(!current.length)return current;setMarks(marksNow=>[...marksNow,current[0]]);return current.slice(1)});
@@ -146,6 +147,7 @@ function MediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, me
           <div className="scene-copy"><span>02 / RITUAL</span><strong>La calma<br/>también se cultiva.</strong></div>
         </div>}
         <AnnotationLayer activeTool={activeTool} activeColor={activeColor} marks={marks} setMarks={updateMarks}/>
+        {remoteCursor&&<div className="remote-cursor" style={{left:`${remoteCursor.x}%`,top:`${remoteCursor.y}%`,'--presence-color':remoteCursor.color}}><i/><span>{remoteCursor.name}</span></div>}
         <div className="frame-badge">{stamp.time} · F{stamp.frame}</div>
       </div>
       <div className="annotation-tools" aria-label="Herramientas de anotación">
@@ -265,6 +267,18 @@ function NotificationCenter({onNavigate}) {
   return <div className="notification-center"><button className="notification-trigger" aria-label={`${unread.length} notificaciones sin leer`} onClick={()=>setOpen(!open)}><Icon name="bell" size={17}/>{unread.length>0&&<b>{unread.length}</b>}</button>{open&&<div className="notification-popover"><header><strong>Notificaciones</strong><button onClick={()=>act('notification/readAll',{})}>Marcar leídas</button></header>{unread.length===0?<p>Estás al día.</p>:unread.map(item=><button key={item.id} onClick={()=>{act('notification/read',{id:item.id});onNavigate('review');setOpen(false)}}><strong>Nueva actividad asignada</strong><span>Campaña Amara · abrir revisión</span></button>)}</div>}</div>;
 }
 
+const onlineReviewers=[
+  {id:'sofia',name:'Sofía Castillo',initials:'SC',color:'#b89be8',time:21.75,x:31,y:38,activity:'Anotando el contraste del texto'},
+  {id:'laura',name:'Laura Méndez',initials:'LM',color:'#ff725e',time:8.58,x:67,y:54,activity:'Revisando la entrada del producto'},
+  {id:'mateo',name:'Mateo Ruiz',initials:'MR',color:'#8ebd72',time:14.08,x:52,y:27,activity:'Viendo el encuadre'},
+  {id:'camila',name:'Camila Pérez',initials:'CP',color:'#f2bd5c',time:28.2,x:78,y:66,activity:'Revisando el cierre'},
+];
+
+function PresenceStack({onFollow,followingId}) {
+  const [open,setOpen]=useState(false);
+  return <div className="presence-wrap"><div className="presence" aria-label={`${onlineReviewers.length} personas viendo`}><button style={{background:onlineReviewers[0].color}} onClick={()=>onFollow(onlineReviewers[0])}>SC</button><button style={{background:onlineReviewers[1].color}} onClick={()=>onFollow(onlineReviewers[1])}>LM</button><button className="presence-more" onClick={()=>setOpen(!open)}>+{onlineReviewers.length-2}</button></div>{open&&<div className="presence-popover"><header><div><strong>Viendo ahora</strong><span>{onlineReviewers.length} personas conectadas</span></div><i className="live-dot"/></header>{onlineReviewers.map(person=><button key={person.id} className={followingId===person.id?'following':''} onClick={()=>{onFollow(person);setOpen(false)}}><span className="avatar" style={{background:person.color}}>{person.initials}</span><span><strong>{person.name}</strong><small>{person.activity} · {formatTime(person.time).time}</small></span><em>{followingId===person.id?'Siguiendo':'Ir'}</em></button>)}<p>Selecciona una persona para saltar a su fotograma y ver su cursor.</p></div>}</div>;
+}
+
 function ShortcutHelp({onClose}) {
   const shortcuts=[['Ctrl/⌘ + Z','Deshacer última anotación'],['Ctrl/⌘ + Shift + Z','Rehacer anotación'],['Espacio','Reproducir / pausar'],['J / L','Retroceder / avanzar 5 s'],['← / →','Mover un fotograma'],['1–4','Lápiz, flecha, rectángulo y texto'],['D','Activar u ocultar dibujo'],['M','Silenciar'],['F','Pantalla completa'],['C','Escribir comentario'],['Ctrl/⌘ + Enter','Publicar comentario'],['Esc','Cerrar paneles']];
   return <div className="modal-layer"><button className="modal-scrim" aria-label="Cerrar atajos" onClick={onClose}/><section className="modal shortcut-modal" role="dialog" aria-modal="true" aria-labelledby="shortcut-title"><div className="modal-title"><div><span className="eyebrow">COMANDOS RÁPIDOS</span><h2 id="shortcut-title">Atajos de revisión</h2></div><button aria-label="Cerrar" onClick={onClose}><Icon name="x"/></button></div><div className="shortcut-grid">{shortcuts.map(([keys,label])=><div key={keys}><kbd>{keys}</kbd><span>{label}</span></div>)}</div></section></div>;
@@ -301,6 +315,7 @@ function App() {
   const [version, setVersion] = useState(3);
   const [toast, setToast] = useState('');
   const [media, setMedia] = useState(null);
+  const [remoteCursor,setRemoteCursor]=useState(null);
   const fileInput = useRef(null);
   const versionStatus=selectVersionStatus(state,'version-amara-v3');
   const approval=versionStatus==='approved'?'Aprobado':versionStatus==='changes_requested'?'Cambios solicitados':'En revisión';
@@ -308,6 +323,7 @@ function App() {
   useEffect(()=>{ if(!toast)return; const timer=setTimeout(()=>setToast(''),2200); return()=>clearTimeout(timer); },[toast]);
   useEffect(()=>{const handler=e=>{if(e.key==='Escape'){setShareOpen(false);setShortcutsOpen(false);setCommentsOpen(false);}if(e.key==='?'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))setShortcutsOpen(value=>!value);if(e.key.toLowerCase()==='c'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){e.preventDefault();document.querySelector('.composer textarea')?.focus();}};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler)},[]);
   const loadMedia = event => { const file=event.target.files?.[0]; if(!file)return; const type=file.type.startsWith('video/')?'video':file.type.startsWith('image/')?'image':null; if(!type){setToast('Formato no compatible');return;} if(media?.url)URL.revokeObjectURL(media.url); setCurrentTime(0); setMedia({name:file.name,type,url:URL.createObjectURL(file),duration:type==='image'?1:0,setDuration:duration=>setMedia(current=>({...current,duration}))}); setToast(`${type==='video'?'Video':'Imagen'} cargado`); };
+  const followReviewer=person=>{setCurrentTime(person.time);setRemoteCursor(person);setToast(`Siguiendo a ${person.name} en ${formatTime(person.time).time}`)};
   return <div className="app-shell">
     <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} currentView={currentView} onNavigate={setCurrentView}/>
     <main className={`workspace ${currentView!=='review'?'dashboard-workspace':''}`}>
@@ -319,7 +335,7 @@ function App() {
       <header className="topbar">
         <div className="breadcrumb"><button onClick={()=>setCurrentView('projects')}>Campaña Amara</button><Icon name="chevron" size={14}/><div><strong>Spot principal · 30s</strong><span>Última edición hace 6 min</span></div></div>
         <div className="top-actions">
-          <div className="presence"><span>SC</span><span>LM</span><span>+2</span></div>
+          <PresenceStack onFollow={followReviewer} followingId={remoteCursor?.id}/>
           <button className="shortcut-trigger" aria-label="Ver atajos de teclado" title="Atajos (?)" onClick={()=>setShortcutsOpen(true)}>?</button>
           <NotificationCenter onNavigate={setCurrentView}/>
           <button className="secondary" aria-label="Compartir revisión" onClick={()=>setShareOpen(true)}><Icon name="share" size={17}/><span>Compartir</span></button>
@@ -329,7 +345,7 @@ function App() {
       <div className="review-layout">
         <div className="review-main">
           <div className="asset-bar"><div className="asset-meta"><span className="file-type">{media?.type==='image'?'IMG':'MP4'}</span><div><strong>{media?.name || 'AMARA_SPOT_MASTER'}</strong><span>{media?'Archivo local de revisión':'1920 × 1080 · H.264 · 48.2 MB'}</span></div></div><div className="asset-actions"><input ref={fileInput} className="visually-hidden" type="file" accept="video/*,image/*" onChange={loadMedia}/><button className="upload-button" onClick={()=>fileInput.current?.click()}><Icon name="plus" size={15}/> Cargar archivo</button><div className="version-select"><span>Versión</span><select aria-label="Versión" value={version} onChange={e=>{setVersion(Number(e.target.value));setToast(`Versión V${e.target.value} abierta`)}}><option value="1">V1</option><option value="2">V2</option><option value="3">V3 · Actual</option></select></div></div></div>
-          <MediaStage activeTool={activeTool} setActiveTool={setActiveTool} activeColor={activeColor} setActiveColor={setActiveColor} media={media} currentTime={currentTime} setCurrentTime={setCurrentTime}/>
+          <MediaStage activeTool={activeTool} setActiveTool={setActiveTool} activeColor={activeColor} setActiveColor={setActiveColor} media={media} currentTime={currentTime} setCurrentTime={setCurrentTime} remoteCursor={remoteCursor}/>
           <div className="review-summary">
             <div><span className="eyebrow">RONDA DE REVISIÓN</span><strong>3 de 4 revisores participaron</strong><small>Dos cambios pendientes antes de aprobar.</small></div>
             <button className="ai-button"><Icon name="spark"/><span><strong>Resumir cambios</strong><small>Organizar con IA</small></span></button>
