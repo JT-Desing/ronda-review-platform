@@ -52,3 +52,15 @@ Este archivo documenta cambios realizados por el ciclo automatizado de Ronda.
 - Los avatares visibles funcionan como accesos directos y `+N` abre la lista completa de participantes.
 - Seleccionar una persona lleva el reproductor a su fotograma y muestra su cursor identificado sobre el contenido.
 - La implementación actual simula presencia local; el modelo visual y de interacción queda preparado para sincronización por WebSockets.
+
+## Panel editorial de comentarios
+
+- Hipótesis: una jerarquía editorial plana, con menos contenedores repetidos, permite revisar más rápido y evita la apariencia genérica de un panel generado automáticamente.
+- Criterios de aceptación: distinguir pendientes y resueltos, buscar comentarios, saltar al timecode, responder dentro del hilo, resolver comentarios y conservar referencias visuales sin perder claridad.
+- Se reorganizó la cabecera con contexto de revisión, conteos reales y filtros `Todos`, `Abiertos` y `Resueltos`.
+- Cada hilo muestra autor, estado, timecode y fotograma como acciones claras; los comentarios bloqueantes conservan una señal visible sin dominar la interfaz.
+- Las respuestas se escriben y persisten dentro del comentario, con envío por teclado y contador por hilo.
+- Se incorporó búsqueda con estado vacío, y se mantuvieron las capturas de referencia y el compositor fijo al pie.
+- Archivos: `src/main.jsx` y `src/styles.css`.
+- Verificación: pruebas unitarias 3/3, compilación de producción, `git diff --check`, búsqueda sin coincidencias y respuesta persistida verificadas en navegador.
+- Siguiente prioridad: sincronizar respuestas y presencia con un backend en tiempo real; hoy ambas capacidades siguen siendo locales o simuladas.

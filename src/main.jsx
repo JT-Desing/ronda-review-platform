@@ -166,46 +166,44 @@ function MediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, me
   </section>;
 }
 
-function CommentCard({ item, selected, onSelect, onResolve, onDelete }) {
+function CommentCard({ item, selected, onSelect, onResolve, onReply, onJump, members }) {
+  const [replying,setReplying]=useState(false); const [reply,setReply]=useState(''); const replies=Array.isArray(item.replies)?item.replies:[];
+  const submitReply=()=>{if(!reply.trim())return;onReply(item.id,reply.trim());setReply('');setReplying(false)};
   return <article className={`comment-card ${selected?'selected':''} ${item.status==='resolved'?'resolved':''}`} onClick={onSelect}>
-    <div className="comment-line" style={{'--author':item.color}}/>
-    <div className="comment-head">
-      <span className="avatar" style={{background:item.color}}>{item.initials}</span>
-      <span className="comment-author"><strong>{item.author}</strong><small>{item.author==='Julian Torres' ? 'ahora' : 'reciente'}</small></span>
-      <button aria-label="Más opciones"><Icon name="more"/></button>
-    </div>
-    <button className="time-pill"><span>{item.time}</span><small>F{item.frame}</small></button>
-    <p>{item.text}</p>
-    {!!item.attachments?.length && <div className="comment-attachments">{item.attachments.map(file=><button key={file.id} onClick={e=>{e.stopPropagation();window.open(file.dataUrl,'_blank','noopener,noreferrer')}} aria-label={`Abrir referencia ${file.name}`}><img src={file.dataUrl} alt={file.name}/><span>{file.name}</span></button>)}</div>}
-    <div className="comment-foot">
-      <span>{item.replies ? `${item.replies} respuestas` : 'Responder'}</span>
-      <div className="comment-actions">{item.author==='Julian Torres' && onDelete && <button aria-label="Eliminar comentario" onClick={e=>{e.stopPropagation();onDelete(item.id)}}><Icon name="x" size={14}/></button>}<button onClick={e=>{e.stopPropagation();onResolve(item.id)}} className={item.status==='resolved'?'done':''}><Icon name="check" size={15}/>{item.status==='resolved'?'Resuelto':'Resolver'}</button></div>
-    </div>
+    <div className="comment-head"><span className="avatar" style={{background:item.color}}>{item.initials}</span><span className="comment-author"><strong>{item.author}</strong><small>{item.author==='Julian Torres'?'Ahora':'Hace unos minutos'}</small></span>{item.priority==='blocking'&&<span className="priority-label">Bloqueante</span>}<button className="icon-button" aria-label="Opciones del comentario"><Icon name="more"/></button></div>
+    <button className="comment-location" onClick={e=>{e.stopPropagation();onJump(item)}}><Icon name="play" size={11}/><strong>{item.time}</strong><span>Fotograma {item.frame}</span></button>
+    <p className="comment-copy">{item.text}</p>
+    {!!item.attachments?.length&&<div className="comment-attachments">{item.attachments.map(file=><button key={file.id} onClick={e=>{e.stopPropagation();window.open(file.dataUrl,'_blank','noopener,noreferrer')}} aria-label={`Abrir referencia ${file.name}`}><img src={file.dataUrl} alt={file.name}/><span>{file.name}</span></button>)}</div>}
+    {!!replies.length&&<div className="reply-list">{replies.slice(-2).map(entry=>{const author=members[entry.authorId]||{name:'Invitado',initials:'IN'};return <div key={entry.id}><span className="avatar">{author.initials}</span><p><strong>{author.name}</strong>{entry.text}</p></div>})}</div>}
+    {replying&&<div className="inline-reply" onClick={e=>e.stopPropagation()}><input autoFocus aria-label={`Responder a ${item.author}`} value={reply} onChange={e=>setReply(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')submitReply();if(e.key==='Escape')setReplying(false)}} placeholder="Escribe una respuesta…"/><button onClick={submitReply}>Enviar</button></div>}
+    <footer className="comment-foot"><div><button onClick={e=>{e.stopPropagation();setReplying(!replying)}}>Responder{replies.length>0&&` · ${replies.length}`}</button><button onClick={e=>{e.stopPropagation();onJump(item)}}>Ir al cuadro</button></div><button onClick={e=>{e.stopPropagation();onResolve(item.id)}} className={item.status==='resolved'?'done':''}><Icon name="check" size={14}/>{item.status==='resolved'?'Reabrir':'Resolver'}</button></footer>
   </article>;
 }
 
-function CommentsPanel({ onClose, currentTime }) {
+function CommentsPanel({ onClose, currentTime, setCurrentTime }) {
   const { state, act } = useRonda();
   const comments = Object.values(state.comments).filter(comment=>comment.versionId==='version-amara-v3').map(comment=>{
     const author=state.members[comment.authorId] || {name:'Invitado',initials:'IN'};
-    const stamp=formatTime(comment.timeSeconds || 0);
-    return {...comment,author:author.name,initials:author.initials,color:comment.priority==='blocking'?'#ff725e':'#67a9d4',time:stamp.time,replies:0};
+    const stamp=formatTime(comment.timeSeconds ?? (comment.frame || 0) / 24);
+    return {...comment,author:author.name,initials:author.initials,color:comment.priority==='blocking'?'#ff725e':'#67a9d4',time:stamp.time,replies:comment.replies||[]};
   });
   const [selected, setSelected] = useState('comment-1');
   const [filter, setFilter] = useState('Todos');
+  const [search,setSearch]=useState('');
   const [draft, setDraft] = useState('');
   const [attachments,setAttachments]=useState([]);
   const [attachmentError,setAttachmentError]=useState('');
   const attachmentInput=useRef(null);
-  const visible = useMemo(()=>filter==='Todos'?comments:comments.filter(c=>c.status==='open'),[comments,filter]);
+  const visible = useMemo(()=>comments.filter(c=>(filter==='Todos'||(filter==='Abiertos'&&c.status==='open')||(filter==='Resueltos'&&c.status==='resolved'))&&`${c.author} ${c.text} ${(c.replies||[]).map(reply=>reply.text).join(' ')} ${c.frame}`.toLowerCase().includes(search.toLowerCase())),[comments,filter,search]);
   const resolve = id => act(state.comments[id]?.status==='resolved'?'comment/reopen':'comment/resolve',{id});
   const stamp = formatTime(currentTime);
   const addFiles=async files=>{setAttachmentError('');const candidates=[...files].filter(file=>file.type.startsWith('image/')).slice(0,3-attachments.length);for(const file of candidates){if(file.size>2*1024*1024){setAttachmentError('Cada referencia debe pesar menos de 2 MB.');continue;}const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file)});setAttachments(current=>[...current,{id:`ref-${Date.now()}-${file.name}`,name:file.name,dataUrl}].slice(0,3));}};
   const add = () => { if(!draft.trim()&&!attachments.length) return; act('comment/add',{projectId:'project-amara',versionId:'version-amara-v3',authorId:state.currentUserId,assigneeId:state.currentUserId,priority:'normal',text:draft.trim()||'Referencia visual adjunta',attachments,timeSeconds:currentTime,frame:stamp.frame}); setDraft('');setAttachments([]); };
+  const replyTo=(id,text)=>{const current=state.comments[id];act('comment/update',{id,changes:{replies:[...(current.replies||[]),{id:`reply-${Date.now()}`,authorId:state.currentUserId,text,createdAt:new Date().toISOString()}]}})};
   return <aside className="comments-panel">
-    <div className="panel-head"><div><strong>Comentarios</strong><span>{comments.filter(c=>c.status==='open').length} abiertos</span></div><button className="mobile-close" aria-label="Cerrar comentarios" onClick={onClose}><Icon name="x"/></button></div>
-    <div className="filters"><button className={filter==='Todos'?'active':''} onClick={()=>setFilter('Todos')}>Todos</button><button className={filter==='Abiertos'?'active':''} onClick={()=>setFilter('Abiertos')}>Abiertos</button><button><Icon name="search" size={16}/></button></div>
-    <div className="comments-scroll">{visible.map(c=><CommentCard key={c.id} item={c} selected={selected===c.id} onSelect={()=>setSelected(c.id)} onResolve={resolve}/>)}</div>
+    <div className="panel-head"><div><span className="panel-kicker">REVISIÓN</span><strong>Comentarios</strong><small>{comments.filter(c=>c.status==='open').length} pendientes de {comments.length}</small></div><button className="mobile-close" aria-label="Cerrar comentarios" onClick={onClose}><Icon name="x"/></button></div>
+    <div className="comment-toolbar"><div className="comment-tabs" role="tablist" aria-label="Filtrar comentarios">{['Todos','Abiertos','Resueltos'].map(item=><button key={item} role="tab" aria-selected={filter===item} className={filter===item?'active':''} onClick={()=>setFilter(item)}>{item}<span>{item==='Todos'?comments.length:comments.filter(c=>c.status===(item==='Abiertos'?'open':'resolved')).length}</span></button>)}</div><label className="comment-search"><Icon name="search" size={14}/><input aria-label="Buscar comentarios" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar"/></label></div>
+    <div className="comments-scroll">{visible.map(c=><CommentCard key={c.id} item={c} members={state.members} selected={selected===c.id} onSelect={()=>setSelected(c.id)} onResolve={resolve} onReply={replyTo} onJump={item=>{setSelected(item.id);setCurrentTime?.(item.timeSeconds ?? (item.frame||0)/24)}}/>)}{visible.length===0&&<div className="comments-empty"><strong>Sin resultados</strong><span>Prueba otra búsqueda o filtro.</span></div>}</div>
     <div className="composer">
       <div className="composer-input">{!!attachments.length&&<div className="reference-strip">{attachments.map(file=><span key={file.id}><img src={file.dataUrl} alt=""/><button aria-label={`Quitar ${file.name}`} onClick={()=>setAttachments(current=>current.filter(item=>item.id!==file.id))}>×</button></span>)}</div>}<textarea value={draft} onChange={e=>setDraft(e.target.value)} onPaste={e=>{if(e.clipboardData.files.length){e.preventDefault();addFiles(e.clipboardData.files)}}} onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')add()}} placeholder={`Comenta o pega una captura sobre ${stamp.time}…`}/><div className="composer-meta"><span>F{stamp.frame} · Ctrl/⌘ + Enter</span><input ref={attachmentInput} className="visually-hidden" type="file" accept="image/*" multiple onChange={e=>{addFiles(e.target.files);e.target.value=''}}/><button onClick={()=>attachmentInput.current?.click()} title="Agregar imagen o captura"><Icon name="image" size={15}/> Referencia</button></div>{attachmentError&&<small className="attachment-error">{attachmentError}</small>}</div>
       <button className="send" aria-label="Publicar comentario" onClick={add} disabled={!draft.trim()&&!attachments.length}><Icon name="send"/></button>
@@ -351,10 +349,10 @@ function App() {
             <button className="ai-button"><Icon name="spark"/><span><strong>Resumir cambios</strong><small>Organizar con IA</small></span></button>
           </div>
         </div>
-        <CommentsPanel onClose={()=>setCommentsOpen(false)} currentTime={currentTime}/>
+        <CommentsPanel onClose={()=>setCommentsOpen(false)} currentTime={currentTime} setCurrentTime={setCurrentTime}/>
       </div>
       <button className="mobile-comments" onClick={()=>setCommentsOpen(true)}>{Object.values(state.comments).filter(c=>c.versionId==='version-amara-v3').length} comentarios <span>{openCount} abiertos</span></button>
-      {commentsOpen && <div className="comments-drawer"><div className="drawer-scrim" onClick={()=>setCommentsOpen(false)}/><CommentsPanel onClose={()=>setCommentsOpen(false)} currentTime={currentTime}/></div>}
+      {commentsOpen && <div className="comments-drawer"><div className="drawer-scrim" onClick={()=>setCommentsOpen(false)}/><CommentsPanel onClose={()=>setCommentsOpen(false)} currentTime={currentTime} setCurrentTime={setCurrentTime}/></div>}
       </>}
       {shareOpen && <ShareDialog onClose={()=>setShareOpen(false)} onNotify={setToast}/>} 
       {shortcutsOpen && <ShortcutHelp onClose={()=>setShortcutsOpen(false)}/>} 
