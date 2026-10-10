@@ -1,0 +1,34 @@
+/* Original layered folder interaction inspired by the supplied Framer reference. */
+:root{--folder-duration:420ms;--folder-ease:cubic-bezier(.2,.75,.25,1)}
+.folder-project{--folder-front:#202126;--folder-back:#292b32;--folder-line:#505360;--folder-text:#faf9fc;--folder-muted:#cbc8d2;--folder-accent:#dac7ff}
+.studio-project-grid:not(.list){gap:28px;padding-top:16px}
+.studio-project-grid:not(.list) .folder-project{position:relative;isolation:isolate;display:block;min-height:360px;padding:0;background:var(--folder-back);border:1px solid var(--folder-line);border-radius:24px;overflow:visible;color:var(--folder-text);transform:perspective(1100px) rotateX(var(--folder-y,0deg)) rotateY(var(--folder-x,0deg));transition:transform var(--folder-duration) var(--folder-ease),box-shadow var(--folder-duration) var(--folder-ease)}
+.studio-project-grid:not(.list) .folder-project .studio-project-cover{position:absolute;inset:9px 9px auto;height:230px;border-radius:17px;overflow:hidden;transform:translateY(0) scale(.98);transform-origin:50% 100%;transition:transform var(--folder-duration) var(--folder-ease),box-shadow var(--folder-duration) var(--folder-ease)}
+.studio-project-grid:not(.list) .folder-project:not(.with-preview) .studio-art{opacity:1;filter:none;background:#d8cff0}
+.studio-project-grid:not(.list) .folder-project:not(.with-preview) .studio-art i:nth-child(1){background:#b9a5db}
+.studio-project-grid:not(.list) .folder-project:not(.with-preview) .studio-art i:nth-child(2){background:#eee8f8}
+.studio-project-grid:not(.list) .folder-project:not(.with-preview) .studio-art i:nth-child(3){background:#cbbce5}
+.studio-project-grid:not(.list) .folder-project .studio-project-copy{position:relative;z-index:2;margin:106px 0 0;min-height:254px;padding:102px 22px 22px;background:none;border-radius:0;box-shadow:none;text-align:left;transform:none;gap:8px}
+.studio-project-grid:not(.list) .folder-project .studio-project-copy:before{content:'';position:absolute;z-index:-1;inset:0;background:var(--folder-front);border-radius:0 20px 22px 22px;transform:perspective(900px) rotateX(0);transform-origin:50% 100%;transition:transform var(--folder-duration) var(--folder-ease),box-shadow var(--folder-duration) var(--folder-ease);box-shadow:0 -1px 0 var(--folder-line)}
+.studio-project-grid:not(.list) .folder-project .studio-project-copy:after{content:'';position:absolute;z-index:-1;left:0;top:-30px;width:36%;height:32px;background:var(--folder-front);border-radius:18px 24px 0 0;clip-path:polygon(0 0,75% 0,100% 100%,0 100%);transition:transform var(--folder-duration) var(--folder-ease)}
+.studio-project-grid:not(.list) .folder-project-tab{position:absolute;z-index:3;left:22px;top:93px;color:var(--folder-accent);pointer-events:none}
+.studio-project-grid:not(.list) .folder-project .studio-tile-arrow{position:absolute;z-index:3;top:128px;right:22px;width:38px;height:38px;display:grid;place-items:center;background:var(--folder-back);border:1px solid var(--folder-line);color:var(--folder-accent);border-radius:50%;transition:transform var(--folder-duration) var(--folder-ease)}
+.studio-project-grid:not(.list) .folder-project .studio-category{color:var(--folder-muted);background:var(--folder-back)}
+.studio-project-grid:not(.list) .folder-project .studio-project-copy>strong{font-size:21px;line-height:1.25;overflow-wrap:anywhere;color:var(--folder-text)}
+.studio-project-grid:not(.list) .folder-project .studio-client{color:var(--folder-muted);opacity:1}
+.studio-project-grid:not(.list) .folder-project footer{margin-top:auto;border-top:1px solid #3b3d46;padding-top:14px;color:var(--folder-muted);gap:8px;flex-wrap:wrap}
+.studio-project-grid:not(.list) .folder-project .studio-status{color:var(--folder-text)}
+.studio-project-grid:not(.list) .folder-project .studio-status.in_review:before{background:var(--folder-accent)}
+.studio-project-grid:not(.list) .folder-project .studio-status.approved:before{background:var(--green)}
+.studio-project-grid:not(.list) .folder-project .studio-status.changes_requested:before{background:var(--coral)}
+.studio-project-grid.list .folder-project-tab,.studio-project-grid.list .folder-project>.studio-tile-arrow{display:none}
+.studio-project-grid:not(.list) .folder-project:focus-visible{outline:3px solid var(--folder-accent);outline-offset:5px}
+@media(hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+ .studio-project-grid:not(.list) .folder-project:is(:hover,:focus-visible){box-shadow:0 20px 40px #0005}
+ .studio-project-grid:not(.list) .folder-project:is(:hover,:focus-visible) .studio-project-cover{transform:translateY(-36px) rotate(-3deg) scale(1.02);box-shadow:0 12px 26px #0004}
+ .studio-project-grid:not(.list) .folder-project:is(:hover,:focus-visible) .studio-project-copy:before{transform:perspective(900px) rotateX(-18deg);box-shadow:0 -1px 0 var(--folder-line),0 -12px 26px #0003}
+ .studio-project-grid:not(.list) .folder-project:is(:hover,:focus-visible) .studio-project-copy:after{transform:translateY(8px)}
+ .studio-project-grid:not(.list) .folder-project:is(:hover,:focus-visible) .studio-tile-arrow{transform:translate(3px,-3px)}
+}
+@media(prefers-reduced-motion:reduce){.folder-project,.folder-project *,.folder-project *:before,.folder-project *:after{transition:none!important;transform:none!important}}
+@media(max-width:680px){.studio-project-grid:not(.list) .folder-project{min-height:330px}.studio-project-grid:not(.list) .folder-project .studio-project-copy{min-height:224px;padding-top:78px}}

@@ -11,9 +11,12 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
-    "vite": "latest",
+    "embla-carousel-react": "8.6.0",
+    "geist": "^1.7.2",
+    "iconoir-react": "7.12.1",
+    "pdfjs-dist": "^6.4.299",
     "react": "latest",
-    "react-dom": "latest"
-  },
-  "devDependencies": {}
+    "react-dom": "latest",
+    "vite": "latest"
+  }
 }

@@ -2,6 +2,16 @@ export const COMMENT_STATUS = Object.freeze({ OPEN: 'open', RESOLVED: 'resolved'
 export const COMMENT_PRIORITY = Object.freeze({ LOW: 'low', NORMAL: 'normal', HIGH: 'high', BLOCKING: 'blocking' });
 export const REVIEW_DECISION = Object.freeze({ PENDING: 'pending', APPROVED: 'approved', CHANGES_REQUESTED: 'changes_requested' });
 
+// Private-account consistency checks, not a substitute for server authorization.
+export function validateReviewDecision(state, {versionId, reviewerId, decision}) {
+  const version=state.versions[versionId];
+  if(!version||!state.projects[version.projectId])return {allowed:false,reason:'La versión o el proyecto ya no existe.'};
+  if(reviewerId!==state.currentUserId||!state.members[reviewerId]||!version.reviewerIds.includes(reviewerId))return {allowed:false,reason:'Tu usuario no está asignado como revisor de esta versión.'};
+  if(!Object.values(REVIEW_DECISION).includes(decision))return {allowed:false,reason:'Decisión de revisión inválida.'};
+  if(decision===REVIEW_DECISION.APPROVED&&openCommentsForVersion(state.comments,versionId).some(isBlockingComment))return {allowed:false,reason:'Resuelve los comentarios bloqueantes antes de aprobar.'};
+  return {allowed:true,reason:null};
+}
+
 export const PLAN_LIMITS = Object.freeze({
   free: { seats: 1, reviewers: 2, versions: 2, historyDays: 7 },
   creator: { seats: 2, reviewers: 10, versions: 10, historyDays: 90 },

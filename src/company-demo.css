@@ -1,0 +1,41 @@
+.account-menu-wrap{position:relative}.account-menu-trigger{background:none;border:0;color:var(--text);padding:10px;cursor:pointer}.account-popover{position:absolute;bottom:calc(100% + 16px);left:0;width:230px;max-width:80vw;padding:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 40px #0008;z-index:100}.account-popover button{display:block;width:100%;text-align:left;background:none;color:var(--text);border:0;padding:12px;border-radius:8px}.account-popover button:hover{background:var(--surface-1)}.company-demo{display:grid;grid-template-columns:210px minmax(0,1fr);min-height:100vh;background:var(--canvas);color:var(--text)}.company-demo aside{padding:24px;border-right:1px solid var(--line)}.company-demo nav{display:grid;gap:8px;margin:24px 0}.company-demo button{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:12px;cursor:pointer}.company-demo button[aria-pressed=true]{border-color:var(--accent)}.company-demo main{padding:24px;min-width:0}.demo-company-banner{padding:16px;border:1px solid #24665d;border-radius:12px;color:#79d9b4;display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}.demo-cover{height:160px;background:#163d3b;color:#79d9b4;display:grid;place-items:center;border-radius:8px;font-size:22px}.company-demo .planning-grid{margin-top:24px}.company-demo .planning-card{margin-top:16px}@media(max-width:680px){.company-demo{grid-template-columns:1fr}.company-demo aside{padding:16px}.company-demo nav{display:flex;overflow:auto}.company-demo main{padding:16px}.company-demo .planning-cards{grid-template-columns:1fr}}
+.account-popover{left:auto;right:0;width:180px;box-sizing:border-box}.account-popover small{display:block;line-height:1.5;color:var(--muted)}
+
+/* Editorial workspace: quiet chrome, purposeful hierarchy, illustrated covers. */
+.company-demo{font-size:14px;line-height:1.5;grid-template-columns:220px minmax(0,1fr)}
+.company-demo aside{padding:32px 18px;display:flex;flex-direction:column;align-items:stretch}
+.company-demo aside h2{font-size:20px;letter-spacing:-.6px;margin:0 12px 4px}
+.company-demo aside>small{color:var(--muted);margin-left:12px;font-size:12px}
+.company-demo nav{gap:4px;margin-top:36px}
+.company-demo nav button{background:transparent;border-color:transparent;text-align:left;padding:11px 14px;font-size:14px;color:var(--muted);transition:background .18s,color .18s}
+.company-demo nav button:hover{background:var(--surface-2);color:var(--text)}
+.company-demo nav button[aria-pressed=true]{background:var(--surface-2);border-color:transparent;color:var(--text);box-shadow:inset 3px 0 var(--accent)}
+.company-demo aside>button{margin-top:auto;font-size:12px;color:var(--muted)}
+.company-demo main{padding:28px 40px 48px;max-width:1440px;width:100%;box-sizing:border-box}
+.demo-company-banner{padding:10px 14px;background:var(--surface-1);border-color:var(--line);color:var(--muted);font-size:12px;border-radius:8px;margin-bottom:32px}
+.demo-company-banner button{padding:6px 10px;font-size:12px;background:transparent}
+.company-demo main>h1{font-size:30px;letter-spacing:-1px;line-height:1.2;margin:0 0 8px}
+.company-demo main>p{color:var(--muted);font-size:13px;max-width:760px;margin:0 0 26px}
+.company-demo main>h2{font-size:22px;letter-spacing:-.5px;margin:26px 0 8px}
+.company-demo .planning-cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.company-demo .demo-project{padding:0;overflow:hidden;margin:0;border-radius:14px;background:var(--surface-1);transition:border-color .2s,transform .2s}
+.company-demo .demo-project:hover{border-color:var(--accent);transform:translateY(-3px)}
+.demo-project .demo-cover{position:relative;overflow:hidden;height:220px;padding:22px;box-sizing:border-box;border-radius:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;background:#c5b1e7;color:#241a38}
+.demo-project-video .demo-cover{background:#e4c9a4;color:#35281e}
+.demo-project-landing .demo-cover{background:#aad0c5;color:#193b35}
+.demo-project .demo-cover::after{content:'';position:absolute;width:190px;height:190px;border:40px solid currentColor;border-radius:50%;right:-95px;bottom:-90px;opacity:.12;pointer-events:none}
+.demo-cover-type{font-size:10px;letter-spacing:1.6px;font-weight:600}
+.demo-cover strong{white-space:pre-line;font-size:28px;line-height:1.05;letter-spacing:-1px;font-weight:600;z-index:1}
+.demo-cover svg{position:absolute;right:22px;top:20px;width:22px;height:22px}
+.demo-project-body{padding:22px}
+.demo-project-body>small{font-size:9px;letter-spacing:1.3px;color:var(--muted)}
+.demo-project-body h2{font-size:18px;letter-spacing:-.4px;margin:8px 0 5px}
+.demo-project-body p{font-size:12px;color:var(--muted);margin:0 0 24px}
+.demo-project-body footer{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:14px;font-size:11px;color:var(--muted)}
+.demo-review-status::before{content:'';display:inline-block;width:5px;height:5px;background:var(--accent);border-radius:50%;margin-right:6px}
+.demo-project-body button{display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:16px;font-size:12px;background:transparent;padding:9px 12px}
+.demo-project-body button svg{width:16px;height:16px}
+.company-demo button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media(max-width:1100px){.company-demo .planning-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.company-demo main{padding:24px}}
+@media(max-width:680px){.company-demo{grid-template-columns:1fr}.company-demo aside{padding:18px;border-right:0;border-bottom:1px solid var(--line)}.company-demo nav{margin:16px 0 0;display:flex}.company-demo nav button{white-space:nowrap}.company-demo aside>button{display:none}.company-demo main{padding:20px 16px}.company-demo .planning-cards{grid-template-columns:1fr}.demo-company-banner{margin-bottom:24px}.demo-project .demo-cover{height:200px}}
+@media(prefers-reduced-motion:reduce){.company-demo .demo-project,.company-demo nav button{transition:none}.company-demo .demo-project:hover{transform:none}}

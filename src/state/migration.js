@@ -1,4 +1,4 @@
-const commentFingerprint = comment => `${String(comment.text ?? '').trim().toLocaleLowerCase()}|${Number(comment.frame ?? 0)}`;
+const commentFingerprint = comment => `${comment.projectId ?? 'project-amara'}|${comment.versionId ?? 'version-amara-v3'}|${String(comment.text ?? '').trim().toLocaleLowerCase()}|${Number(comment.frame ?? 0)}|${comment.annotationId ?? ''}|${comment.annotationContext ?? ''}`;
 
 const parseLegacyTime = (value, frame) => {
   if (Number.isFinite(value) && (value > 0 || !frame)) return value;

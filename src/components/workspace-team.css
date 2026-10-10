@@ -1,0 +1,97 @@
+.server-team .team-scope-note{padding:16px;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:var(--r-sm);color:var(--muted);font-size:13px;line-height:1.6;margin:0 0 20px}
+.server-team button{min-height:44px;padding:0 14px;border:1px solid var(--line-strong);border-radius:var(--r-sm);background:var(--surface-2);color:var(--text);cursor:pointer;font:inherit;font-size:13px}
+.server-team button:disabled{opacity:.5;cursor:default}.server-team button.primary-action{background:var(--accent);color:var(--canvas);border-color:var(--accent);font-weight:600}
+.server-team .team-invitations,.server-team .team-accept,.server-team .team-issued,.server-team .team-feedback,.server-team .team-history{margin:20px 0;padding:20px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface-1)}
+.server-team h2{font-size:18px;margin:0 0 8px}.server-team p{line-height:1.6;font-size:13px;color:var(--muted)}
+.server-team form{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}.server-team label{display:flex;flex-direction:column;gap:8px;font-size:12px;min-width:0}.server-team form label:first-child{flex:1;min-width:200px}
+.server-team input,.server-team select{min-height:44px;padding:0 12px;border:1px solid var(--line-strong);border-radius:var(--r-sm);background:var(--canvas);color:var(--text);font:inherit;font-size:13px;min-width:0;max-width:100%;width:100%}
+.server-team .team-toolbar label{flex:1}.server-team .member-row{min-width:0}.server-team .team-feedback{border-color:var(--accent)}.server-team .team-feedback button,.server-team .team-issued button{margin:8px 8px 0 0}
+.server-team .pending-invitations{list-style:none;padding:0;margin:20px 0 0}.server-team .pending-invitations li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}.server-team .pending-invitations span{min-width:0;overflow-wrap:anywhere}.server-team small{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+.server-team .team-issued input{font-family:var(--font-mono,monospace)}.server-team .team-history summary{cursor:pointer;min-height:28px;font-size:13px}.server-team .team-history li{margin:12px 0;overflow-wrap:anywhere}.server-team .team-history li span{display:block;font-size:11px;color:var(--muted);margin-top:4px}
+.server-team{max-width:1280px;margin-inline:auto}
+.server-team .dashboard-header{margin-bottom:24px;align-items:center}
+.server-team .dashboard-header h1{font-size:30px;letter-spacing:-1px;margin:6px 0}
+.team-header-actions{display:flex;gap:8px;align-items:center}
+.server-team .workspace-picker{position:relative;min-width:0;z-index:5}
+.team-field-label{display:block;color:var(--muted);font-size:11px;margin-bottom:6px}
+.server-team .workspace-picker-trigger{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:7px 12px;text-align:left;background:var(--surface-1);border:1px solid var(--line-strong);border-radius:10px}
+.workspace-picker-trigger>span:nth-child(2){flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.workspace-picker-trigger>svg{transform:rotate(90deg);color:var(--muted);flex-shrink:0}
+.workspace-picker-trigger[aria-expanded=true]>svg{transform:rotate(-90deg)}
+.workspace-picker-mark{display:grid;place-items:center;width:28px;height:28px;flex-shrink:0;background:var(--surface-2);color:var(--accent);border-radius:7px}
+.workspace-picker-popup{position:absolute;top:calc(100% + 8px);left:0;width:100%;box-sizing:border-box;padding:8px;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:12px;box-shadow:0 16px 40px #0006;z-index:20}
+.workspace-picker-caption{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 10px;font-size:9px;letter-spacing:1px;color:var(--muted)}
+.workspace-picker-caption span{letter-spacing:0}
+.workspace-picker-popup [role=listbox]{max-height:260px;overflow:auto}
+.workspace-picker-option{display:flex;align-items:center;gap:10px;padding:11px 8px;min-height:44px;box-sizing:border-box;border-radius:8px;cursor:pointer}
+.workspace-picker-option>span:nth-child(2){flex:1;min-width:0}
+.workspace-picker-option strong{display:block;font-size:12px;font-weight:500;overflow-wrap:anywhere}
+.server-team .workspace-picker-option small{font-size:10px;margin-top:2px}
+.workspace-picker-option.highlighted{background:var(--surface-3);box-shadow:none}
+.workspace-picker-option>svg{flex-shrink:0;color:var(--accent)}
+.server-team .workspace-picker-popup>p{font-size:10px;margin:8px 8px 2px;padding-top:10px;border-top:1px solid var(--line);color:var(--muted)}
+.server-team .team-toolbar{grid-template-columns:minmax(220px,380px) minmax(200px,1fr);padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--surface-1)}
+.team-search-field{position:relative;display:flex;align-items:center}
+.team-search-field>svg{position:absolute;left:14px;color:var(--muted);pointer-events:none}
+.server-team .team-search-field input{min-height:48px;border-radius:10px;padding-left:40px;background:var(--canvas)}
+.team-header-actions button{display:flex;gap:8px;align-items:center;justify-content:center}
+.server-team .team-scope-note{padding:12px 16px;border-left:1px solid var(--line);background:transparent;margin-bottom:24px}
+.server-team .team-scope-note summary{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px;list-style:none}
+.server-team .team-scope-note summary svg:last-child{margin-left:auto}
+.server-team .team-scope-note[open] summary svg:last-child{transform:rotate(90deg)}
+.server-team .team-toolbar{gap:16px;margin-bottom:20px;display:grid;grid-template-columns:minmax(200px,320px) minmax(200px,1fr)}
+.server-team .team-toolbar label{font-size:11px;color:var(--muted);gap:6px}
+.server-team .team-summary{padding:12px 0;border:0;border-radius:0;background:none;margin-bottom:12px;display:flex;justify-content:space-between;gap:16px;align-items:center}
+.server-team .team-summary>div{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.server-team .team-count{font-size:20px;font-weight:600;color:var(--text)}
+.team-summary-meta span{border:1px solid var(--line);padding:5px 10px;border-radius:6px;font-size:11px}
+.server-team .member-table{border-radius:10px}
+.server-team .member-table>header{padding-block:12px;font-size:10px;letter-spacing:.8px;background:var(--surface-2)}
+.server-team .member-row{padding-block:18px;font-size:13px}
+.server-team .member-person{gap:12px}
+.server-team .member-person strong{font-size:13px}
+.server-team .member-person small{font-size:11px;overflow-wrap:anywhere}
+.server-team .member-row select{min-height:36px;background:transparent;font-size:12px}
+.server-team .member-status{font-size:11px;border-radius:5px;padding:5px 8px;background:var(--surface-2)}
+.server-team .remove-member{min-height:36px;background:transparent;font-size:11px}
+.server-team .team-history,.server-team .team-accept{padding:14px 18px;background:transparent;border-radius:10px;margin-top:16px}
+.server-team .team-accept summary{display:flex;gap:10px;align-items:center;font-size:13px;cursor:pointer;list-style:none;min-height:24px}
+.team-summary-hint{margin-left:auto;font-size:11px;color:var(--muted)}
+.server-team .team-invitations{border-color:var(--accent);padding:22px;margin-top:20px}
+.server-team .team-invitations[hidden]{display:none}
+.app-shell .server-team .team-summary{background:transparent;border-radius:0}
+/* A directory, not a stack of cards: controls and people share one rhythm. */
+.server-team{display:flex;flex-direction:column;max-width:1120px}
+.server-team>.dashboard-header{order:1;margin-bottom:24px}
+.server-team>.team-toolbar{order:2;display:grid;grid-template-columns:minmax(200px,360px) minmax(200px,320px);justify-content:space-between;gap:16px;padding:0;border:0;background:transparent;border-radius:0;margin-bottom:20px}
+.server-team .team-toolbar .team-field-label,.server-team .team-toolbar>label{font-size:0}
+.server-team .team-toolbar .team-field-label{height:0;margin:0}
+.server-team .team-toolbar>label{gap:0}
+.server-team .workspace-picker-trigger{border:0;background:transparent;padding:8px 0;min-height:44px;border-radius:6px}
+.server-team .workspace-picker-trigger .workspace-picker-mark{background:transparent;width:22px}
+.server-team .workspace-picker-trigger>span:nth-child(2){font-size:13px;flex:0 1 auto}
+.server-team .workspace-picker-trigger>svg{margin-left:4px}
+.server-team .team-search-field input{min-height:40px;background:transparent;font-size:12px;border-color:var(--line);border-radius:8px}
+.server-team>.team-summary{order:3;margin:0;padding:12px 0;border-top:1px solid var(--line);background:transparent}
+.server-team .team-count{font-size:14px}
+.server-team .team-summary-meta span{border:0;padding:0;font-size:11px}
+.server-team .team-summary-meta span+span{border-left:1px solid var(--line);padding-left:12px}
+.server-team>.member-table{order:4;border-radius:8px;margin-bottom:24px}
+.server-team>.team-empty{order:4}
+.server-team>.team-invitations,.server-team>.team-issued,.server-team>.team-feedback{order:5}
+.server-team>.team-history{order:6}
+.server-team>.team-accept{order:7}
+.server-team>.team-scope-note{order:8}
+.server-team>.team-history,.server-team>.team-accept,.server-team>.team-scope-note{margin:0;padding:14px 0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent}
+.server-team .team-scope-note summary{font-size:12px;color:var(--muted)}
+.server-team>.team-scope-note p{max-width:780px}
+.server-team>p[role=status]{order:3}
+.server-team .workspace-picker-popup{min-width:280px}
+.server-team .workspace-picker-popup{padding:6px;border-radius:10px}
+.server-team .workspace-picker-option{border:0;border-radius:5px;padding:10px}
+.server-team .workspace-picker-option .workspace-picker-mark{background:transparent;border:0;width:22px;border-radius:0}
+.server-team .workspace-picker-caption{padding:8px 10px;color:var(--faint)}
+@media(max-width:780px){.server-team>.team-toolbar{grid-template-columns:1fr;gap:10px}.server-team>.team-history,.server-team>.team-accept,.server-team>.team-scope-note{padding:14px 0}.server-team .workspace-picker-popup{min-width:0}.server-team .team-summary-meta{gap:8px}}
+.server-team input:focus-visible,.server-team select:focus-visible,.server-team button:focus-visible,.server-team summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media(max-width:780px){.server-team .team-toolbar{grid-template-columns:1fr}.server-team .dashboard-header{align-items:flex-start;gap:16px}.server-team .team-summary{align-items:flex-start}.server-team .team-summary-meta{flex-wrap:wrap;justify-content:flex-end}.team-summary-hint{display:none}.team-header-actions .primary-action{font-size:11px;padding-inline:10px}}
+@media(max-width:780px){.server-team .team-toolbar{flex-direction:column;align-items:stretch}.server-team .member-table{overflow:visible}.app-shell .server-team .member-row{min-width:0}.server-team .team-summary>p{display:block;max-width:190px;font-size:11px}.server-team form{align-items:stretch;flex-direction:column}.server-team form label:first-child{min-width:0}.server-team .team-invitations,.server-team .team-accept,.server-team .team-issued,.server-team .team-feedback,.server-team .team-history{padding:16px}}

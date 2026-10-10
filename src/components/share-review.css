@@ -1,0 +1,27 @@
+.share-layer .modal-scrim{animation:share-backdrop .2s ease-out both}
+.share-review-modal{width:min(480px,calc(100vw - 32px));padding:28px!important;border-radius:18px!important;background:var(--surface-1);border:1px solid var(--line-strong);box-shadow:0 24px 80px #0007;animation:share-enter .28s cubic-bezier(.2,.8,.2,1) both;max-height:calc(100dvh - 40px);overflow:auto}
+.share-review-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.share-symbol{display:grid;place-items:center;width:48px;height:48px;background:var(--surface-2);border-radius:14px;color:var(--accent)}
+.share-close{display:grid;place-items:center;width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.share-close:hover{background:var(--surface-2);color:var(--text)}
+.share-review-modal h2{font-size:25px;letter-spacing:-.8px;line-height:1.2;margin:8px 0 10px}
+.share-review-modal>p{font-size:13px;line-height:1.6;color:var(--muted);margin-bottom:24px}
+.share-link-label{display:block;font-size:11px;color:var(--muted)}
+.share-link-field{display:flex;gap:10px;align-items:center;margin-top:8px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--canvas);color:var(--muted)}
+.share-link-field input{min-width:0;width:100%;height:44px;background:none;border:0;color:var(--text);font-size:11px;outline:0}
+.share-link-field:focus-within{border-color:var(--accent)}
+.share-access-note{display:flex;gap:10px;margin:16px 0 8px;color:var(--muted)}
+.share-access-note svg{flex-shrink:0;margin-top:3px}
+.share-access-note p{font-size:11px;line-height:1.6;margin:0}
+.share-access-note strong{display:block;color:var(--text);font-weight:500;margin-bottom:2px}
+.share-future-options>div{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:16px 0}
+.share-future-options strong{font-size:12px;font-weight:500}.share-future-options small{display:block;font-size:10px;color:var(--muted);margin-top:4px}
+.share-pending{font-size:9px;color:var(--faint);white-space:nowrap}
+.share-review-modal footer{margin-top:24px}.share-copy{width:100%;min-height:44px;border:0;border-radius:8px;background:var(--accent);color:var(--canvas);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:background .2s,transform .15s}
+.share-copy:hover{transform:translateY(-1px)}.share-copy:active{transform:translateY(0)}.share-copy.copied{background:var(--green)}
+.share-review-modal footer>span{display:block;text-align:center;color:var(--muted);font-size:10px;margin-top:10px;line-height:1.5;min-height:16px}
+.share-review-modal button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@keyframes share-enter{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes share-backdrop{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.share-review-modal,.share-layer .modal-scrim{animation:none}.share-copy{transition:none}.share-copy:hover{transform:none}}
+@media(max-width:480px){.share-review-modal{padding:22px!important}.share-review-modal h2{font-size:23px}}

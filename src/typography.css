@@ -1,0 +1,22 @@
+@font-face {
+  font-family:'Geist';
+  src:url('../node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2') format('woff2');
+  font-weight:100 900;
+  font-style:normal;
+  font-display:swap;
+}
+@font-face {
+  font-family:'Geist Mono';
+  src:url('../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2') format('woff2');
+  font-weight:100 900;
+  font-style:normal;
+  font-display:swap;
+}
+:root {
+  --font-ui:'Geist',Arial,sans-serif;
+  --font-mono:'Geist Mono',ui-monospace,monospace;
+}
+/* One typography authority, including legacy views with font shorthands. */
+html,body,#root,#root * {font-family:var(--font-ui)!important}
+#root :is(code,pre,kbd,samp,.timecode,.frame-label,.composer-hint),
+#root .server-team .team-issued input {font-family:var(--font-mono)!important}

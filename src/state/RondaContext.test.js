@@ -9,6 +9,13 @@ const memoryStorage = values => ({
   setItem(key, value) { this.values[key] = String(value); },
 });
 
+test('no elimina comentarios iguales de versiones distintas al recargar',()=>{
+  const seed=createSeedState();const original=seed.comments['comment-1'];
+  seed.comments.other={...original,id:'other',versionId:'otra-version'};
+  const restored=normalizeRondaState(seed);
+  assert.ok(restored.comments.other);assert.ok(restored.comments[original.id]);
+});
+
 test('migra timecode, autor y respuestas de comentarios antiguos', () => {
   const storage = memoryStorage({ 'ronda-comments': JSON.stringify([{ id: 7, author: 'Julian T.', text: 'Cambio histórico', time: '00:00:12', frame: 288, replies: [{ id: 'r1', text: 'Listo' }] }]) });
   const state = migrateLegacyComments(createSeedState(), storage);

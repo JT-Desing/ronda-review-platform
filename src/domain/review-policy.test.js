@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {validateReviewDecision} from './review.js';
+const state=()=>({currentUserId:'a',members:{a:{},b:{}},projects:{p:{}},versions:{v:{projectId:'p',reviewerIds:['a','b']}},comments:{}});
+const payload={versionId:'v',reviewerId:'a',decision:'approved'};
+test('permite la decisión del revisor activo',()=>assert.equal(validateReviewDecision(state(),payload).allowed,true));
+test('rechaza decidir por otro usuario o una decisión desconocida',()=>{assert.equal(validateReviewDecision(state(),{...payload,reviewerId:'b'}).allowed,false);assert.equal(validateReviewDecision(state(),{...payload,decision:'invalid'}).allowed,false)});
+test('rechaza versión huérfana y revisor no asignado',()=>{const s=state();delete s.projects.p;assert.equal(validateReviewDecision(s,payload).allowed,false);s.projects.p={};s.versions.v.reviewerIds=[];assert.equal(validateReviewDecision(s,payload).allowed,false)});
+test('bloqueante abierto impide aprobar, pero no pedir cambios',()=>{const s=state();s.comments.c={versionId:'v',status:'open',priority:'blocking'};assert.equal(validateReviewDecision(s,payload).allowed,false);assert.equal(validateReviewDecision(s,{...payload,decision:'changes_requested'}).allowed,true);s.comments.c.status='resolved';assert.equal(validateReviewDecision(s,payload).allowed,true)});
+test('un bloqueante de otra versión no impide aprobar',()=>{const s=state();s.comments.c={versionId:'other',status:'open',priority:'blocking'};assert.equal(validateReviewDecision(s,payload).allowed,true)});

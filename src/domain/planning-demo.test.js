@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {createPlanningDemo} from './planning-demo.js';
+test('demo contains activity without invalid days or persistence references',()=>{const demo=createPlanningDemo('2026-02');assert.ok(Object.keys(demo.comments).length>200);assert.ok(Object.values(demo.comments).every(c=>c.id.startsWith('demo-')&&Number(c.createdAt.slice(8,10))<=28));assert.equal(Object.values(demo.comments).filter(c=>c.createdAt.startsWith('2026-02-14')).length,38)});
+test('demo instances do not share mutable state',()=>{const a=createPlanningDemo('2026-10'),b=createPlanningDemo('2026-10');a.members.laura.name='changed';assert.equal(b.members.laura.name,'Laura Méndez')});
