@@ -11,6 +11,8 @@ while true; do
     mv "$directory/files.tar.gz.part" "$directory/files.tar.gz"
     printf 'completed\n' > "$directory/COMPLETE"
     echo "Backup completed: $stamp"
+    # Prune only after a fresh complete backup exists, and only timestamped folders.
+    find /backups -mindepth 1 -maxdepth 1 -type d -name '[0-9]*T[0-9]*Z' -mtime +"${BACKUP_RETENTION_DAYS:-14}" -exec rm -rf {} +
     sleep 86400
   else
     echo 'Backup failed; incomplete backup preserved, retry in 5 minutes.' >&2
