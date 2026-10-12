@@ -12,7 +12,7 @@ import {sharedReviewRepository} from './repositories/shared-review.js';
 import {sharedCommentService} from './shared-comment-service.js';
 import {createApp} from './app.js';
 import {digest} from './security.js';
-const f=await reviewFixture(),dist=fileURLToPath(new URL('../dist/',import.meta.url));
+const f=await reviewFixture(),dist=resolve(fileURLToPath(new URL('../dist/',import.meta.url)));
 const media=sharedMediaService(sharedReviewRepository(f.pool),localStorage(f.root));
 await f.pool.query("UPDATE users SET name=CASE id WHEN $1 THEN 'Ana · Administradora QA' WHEN $2 THEN 'Mateo · Editor QA' WHEN $3 THEN 'Laura · Revisora QA' ELSE 'Externo QA' END",[f.admin,f.editor,f.reviewer]);
 await f.pool.query("UPDATE workspaces SET name='Estudio Norte · QA' WHERE id=$1",[f.space]);
