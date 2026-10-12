@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { useRonda, selectPlanUsage } from '../state/RondaContext.jsx';
 import { SharedProjects } from './SharedProjects.jsx';
 import { ProjectLibrary } from './StudioWorkspace.jsx';
+import {demoSession} from '../state/demoSession.js';
 
-export function ProjectActions({ onOpen, onNotify }) {
+export function ProjectActions({ onOpen, onNotify,onDirtyChange }) {
   const [scope, setScope] = useState('private');
   const [sharedDirty, setSharedDirty] = useState(false), [pendingScope, setPendingScope] = useState(null);
-  const changeScope = next => { if (next === scope) return; if (scope === 'shared' && sharedDirty) setPendingScope(next); else setScope(next); };
+  useEffect(()=>{onDirtyChange?.(sharedDirty);return()=>onDirtyChange?.(false);},[sharedDirty,onDirtyChange]);
+  const changeScope = next => { if (next === scope) return; if(next==='shared'&&demoSession())return onNotify('El demo no accede a los proyectos compartidos reales.'); if (scope === 'shared' && sharedDirty) setPendingScope(next); else setScope(next); };
   return <><nav className="project-scope-switch" aria-label="Tipo de proyectos"><button aria-pressed={scope === 'private'} onClick={() => changeScope('private')}>Mis proyectos privados</button><button aria-pressed={scope === 'shared'} onClick={() => changeScope('shared')}>Compartidos con el equipo</button></nav>{pendingScope && <div className="shared-feedback" role="alert"><p>Hay texto sin publicar en proyectos compartidos. Cambiar de vista descartará estos borradores.</p><button onClick={() => setPendingScope(null)}>Seguir escribiendo</button><button onClick={() => { setScope(pendingScope); setPendingScope(null); }}>Descartar y cambiar vista</button></div>}{scope === 'private' ? <PrivateProjectActions onOpen={onOpen} onNotify={onNotify} /> : <SharedProjects onNotify={onNotify} onDirtyChange={setSharedDirty} />}</>;
 }
 

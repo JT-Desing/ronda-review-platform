@@ -54,6 +54,16 @@ Pruebas adicionales: `workspace-integration.js` crea y elimina su base UUID QA. 
 
 ## Próxima etapa
 
+## Revisión compartida — incremento en desarrollo
+
+`sharedReviewRepository` reutiliza la autorización transaccional por espacio y valida la cadena proyecto/pieza/versión. `shared-media-service` reserva capacidad antes de recibir bytes; ninguna conexión SQL permanece retenida durante la transferencia. La finalización separa filesystem y DB mediante estados staging/received/ready/failed y clave determinista. No representa una transacción distribuida. La recuperación/limpieza de temporales debe validarse antes de publicar.
+
+`shared-comment-service` guarda contexto de versión y anotación normalizada, identifica al autor desde sesión y aplica CAS; `shared-decision-service` serializa decisiones/bloqueantes y exige revisores vigentes. Revocar membresía reconcilia decisiones sin borrar eventos. `modules/shared-review` enruta únicamente recursos explícitos y la ruta binaria mantiene autorización también para Range.
+
+`SharedReviewRoom` usa API compartida y no escribe snapshots privados. `AnnotationLayer` es un componente presentacional reutilizado; visores privados se mantienen. `SharedProjectMedia` abre la sala desde los proyectos compartidos. Sin tiempo real: entrada/foco y actualización manual. No dar por verificada la interacción por el solo hecho de compilar.
+
+Migración aditiva 0004; no modificar migraciones previas ni DROP producción. Ante problemas deshabilitar rutas/vista nueva conservando tablas y originales; no revertir protecciones del PR de seguridad. Almacenamiento comercial y acceso externo siguen incrementos propios antes del primer cliente.
+
 ## Proyectos compartidos — etapa 3
 
 `modules/shared-projects.js` controla HTTP; `shared-project-service.js` organiza casos de uso; `project-policy.js` valida límites y rol; `repositories/shared-projects.js` centraliza acceso transaccional y lectura de recursos. Algunas consultas del caso de uso permanecen en el servicio: separación incremental, no una arquitectura hexagonal completa.

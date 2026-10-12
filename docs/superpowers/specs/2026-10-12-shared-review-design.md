@@ -1,6 +1,6 @@
 # Revisión compartida de Ronda — propuesta para aprobación
 
-Estado: diseño pendiente de revisión del usuario. No implementado ni desplegado.
+Estado: diseño aprobado por el usuario. Implementación en rama aislada; validación visual y dictamen independiente completos pendientes. No desplegado.
 
 ## Objetivo y contexto
 
@@ -109,8 +109,8 @@ No se declara terminado sin pruebas servidor/UI y un respaldo restaurable. Despl
 - [x] Comparar alternativas y formular diseño recomendado.
 - [x] Especificar datos, roles, UX, fallos, almacenamiento y pruebas.
 - [x] Autorrevisión: eliminar ambigüedad sobre privado/compartido, aprobación, alcance del plan y revocación.
-- [ ] Usuario revisa/aprueba este documento.
-- [ ] Escribir plan de implementación y elegir ejecución.
+- [x] Usuario revisa/aprueba este documento.
+- [x] Escribir plan de implementación y elegir ejecución nativa en worktree aislado.
 - [ ] Implementar y verificar incrementos.
 
 Migraciones aditivas, sin DROP/reset; respaldar antes de aplicar. Reversión deshabilita la nueva vista/rutas conservando datos compartidos. Nunca volver a versión de código que omita protecciones de seguridad. Almacenamiento comercial, acceso externo, correo y planes mantienen entregas propias con criterios de aceptación separados.

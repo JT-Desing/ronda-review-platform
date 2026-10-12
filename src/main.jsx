@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from './components/Icon.jsx';
+import {AnnotationLayer} from './components/AnnotationLayer.jsx';
+import {canLeaveSharedReview} from './state/sharedReviewState.js';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 import AccountAccess from './components/AccountAccess.jsx';
@@ -87,50 +89,6 @@ function MobileNav({ currentView, onNavigate }) {
   return <nav className="mobile-nav" aria-label="Navegación móvil">{items.map(([view,icon,label])=><button key={view} className={currentView===view||(currentView==='review'&&view==='projects')?'active':''} onClick={()=>onNavigate(view)}><Icon name={icon}/><span>{label}</span></button>)}</nav>;
 }
 
-function AnnotationLayer({ activeTool, activeColor, marks, setMarks, selectedFigure }) {
-  const canvas = useRef(null);
-  const draft = useRef(null);
-  const activePointer = useRef(null);
-  const [textEditor,setTextEditor]=useState(null);
-  const [textValue,setTextValue]=useState('');
-  const draw = () => {
-    const el = canvas.current;
-    if (!el) return;
-    const ctx = el.getContext('2d');
-    const ratio = window.devicePixelRatio || 1;
-    const box = el.getBoundingClientRect();
-    const width=Math.round(box.width*ratio); const height=Math.round(box.height*ratio);
-    if (el.width !== width || el.height !== height) { el.width=width;el.height=height; }
-    ctx.setTransform(ratio,0,0,ratio,0,0);
-    ctx.clearRect(0, 0, box.width, box.height);
-    [...marks, ...(draft.current?.points.length ? [draft.current] : [])].forEach(mark => {
-      ctx.shadowColor=mark.id===selectedFigure?'#f2bd5c':'transparent';ctx.shadowBlur=mark.id===selectedFigure?10:0;
-      const pixels=mark.points.map(point=>({x:point.x*box.width,y:point.y*box.height}));
-      if (mark.tool === 'pen') {
-        ctx.strokeStyle = mark.color; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();
-        pixels.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.stroke();
-      }
-      if (mark.tool === 'square' && mark.points.length > 1) {
-        const [start,end]=[pixels[0],pixels.at(-1)]; ctx.strokeStyle=mark.color;ctx.lineWidth=4;ctx.strokeRect(start.x,start.y,end.x-start.x,end.y-start.y);
-      }
-      if (mark.tool === 'arrow' && mark.points.length > 1) {
-        const [start,end]=[pixels[0],pixels.at(-1)]; const angle=Math.atan2(end.y-start.y,end.x-start.x);ctx.strokeStyle=mark.color;ctx.lineWidth=4;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.lineTo(end.x,end.y);ctx.lineTo(end.x-14*Math.cos(angle-Math.PI/6),end.y-14*Math.sin(angle-Math.PI/6));ctx.moveTo(end.x,end.y);ctx.lineTo(end.x-14*Math.cos(angle+Math.PI/6),end.y-14*Math.sin(angle+Math.PI/6));ctx.stroke();
-      }
-      if (mark.tool === 'type') { ctx.fillStyle=mark.color;ctx.font='600 18px system-ui';ctx.fillText(mark.text,pixels[0].x,pixels[0].y); }
-    });
-  };
-  useEffect(draw, [marks,selectedFigure]);
-  useEffect(() => { const observer=new ResizeObserver(draw);if(canvas.current)observer.observe(canvas.current);return()=>observer.disconnect(); },[marks]);
-  const point = e => toNormalizedPoint(e,canvas.current.getBoundingClientRect());
-  const cancel=e=>{if(e&&activePointer.current!==e.pointerId)return;draft.current=null;activePointer.current=null;draw()};
-  const finish=e=>{if(!draft.current||activePointer.current!==e.pointerId)return;draft.current.points.push(point(e));const mark=finalizeAnnotation(draft.current.tool,draft.current.color,draft.current.points);draft.current=null;activePointer.current=null;if(mark)setMarks(current=>[...current,mark]);else draw()};
-  const closeText=commit=>{if(commit&&textEditor){const mark=finalizeAnnotation('type',textEditor.color,[textEditor.point],textValue);if(mark)setMarks(current=>[...current,mark]);}setTextEditor(null);setTextValue('')};
-  return <><canvas ref={canvas} className={`annotation-layer ${activeTool ? 'drawing' : ''}`}
-    onPointerDown={e => { if(!activeTool||activePointer.current!==null||e.isPrimary===false||(e.pointerType==='mouse'&&e.button!==0)) return; const start=point(e); if(activeTool==='type'){setTextEditor({point:start,color:activeColor});setTextValue('');return;} activePointer.current=e.pointerId;e.currentTarget.setPointerCapture?.(e.pointerId);draft.current={tool:activeTool,color:activeColor,points:[start]};draw(); }}
-    onPointerMove={e => { if(!draft.current||activePointer.current!==e.pointerId) return;const next=point(e);if(draft.current.tool==='pen')draft.current.points.push(next);else draft.current.points=[draft.current.points[0],next];draw(); }}
-    onPointerUp={finish} onPointerCancel={cancel} onLostPointerCapture={e=>{if(draft.current)finish(e)}} />
-    {textEditor&&<input className="annotation-text-input" autoFocus aria-label="Texto de la anotación" value={textValue} onChange={e=>setTextValue(e.target.value)} onKeyDown={e=>{e.stopPropagation();if(e.key==='Enter')closeText(true);if(e.key==='Escape')closeText(false)}} placeholder="Escribe y pulsa Enter · Esc cancela" style={{left:`${textEditor.point.x*100}%`,top:`${textEditor.point.y*100}%`,color:textEditor.color}}/>}</>;
-}
 
 function MediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, media, currentTime, setCurrentTime, remoteCursor, marks, setMarks, selectedFigure, onFigure, figureComments, onTimelineComment, reviewVersionId }) {
   const {state}=useRonda();
@@ -355,7 +313,9 @@ function App({demo=false,onExitDemo}) {
   const setCommentDraft=value=>setDraftCache(current=>({...current,[draftKey]:typeof value==='function'?value(readDraftForContext(current,draftStorage,draftKey)):value}));
   const recoveredDraft=useRef(Boolean(commentDraft));
   const [collapsed, setCollapsed] = useState(false);
-  const [currentView, setCurrentView] = useState(location.hash.startsWith('#review/')?'review':'home');
+  const [currentView, setCurrentViewRaw] = useState(location.hash.startsWith('#review/')?'review':'home');
+  const [sharedDirty,setSharedDirty]=useState(false);
+  const setCurrentView=next=>{if(next===currentView||canLeaveSharedReview({dirty:sharedDirty,busy:false},()=>window.confirm('Hay cambios sin publicar en la revisión compartida. ¿Descartarlos?')))setCurrentViewRaw(next);};
   const [companyDemo,setCompanyDemo]=useState(false);
   const [activeTool, setActiveTool] = useState('pen');
   const [activeColor, setActiveColor] = useState('#ff725e');
@@ -397,13 +357,13 @@ function App({demo=false,onExitDemo}) {
   if(companyDemo)return <RondaProvider initialState={companyDemo} ephemeral><App demo onExitDemo={()=>{endDemoSession();setCompanyDemo(false)}}/></RondaProvider>;
   return <div className="app-shell">
     <DrawingTrail enabled={currentView==='review'&&!socialMode&&activeTool!=='type'&&Boolean(activeTool)} color={activeColor}/>
-    <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} currentView={currentView} onNavigate={setCurrentView} onDemo={()=>{if(demo)return;const fixture=createCompanyDemo();beginDemoSession(fixture);setCompanyDemo(fixture)}}/>
+    <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} currentView={currentView} onNavigate={setCurrentView} onDemo={()=>{if(demo||!canLeaveSharedReview({dirty:sharedDirty,busy:false},()=>window.confirm('Hay cambios sin publicar en la revisión compartida. ¿Descartarlos para abrir el demo?')))return;const fixture=createCompanyDemo();beginDemoSession(fixture);setCompanyDemo(fixture)}}/>
     <main className={`workspace ${currentView!=='review'?'dashboard-workspace':''}`}>
       {demo&&<div className="demo-company-banner" role="status"><span>DEMO · Empresa activa · Datos ficticios. Los cambios se descartan al salir.</span><button onClick={onExitDemo}>Volver a mi cuenta</button></div>}
       {currentView!=='review' && <header className="studio-topbar"><span>{state.workspace.name} <span aria-hidden="true">/</span> <strong>{{home:'Inicio',projects:'Proyectos',pauta:'Pauta',activity:'Actividad',planning:'Planificación',team:'Equipo',settings:'Configuración',branding:'Personalización'}[currentView]}</strong></span><div><NotificationCenter onNavigate={setCurrentView}/><span className="avatar small">{state.members[state.currentUserId]?.initials}</span><span className="studio-greeting">Hola, {state.members[state.currentUserId]?.name?.split(' ')[0]}</span></div></header>}
       {currentView==='home' && <StudioHome onNavigate={setCurrentView} onOpen={openProject}/>}
       {persistenceError&&<div className="persistence-alert" role="alert"><Icon name="alert" size={16}/><span><strong>Los cambios están solo en este dispositivo</strong><small>{persistenceError==='quota'?'El almacenamiento del navegador está lleno. Quita algunas referencias pesadas o libera espacio.':'El navegador bloqueó el almacenamiento local.'}</small></span><button onClick={retryPersistence}>Reintentar</button></div>}
-      {currentView==='projects' && <ProjectActions onOpen={openProject} onNotify={setToast}/>}
+      {currentView==='projects' && <ProjectActions onOpen={openProject} onNotify={setToast} onDirtyChange={setSharedDirty}/>}
       {currentView==='activity' && <ActivityView onNavigate={setCurrentView}/>}
       {currentView==='planning' && <Planning onOpen={openPlanningComment}/>}
       {currentView==='team' && <TeamActions onNotify={setToast}/>}

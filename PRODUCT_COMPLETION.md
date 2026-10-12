@@ -1,5 +1,11 @@
 # Cierre funcional de Ronda
 
+## Revisión compartida — desarrollo aislado 12 octubre 2026
+
+Rama `feature/shared-review`, worktree aislado. Implementación de piezas, versiones independientes, comentarios/anotaciones, asignación, decisiones y lectura autorizada del espacio. Datos privados no se copian. Integraciones PostgreSQL QA independientes prueban permisos, versión, firma de medio, cuotas concurrentes, rangos, borradores de estado, aprobación/revocación y conservación. La interfaz compartida está conectada pero la interacción y diseño en navegador quedan INCONCLUSIVE: los navegadores habilitados bloquean la URL local. No es una entrega desplegada ni comercial.
+
+Límites locales son de prototipo; proveedor comercial se activa y verifica antes del primer cliente. Correo, pagos, enlaces externos y dominio siguen pendientes. Registro detallado de pruebas/revisión en el ledger de ejecución de este plan; no marcar este incremento completo mientras persistan puertas de recuperación/UI.
+
 ## Primer incremento — 10 octubre 2026
 
 Objetivo: comentarios y decisiones coherentes con la versión y el usuario activos.
