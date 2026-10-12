@@ -10,3 +10,5 @@ Thumbs.db
 .idea/
 coverage/
 .backups/
+.worktrees/
+.superpowers/
