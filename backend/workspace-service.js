@@ -1,5 +1,6 @@
 import { token, digest } from './security.js';
 import { validateRole, protectLastAdmin, workspaceError, WORKSPACE_SEAT_LIMIT } from './workspace-policy.js';
+import {reviewSummary} from './shared-decision-service.js';
 async function event(client, workspaceId, actorId, action, details) {
   await client.query('INSERT INTO workspace_events(workspace_id,actor_id,action,details) VALUES($1,$2,$3,$4)', [workspaceId, actorId, action, details]);
 }
@@ -44,7 +45,16 @@ export function workspaceService(repository) {
         const member = members.find(item => item.user_id === memberId);
         if (!member) throw workspaceError(404, 'Miembro no disponible.');
         protectLastAdmin(member.role, role, members.filter(item => item.role === 'admin').length);
-        if (role === null) await client.query('DELETE FROM workspace_members WHERE workspace_id=$1 AND user_id=$2', [workspaceId, memberId]);
+        if (role === null) {
+          await client.query('DELETE FROM workspace_members WHERE workspace_id=$1 AND user_id=$2', [workspaceId, memberId]);
+          const versions=(await client.query('SELECT v.id FROM shared_versions v JOIN shared_review_decisions d ON d.version_id=v.id WHERE v.workspace_id=$1 AND d.user_id=$2 AND d.active=true FOR UPDATE OF v',[workspaceId,memberId])).rows;
+          for(const version of versions){
+            await client.query('UPDATE shared_review_decisions SET active=false WHERE version_id=$1 AND user_id=$2',[version.id,memberId]);
+            const summary=await reviewSummary(client,version.id);
+            await client.query('UPDATE shared_versions SET status=$1,revision=revision+1 WHERE id=$2',[summary.status,version.id]);
+            await event(client,workspaceId,actorId,'review.reviewer_removed',{versionId:version.id,userId:memberId,status:summary.status});
+          }
+        }
         else await client.query('UPDATE workspace_members SET role=$3 WHERE workspace_id=$1 AND user_id=$2', [workspaceId, memberId, role]);
         await event(client, workspaceId, actorId, role === null ? 'member.removed' : 'member.role_changed', { userId: memberId, before: member.role, after: role });
         return { ok: true };

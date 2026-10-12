@@ -1,0 +1,130 @@
+import {randomUUID} from 'node:crypto';
+import {workspaceError} from './workspace-policy.js';
+import {requestId,UUID_PATTERN} from './project-policy.js';
+import {requireReviewAction} from './shared-review-policy.js';
+import {parseRange} from './shared-range.js';
+import {assetDto,versionDto,recordEvent} from './shared-review-dto.js';
+const types={'image/png':'image','image/jpeg':'image','image/webp':'image','video/mp4':'video'};
+const quota=2147483648;
+function uploadInput(input){
+  if(!input||typeof input.name!=='string'||!input.name.trim()||input.name.length>255||!Object.hasOwn(types,input.mime)||!Number.isInteger(input.size)||input.size<1||input.size>104857600)throw workspaceError(400,'Archivo inválido; prueba hasta 100 MB.');
+  if(!UUID_PATTERN.test(input.projectId)||input.assetId&&!UUID_PATTERN.test(input.assetId))throw workspaceError(400,'Proyecto o pieza inválidos.');
+  return {...input,name:input.name.trim(),requestId:requestId(input.requestId),kind:types[input.mime]};
+}
+function signature(bytes,mime){
+  if(mime==='image/png')return bytes.subarray(0,8).equals(Buffer.from('89504e470d0a1a0a','hex'));
+  if(mime==='image/jpeg')return bytes.length>=3&&bytes[0]===255&&bytes[1]===216&&bytes[2]===255;
+  if(mime==='image/webp')return bytes.subarray(0,4).toString()==='RIFF'&&bytes.subarray(8,12).toString()==='WEBP';
+  return bytes.length>=12&&bytes.subarray(4,8).toString()==='ftyp';
+}
+export function sharedMediaService(repository,storage){
+  const file=async(db,space,id)=>{
+    const row=(await db.query('SELECT * FROM shared_media_files WHERE workspace_id=$1 AND id=$2 FOR UPDATE',[space,id])).rows[0];
+    if(!row)throw workspaceError(404,'Archivo no disponible.');return row;
+  };
+  return {
+    async readVersion(space,actor,c){return repository.access(space,actor,async(db,role)=>({role,asset:assetDto(await repository.asset(db,space,c.projectId,c.assetId)),version:await versionDto(db,await repository.version(db,space,c.projectId,c.assetId,c.versionId)),members:(await db.query('SELECT u.id,u.name,m.role FROM workspace_members m JOIN users u ON u.id=m.user_id WHERE m.workspace_id=$1 ORDER BY u.name,u.id',[space])).rows}));},
+    async listAssets(space,actor,projectId){
+      return repository.access(space,actor,async db=>{await repository.project(db,space,projectId);const rows=(await db.query('SELECT * FROM shared_assets WHERE workspace_id=$1 AND project_id=$2 ORDER BY created_at,id',[space,projectId])).rows;return {assets:rows.map(assetDto)};});
+    },
+    async listVersions(space,actor,projectId,assetId){
+      return repository.access(space,actor,async db=>{
+        const asset=await repository.asset(db,space,projectId,assetId);
+        const rows=(await db.query('SELECT id FROM shared_versions WHERE asset_id=$1 ORDER BY number DESC',[assetId])).rows;
+        return {asset:assetDto(asset),versions:await Promise.all(rows.map(async r=>versionDto(db,await repository.version(db,space,projectId,assetId,r.id))))};
+      });
+    },
+    async completeUpload(space,actor,id){
+      return repository.access(space,actor,async(db,role)=>{
+        requireReviewAction(role,'upload');const upload=await file(db,space,id);
+        if(upload.created_by!==actor)throw workspaceError(403,'Esta carga pertenece a otro miembro.');
+        const prior=(await db.query('SELECT id,asset_id FROM shared_versions WHERE file_id=$1',[id])).rows[0];
+        if(prior)return {asset:assetDto(await repository.asset(db,space,upload.project_id,prior.asset_id)),version:await versionDto(db,await repository.version(db,space,upload.project_id,prior.asset_id,prior.id))};
+        if(upload.state!=='received'||upload.expires_at<=new Date())throw workspaceError(409,'Primero completa la subida.');
+        let asset;
+        if(upload.asset_id)asset=await repository.asset(db,space,upload.project_id,upload.asset_id,true);
+        else asset=(await db.query('INSERT INTO shared_assets(workspace_id,project_id,name,kind,created_by,request_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING *',[space,upload.project_id,upload.name,upload.kind,actor,upload.request_id])).rows[0];
+        const previous=(await db.query('SELECT id,number FROM shared_versions WHERE asset_id=$1 ORDER BY number DESC LIMIT 1',[asset.id])).rows[0];
+        const key=`${space}/${id}`;
+        // Deterministic key permits retry after filesystem rename but SQL rollback.
+        await storage.finalize({temporaryKey:upload.object_key,key});
+        await db.query("UPDATE shared_media_files SET state='ready',object_key=$1,asset_id=$2 WHERE id=$3",[key,asset.id,id]);
+        const created=(await db.query('INSERT INTO shared_versions(workspace_id,project_id,asset_id,file_id,number) VALUES($1,$2,$3,$4,$5) RETURNING id',[space,upload.project_id,asset.id,id,(previous?.number||0)+1])).rows[0];
+        if(previous)await db.query("INSERT INTO shared_review_decisions(version_id,user_id) SELECT $1,d.user_id FROM shared_review_decisions d JOIN workspace_members m ON m.workspace_id=$2 AND m.user_id=d.user_id WHERE d.version_id=$3 AND d.active=true",[created.id,space,previous.id]);
+        await db.query('UPDATE shared_assets SET active_version_id=$1,revision=revision+1 WHERE id=$2',[created.id,asset.id]);
+        await recordEvent(db,space,actor,'review.version_created',{projectId:upload.project_id,assetId:asset.id,versionId:created.id});
+        return {asset:assetDto(await repository.asset(db,space,upload.project_id,asset.id)),version:await versionDto(db,await repository.version(db,space,upload.project_id,asset.id,created.id))};
+      },true);
+    },
+    async setReviewers(space,actor,{projectId,assetId,versionId,reviewerIds,revision}){
+      if(!Array.isArray(reviewerIds)||reviewerIds.length>100||new Set(reviewerIds).size!==reviewerIds.length||reviewerIds.some(id=>typeof id!=='string'||!UUID_PATTERN.test(id))||!Number.isInteger(revision))throw workspaceError(400,'Revisores inválidos.');
+      return repository.access(space,actor,async(db,role)=>{
+        requireReviewAction(role,'assign');const v=await repository.version(db,space,projectId,assetId,versionId,true);
+        if(v.revision!==revision)throw workspaceError(409,'La revisión cambió; actualiza los datos.');
+        if(v.status==='approved')throw workspaceError(409,'La versión aprobada es de solo lectura.');
+        const members=(await db.query('SELECT user_id FROM workspace_members WHERE workspace_id=$1 AND user_id=ANY($2::uuid[])',[space,reviewerIds])).rows;
+        if(members.length!==reviewerIds.length)throw workspaceError(400,'Todos los revisores deben pertenecer al espacio.');
+        await db.query('UPDATE shared_review_decisions SET active=false WHERE version_id=$1',[versionId]);
+        for(const user of reviewerIds)await db.query("INSERT INTO shared_review_decisions(version_id,user_id) VALUES($1,$2) ON CONFLICT(version_id,user_id) DO UPDATE SET active=true,decision='pending',request_id=NULL,decided_at=NULL",[versionId,user]);
+        await db.query('UPDATE shared_versions SET revision=revision+1 WHERE id=$1',[versionId]);
+        await recordEvent(db,space,actor,'review.reviewers_changed',{versionId,reviewerIds});
+        return {version:await versionDto(db,await repository.version(db,space,projectId,assetId,versionId))};
+      },true);
+    },
+    async reserve(space,actor,input){
+      const value=uploadInput(input);
+      return repository.access(space,actor,async(db,role)=>{
+        requireReviewAction(role,'upload');await repository.project(db,space,value.projectId);
+        if(value.assetId){const asset=await repository.asset(db,space,value.projectId,value.assetId);if(asset.kind!==value.kind)throw workspaceError(400,'La nueva versión debe conservar el tipo de medio.');}
+        const prior=(await db.query('SELECT * FROM shared_media_files WHERE workspace_id=$1 AND created_by=$2 AND request_id=$3',[space,actor,value.requestId])).rows[0];
+        if(prior){
+          const piece=prior.asset_id?await repository.asset(db,space,prior.project_id,prior.asset_id):null;
+          const originalAssetId=piece?.request_id===prior.request_id&&piece?.created_by===actor?null:prior.asset_id;
+          if(prior.name!==value.name||prior.mime!==value.mime||Number(prior.size)!==value.size||prior.project_id!==value.projectId||originalAssetId!==(value.assetId||null))throw workspaceError(409,'La solicitud ya pertenece a otra carga.');
+          if(prior.state==='ready'||prior.expires_at>new Date()&&prior.state!=='failed')return {uploadId:prior.id};
+          if(prior.state==='failed'&&!prior.object_key){
+            const occupied=Number((await db.query("SELECT COALESCE(sum(size),0) AS size FROM shared_media_files WHERE workspace_id=$1 AND (state='ready' OR object_key IS NOT NULL OR (state IN ('staging','received') AND expires_at>now()))",[space])).rows[0].size);
+            if(occupied+value.size>quota)throw workspaceError(413,'Límite del prototipo: 2 GB por espacio.');
+            await db.query("UPDATE shared_media_files SET state='staging',expires_at=now()+interval '1 hour' WHERE id=$1",[prior.id]);return {uploadId:prior.id};
+          }
+          throw workspaceError(409,'La carga caducó o falló. Inicia otra carga.');
+        }
+        const used=Number((await db.query("SELECT COALESCE(sum(size),0) AS size FROM shared_media_files WHERE workspace_id=$1 AND (state='ready' OR object_key IS NOT NULL OR (state IN ('staging','received') AND expires_at>now()))",[space])).rows[0].size);
+        if(used+value.size>quota)throw workspaceError(413,'Límite del prototipo: 2 GB por espacio.');
+        const row=(await db.query('INSERT INTO shared_media_files(workspace_id,project_id,asset_id,created_by,request_id,name,mime,size,kind) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id',[space,value.projectId,value.assetId||null,actor,value.requestId,value.name,value.mime,value.size,value.kind])).rows[0];
+        return {uploadId:row.id};
+      },true);
+    },
+    async receive(space,actor,id,stream){
+      const upload=await repository.access(space,actor,async(db,role)=>{
+        requireReviewAction(role,'upload');const row=await file(db,space,id);
+        if(row.created_by!==actor)throw workspaceError(403,'Esta carga pertenece a otro miembro.');
+        if(['received','ready'].includes(row.state))return {...row,done:true};
+        if(row.state!=='staging'||row.expires_at<=new Date())throw workspaceError(409,'Carga no disponible.');
+        if(row.object_key)throw workspaceError(409,'La carga está en proceso.');
+        await db.query('UPDATE shared_media_files SET object_key=$1 WHERE id=$2',[`${space}/${id}.part`,id]);return row;
+      },true);
+      if(upload.done){stream.resume?.();return {ok:true};}
+      const key=`${space}/${id}.part`;
+      try{
+        const received=await storage.stage({workspaceId:space,uploadId:id,stream,maxBytes:Number(upload.size)});
+        if(received.size!==Number(upload.size))throw workspaceError(400,'Carga incompleta.');
+        if(!signature(await storage.prefix(key),upload.mime))throw workspaceError(415,'Contenido no compatible con el tipo declarado.');
+        await repository.access(space,actor,async(db,role)=>{
+          requireReviewAction(role,'upload');const row=await file(db,space,id);
+          if(row.state!=='staging'||row.expires_at<=new Date())throw workspaceError(409,'Carga caducada.');
+          await db.query("UPDATE shared_media_files SET state='received' WHERE id=$1",[id]);
+        },true);
+        return {ok:true};
+      }catch(error){const cleaned=await storage.discardTemporary({key}).then(()=>true).catch(()=>false);await repository.failUpload(space,actor,id,cleaned);throw error;}
+    },
+    async readFile(space,actor,id,{download=false,range}={}){
+      return repository.access(space,actor,async(db,role)=>{
+        requireReviewAction(role,download?'download':'read');const row=await file(db,space,id);
+        if(row.state!=='ready')throw workspaceError(404,'Archivo no disponible.');
+        let bounds;try{bounds=parseRange(range,Number(row.size));}catch(error){error.size=Number(row.size);throw error;}
+        return {stream:storage.open({key:row.object_key,...bounds}),size:Number(row.size),mime:row.mime,name:row.name,range:bounds};
+      });
+    },
+  };
+}

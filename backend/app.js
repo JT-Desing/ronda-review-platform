@@ -6,9 +6,10 @@ import { handleAccountData } from './modules/account-data.js';
 import { handleFiles } from './modules/files.js';
 import { handleWorkspaces } from './modules/workspaces.js';
 import { handleSharedProjects } from './modules/shared-projects.js';
+import {handleSharedReview,isSharedReviewPath} from './modules/shared-review.js';
 
 // Composition root: infrastructure is supplied, no listening or schema mutation here.
-export function createApp({ pool, origin, mailer }) {
+export function createApp({ pool, origin, mailer, sharedStorage }) {
   if (!origin) throw new Error('APP_ORIGIN is required');
   const sessions = sessionRepository(pool);
   const cookie = (value, maxAge) => `ronda_session=${value}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAge}${origin.startsWith('https:') ? '; Secure' : ''}`;
@@ -24,7 +25,8 @@ export function createApp({ pool, origin, mailer }) {
       if (req.method !== 'GET' && req.headers.origin !== origin) return reply(res, 403, { error: 'Origen no permitido.' });
       const sessionToken = req.headers.cookie?.split(';').map(x => x.trim()).find(x => x.startsWith('ronda_session='))?.slice(14);
       const account = await sessions.findAccount(sessionToken);
-      const context = { req, res, path, account, sessionToken, pool, cookie };
+      const context = { req, res, path, account, sessionToken, pool, cookie, sharedStorage };
+      if(isSharedReviewPath(path))return await handleSharedReview(context);
       if (/^\/api\/workspaces\/[^/]+\/projects(?:\/|$)/.test(path)) return await handleSharedProjects(context);
       if (path === '/api/workspaces' || path?.startsWith('/api/workspaces/') || path === '/api/workspace-invitations/accept') return await handleWorkspaces(context);
       if (req.method === 'GET' && path === '/api/auth/session') return reply(res, 200, { user: account });

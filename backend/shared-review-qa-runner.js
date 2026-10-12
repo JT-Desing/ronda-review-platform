@@ -22,7 +22,7 @@ try{
   }
   if(!ready)throw new Error('QA database unavailable');
   const exit=await new Promise((resolve,reject)=>{
-    const child=spawn(process.execPath,[fileURLToPath(new URL(script,import.meta.url))],{env:{...process.env,RONDA_QA_DATABASE_URL:url,DATABASE_URL:url},stdio:'inherit'});
+    const child=spawn(process.execPath,[fileURLToPath(new URL(script,import.meta.url))],{env:{...process.env,RONDA_QA_DATABASE_URL:url,RONDA_QA_CONTAINER:name,DATABASE_URL:url},stdio:'inherit'});
     child.on('error',reject);child.on('close',resolve);
   });
   process.exitCode=exit||0;
