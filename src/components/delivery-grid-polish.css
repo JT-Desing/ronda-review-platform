@@ -1,0 +1,61 @@
+.app-shell .delivery-grid.storyboard.organize ol{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px;padding:6px;max-height:620px}
+.app-shell .delivery-grid.storyboard li{padding:0;gap:0;overflow:hidden;border:1px solid var(--line);border-radius:16px;background:var(--surface-1);transition:border-color 180ms ease,box-shadow 180ms ease}
+.app-shell .delivery-grid.storyboard li:hover{border-color:#756681;box-shadow:0 6px 20px #00000020}
+.app-shell .delivery-grid.storyboard li.selected{border-color:var(--accent,#cbb0f0);box-shadow:0 0 0 1px var(--accent,#cbb0f0)}
+.app-shell .delivery-grid.storyboard .storyboard-preview{height:200px;background:#0b0b0e}
+.app-shell .delivery-grid.storyboard .storyboard-preview img,.app-shell .delivery-grid.storyboard .storyboard-preview video{object-fit:cover;outline:1px solid #ffffff0d;outline-offset:-1px}
+.app-shell .delivery-grid.storyboard .storyboard-number,.app-shell .delivery-grid.storyboard .storyboard-format{top:12px;padding:5px 8px;border-radius:7px;background:#101014dd;font-size:10px;font-weight:600;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.app-shell .delivery-grid.storyboard .storyboard-number{left:12px}.app-shell .delivery-grid.storyboard .storyboard-format{right:12px}
+.app-shell .delivery-grid.storyboard .delivery-open>strong{padding:0 16px;margin:16px 0 6px;font-size:14px;font-weight:600;line-height:1.5}
+.app-shell .delivery-grid.storyboard .delivery-open>small{display:block;padding:0 16px;font-size:11px;line-height:1.8;font-variant-numeric:tabular-nums}
+.app-shell .delivery-grid.storyboard .delivery-open>small:last-child{padding-bottom:16px;color:var(--muted)}
+.app-shell .delivery-grid.storyboard .storyboard-order{padding:6px 12px;background:transparent;gap:8px;flex-wrap:nowrap}
+.app-shell .delivery-grid.storyboard .storyboard-order button{width:40px;height:40px;min-height:40px;padding:0;border:0;border-radius:8px;background:transparent;font-size:18px;transition:background-color 160ms ease,transform 160ms ease}
+.app-shell .delivery-grid.storyboard .storyboard-order button:hover:not(:disabled){background:#cbb0f015}
+.app-shell .delivery-grid.storyboard .storyboard-order button:active:not(:disabled){transform:scale(.95)}
+.app-shell .delivery-grid.storyboard .storyboard-order button:disabled{opacity:.25}
+.app-shell .delivery-grid.storyboard .storyboard-order label{gap:10px;font-size:11px}
+.app-shell .delivery-grid.storyboard .storyboard-order select{height:40px;min-width:44px;padding:0 8px;border:0;border-radius:8px;background:transparent;font-variant-numeric:tabular-nums}
+.app-shell .delivery-grid.storyboard button:focus-visible,.app-shell .delivery-grid.storyboard select:focus-visible{outline:2px solid #cbb0f0;outline-offset:-3px}
+.app-shell .delivery-grid.storyboard.review li{flex-basis:180px}
+.app-shell .delivery-grid.storyboard.review .storyboard-preview{height:100px}
+.app-shell .delivery-grid.storyboard.review ol{max-height:280px}
+@media(max-width:600px){.app-shell .delivery-grid.storyboard.organize ol{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}.app-shell .delivery-grid.storyboard .storyboard-preview{height:170px}}
+@media(prefers-reduced-motion:reduce){.app-shell .delivery-grid.storyboard li,.app-shell .delivery-grid.storyboard .storyboard-order button{transition:none}.app-shell .delivery-grid.storyboard .storyboard-order button:active:not(:disabled){transform:none}}
+.app-shell .delivery-grid.storyboard{--delivery-gap:20px;--delivery-radius:14px;--delivery-control:44px;padding:20px;background:var(--surface-1);color:var(--text)}
+.app-shell .delivery-grid.storyboard>header{display:flex;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:20px}
+.app-shell .delivery-grid.storyboard>header>div:first-child{flex:1;min-width:200px}
+.app-shell .delivery-grid.storyboard>header strong{font-size:16px;font-weight:600;letter-spacing:-.02em}
+.app-shell .delivery-grid.storyboard>header small{display:block;margin-top:6px;font-size:12px;color:var(--muted)}
+.app-shell .delivery-grid.storyboard .storyboard-modes{padding:4px;border:0;border-radius:10px;background:var(--surface-2);gap:4px}
+.app-shell .delivery-grid.storyboard .storyboard-modes button{height:var(--delivery-control);min-height:var(--delivery-control);border:0;border-radius:7px;background:transparent;font-size:12px;padding:0 16px;color:var(--muted)}
+.app-shell .delivery-grid.storyboard .storyboard-modes button[aria-pressed=true]{background:var(--surface-3);color:var(--text);box-shadow:0 1px 3px #0002}
+.app-shell .delivery-grid.storyboard .upload-button{display:inline-flex;align-items:center;justify-content:center;min-height:var(--delivery-control);padding:0 16px;border:1px solid var(--line-strong);border-radius:10px;background:transparent;font-size:12px;color:var(--text)}
+.app-shell .delivery-grid.storyboard.organize ol{gap:var(--delivery-gap);max-height:none;overflow:visible;margin:0;padding:0}
+.app-shell .delivery-grid.storyboard li{border-radius:var(--delivery-radius);background:var(--surface-1)}
+.app-shell .delivery-grid.storyboard.organize .storyboard-preview{height:auto;aspect-ratio:16/10}
+.app-shell .delivery-grid.storyboard .storyboard-order button{height:var(--delivery-control);min-height:var(--delivery-control);width:var(--delivery-control);border:0!important;background:transparent!important}
+.app-shell .delivery-grid.storyboard .storyboard-order select{height:var(--delivery-control);border:0!important;background:transparent!important}
+.app-shell .delivery-grid.storyboard>small{display:block;margin-top:20px;color:var(--muted);font-size:12px;line-height:1.6}
+@media(max-width:600px){.app-shell .delivery-grid.storyboard{padding:12px;--delivery-gap:12px}.app-shell .delivery-grid.storyboard>header>div:first-child{flex-basis:100%}.app-shell .delivery-grid.storyboard .upload-button{width:auto}.app-shell .delivery-grid.storyboard.organize ol{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}}
+.app-shell .delivery-grid.storyboard li{overflow:visible}
+.app-shell .delivery-grid.storyboard .storyboard-preview{border-radius:13px 13px 0 0}
+.delivery-position-picker{position:relative;font-size:12px;color:var(--muted)}
+.delivery-position-picker summary{list-style:none;display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 8px;cursor:pointer;border-radius:8px;transition:background-color 160ms ease}
+.delivery-position-picker summary::-webkit-details-marker{display:none}
+.delivery-position-picker summary strong{color:var(--text);font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}
+.delivery-position-picker summary:hover,.delivery-position-picker[open] summary{background:var(--surface-3)}
+.delivery-position-picker summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.delivery-position-picker[open]{z-index:5}
+.delivery-position-panel{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:210px;max-width:calc(100vw - 48px);padding:12px;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:12px;box-shadow:0 8px 24px #0005}
+.delivery-position-heading{display:block;margin:0 0 10px;font-size:11px;color:var(--muted)}
+.delivery-position-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;max-height:188px;overflow:auto}
+.app-shell .delivery-grid.storyboard .storyboard-order .delivery-position-options button{width:100%;height:44px;min-height:44px;border-radius:7px;background:var(--surface-1)!important;font-size:12px;font-variant-numeric:tabular-nums}
+.app-shell .delivery-grid.storyboard .storyboard-order .delivery-position-options button[aria-pressed=true]{background:var(--accent)!important;color:var(--canvas);font-weight:600}
+.app-shell .delivery-grid.storyboard .storyboard-order .delivery-position-options button:hover:not([aria-pressed=true]){background:var(--surface-3)!important}
+@media(prefers-reduced-motion:reduce){.delivery-position-picker summary{transition:none}}
+.storyboard-disclosure .delivery-grid.storyboard{opacity:1;transform:translateY(0);transition:opacity 200ms ease,transform 200ms cubic-bezier(.2,.8,.2,1),display 200ms allow-discrete}
+.storyboard-disclosure .delivery-grid.storyboard[hidden]{display:none;opacity:0;transform:translateY(-6px);transition-duration:150ms}
+@starting-style{.storyboard-disclosure.expanded .delivery-grid.storyboard{opacity:0;transform:translateY(-6px)}}
+.storyboard-disclosure .parrilla-toggle-action svg{transition:transform 200ms cubic-bezier(.2,.8,.2,1)}
+@media(prefers-reduced-motion:reduce){.storyboard-disclosure .delivery-grid.storyboard,.storyboard-disclosure .parrilla-toggle-action svg{transition:none;transform:none}}

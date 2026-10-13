@@ -38,6 +38,19 @@ import './company-demo.css';
 import './typography.css';
 import './studio-art.css';
 import './review-header.css';
+import './components/delivery-grid-polish.css';
+import './editorial-workspace.css';
+import './color-accents.css';
+import './section-backdrops.css';
+import abstractSculpture from './abstract-ribbon-inflated-v3.png';
+import sculptureProjects from './abstract-sculpture-projects.png';
+import sculpturePauta from './abstract-sculpture-pauta.png';
+import sculpturePlanning from './abstract-sculpture-planning.png';
+import sculptureActivity from './abstract-sculpture-activity.png';
+import sculptureTeam from './abstract-sculpture-team.png';
+import sculptureBranding from './abstract-sculpture-branding.png';
+import sculptureSettings from './abstract-sculpture-settings.png';
+const sectionSculptures={home:abstractSculpture,projects:sculptureProjects,pauta:sculpturePauta,planning:sculpturePlanning,activity:sculptureActivity,team:sculptureTeam,branding:sculptureBranding,settings:sculptureSettings};
 import ShareReviewDialog from './components/ShareReviewDialog.jsx';
 
 const formatTime = value => {
@@ -358,7 +371,8 @@ function App({demo=false,onExitDemo}) {
   return <div className="app-shell">
     <DrawingTrail enabled={currentView==='review'&&!socialMode&&activeTool!=='type'&&Boolean(activeTool)} color={activeColor}/>
     <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} currentView={currentView} onNavigate={setCurrentView} onDemo={()=>{if(demo||!canLeaveSharedReview({dirty:sharedDirty,busy:false},()=>window.confirm('Hay cambios sin publicar en la revisión compartida. ¿Descartarlos para abrir el demo?')))return;const fixture=createCompanyDemo();beginDemoSession(fixture);setCompanyDemo(fixture)}}/>
-    <main className={`workspace ${currentView!=='review'?'dashboard-workspace':''}`}>
+    <main data-view={currentView} className={`workspace ${currentView!=='review'?'dashboard-workspace':''}`}>
+      {sectionSculptures[currentView]&&<img className="abstract-sculpture-background" src={sectionSculptures[currentView]} alt="" aria-hidden="true" draggable={false}/>}
       {demo&&<div className="demo-company-banner" role="status"><span>DEMO · Empresa activa · Datos ficticios. Los cambios se descartan al salir.</span><button onClick={onExitDemo}>Volver a mi cuenta</button></div>}
       {currentView!=='review' && <header className="studio-topbar"><span>{state.workspace.name} <span aria-hidden="true">/</span> <strong>{{home:'Inicio',projects:'Proyectos',pauta:'Pauta',activity:'Actividad',planning:'Planificación',team:'Equipo',settings:'Configuración',branding:'Personalización'}[currentView]}</strong></span><div><NotificationCenter onNavigate={setCurrentView}/><span className="avatar small">{state.members[state.currentUserId]?.initials}</span><span className="studio-greeting">Hola, {state.members[state.currentUserId]?.name?.split(' ')[0]}</span></div></header>}
       {currentView==='home' && <StudioHome onNavigate={setCurrentView} onOpen={openProject}/>}

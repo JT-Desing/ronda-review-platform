@@ -1,5 +1,11 @@
 # Ronda — dirección de producto y sistema visual
 
+## Parrilla de entrega — 12 octubre 2026
+
+Refinamiento acotado a DeliveryGrid, no rediseño ni certificación de toda la aplicación. Reutiliza superficies, texto, líneas y lavanda del sistema Studio 0.2. Cabecera con selector segmentado, tarjetas de radio 14px, ritmo 12/16/20px y controles de 44px. Miniaturas cover 16:10 para eliminar bandas: recortan únicamente la representación de biblioteca, nunca el archivo o el visor. Organización mantiene arrastre, flechas y selector accesibles. La parrilla deja de tener scroll vertical propio; usa el del panel. Movimiento reducido conserva estados sin transiciones.
+
+Auditoría subjetiva previa, basada en captura y código: color 7/10; jerarquía 6/10; espaciado 6/10; consistencia 5/10; responsive 6/10; oscuro 8/10; movimiento 6/10; accesibilidad 6/10; densidad 5/10; acabado 6/10. Correcciones en `src/components/delivery-grid-polish.css`: tokens existentes, segmentación sin bordes repetidos, superficies neutrales sin gradientes decorativos, foco y objetivos de 44px, thumbnails de proporción estable y scroll único. No puntuar mejora como verificada hasta nueva captura e interacción en escritorio/móvil. Compilación y pruebas no sustituyen esa comprobación.
+
 ## Personalización limpia — 9 octubre 2026
 
 Se sustituyeron tarjetas numeradas por secciones separadas con líneas y un panel lateral de preview en vivo. Campos compactos, control de archivo accesible con botón propio y acciones Guardar/Descartar conservan la lógica de validación y persistencia. Tokens, Geist e Iconoir del sistema existente; sin animación decorativa. Dominio explícitamente sin conectar: no cambia DNS ni túnel.
