@@ -43,6 +43,7 @@ import './editorial-workspace.css';
 import './color-accents.css';
 import './section-backdrops.css';
 import abstractSculpture from './abstract-ribbon-inflated-v3.png';
+import rondaLogo from './ronda-logo-v2.png';
 import sculptureProjects from './abstract-sculpture-projects.png';
 import sculpturePauta from './abstract-sculpture-pauta.png';
 import sculpturePlanning from './abstract-sculpture-planning.png';
@@ -73,7 +74,7 @@ function Sidebar({ collapsed, setCollapsed, currentView, onNavigate, onDemo }) {
   const [accountMenu,setAccountMenu]=useState(false);
   return <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
     <button className="brand" onClick={() => setCollapsed(!collapsed)} aria-label={collapsed?'Expandir navegación':'Contraer navegación'}>
-      <span className="brand-mark" aria-hidden="true">{state.workspace.branding?.logo?<img src={state.workspace.branding.logo} alt=""/>:<svg viewBox="0 0 32 32"><path d="M18 3a13 13 0 0 1 11 12h-9a4 4 0 0 0-3-3Z" fill="#d4b9fa"/><path d="M28 20A13 13 0 0 1 5 23l7-5a5 5 0 0 0 9-1Z" fill="#efb9d9"/></svg>}</span><span className="brand-name">{state.workspace.branding?.name||'Ronda'}</span>
+      <span className="brand-mark" aria-hidden="true">{state.workspace.branding?.logo?<img src={state.workspace.branding.logo} alt=""/>:<img src={rondaLogo} alt=""/>}</span><span className="brand-name">{state.workspace.branding?.name||'Ronda'}</span>
     </button>
     <LensNavigation className="side-nav" label="Principal" currentView={currentView} collapsed={collapsed}>
       <button className={currentView==='home'?'active':''} onClick={()=>onNavigate('home')}><Icon name="home"/><span>Inicio</span></button>

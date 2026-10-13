@@ -17,6 +17,7 @@ body{background:var(--canvas)}
 .app-shell .brand{gap:9px;padding:0 9px;flex-shrink:0}
 .app-shell .brand-mark{border:0;width:28px;height:28px;background:none}
 .brand-mark svg{width:28px;height:28px}
+.app-shell .brand-mark img{width:100%;height:100%;object-fit:contain;display:block}
 .app-shell .brand-name{letter-spacing:-.02em;text-transform:none;font-size:20px;font-weight:650}
 .app-shell .side-nav{gap:5px;margin-top:28px}
 .app-shell .side-nav button{min-height:44px;height:auto;padding:12px;color:var(--muted);font-size:13px;white-space:normal}
