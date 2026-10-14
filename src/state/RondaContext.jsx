@@ -2,6 +2,8 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { COMMENT_STATUS, getPlanUsage, getVersionStatus, validateReviewDecision } from '../domain/review.js';
 import { normalizeSocialPreview } from '../domain/social-preview.js';
 import { appendAssetVersion } from '../domain/asset-versions.js';
+import { renameProject } from '../domain/project-name.js';
+import {trashAsset,restoreAsset} from '../domain/asset-trash.js';
 import {canCreateComment,safeCommentChanges} from '../domain/comments.js';
 import { createSeedState, STATE_VERSION, STORAGE_KEY } from '../data/seed.js';
 import { migrateLegacyComments, normalizeRondaState, persistRondaState } from './migration.js';
@@ -29,9 +31,12 @@ const addEvent = (state, action, kind, detail, recipients = []) => {
 export function rondaReducer(state, action) {
   const { payload } = action;
   switch (action.type) {
+    case 'asset/trash': return trashAsset(state,payload,action.meta.occurredAt);
+    case 'asset/restore': return restoreAsset(state,payload);
+    case 'project/rename': return renameProject(state, payload);
     case 'asset/versionAdd': return appendAssetVersion(state,payload,action.meta.occurredAt);
     case 'social/save': { const project = state.projects[payload.projectId]; if (!project) return state; return {...state, projects:{...state.projects,[project.id]:{...project,socialPreview:normalizeSocialPreview(payload.config,state.assets||[],project.id)}}}; }
-    case 'asset/add': {const id=`asset-${payload.id}-v1`;return {...state,assets:[...(state.assets||[]),payload],versions:{...state.versions,[id]:{id,projectId:payload.projectId,number:1,name:payload.name,reviewerIds:Object.keys(state.members),decisions:{}}}};}
+    case 'asset/add': {const id=`asset-${payload.id}-v1`;return {...state,assets:[...(state.assets||[]),payload],projects:{...state.projects,[payload.projectId]:{...state.projects[payload.projectId],activeVersionId:state.projects[payload.projectId]?.activeVersionId||id}},versions:{...state.versions,[id]:{id,projectId:payload.projectId,number:1,name:payload.name,reviewerIds:Object.keys(state.members),decisions:{}}}};}
     case 'asset/order': {const assets=state.assets||[];if(payload.order.length!==assets.length||new Set(payload.order).size!==assets.length||payload.order.some(id=>!assets.some(a=>a.id===id)))return state;return {...state,assets:payload.order.map(id=>assets.find(a=>a.id===id))};}
     case 'annotations/save': return { ...state, annotations: { ...state.annotations, [payload.context]: payload.marks } };
     case 'project/add': {

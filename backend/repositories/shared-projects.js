@@ -15,7 +15,7 @@ export function sharedProjectRepository(pool) {
       finally { client.release(); }
     },
     async project(client, workspaceId, id) {
-      const result = (await client.query('SELECT id,workspace_id,name,client,revision,created_at,updated_at FROM shared_projects WHERE workspace_id=$1 AND id=$2', [workspaceId, id])).rows[0];
+      const result = (await client.query('SELECT id,workspace_id,name,client,revision,created_at,updated_at FROM shared_projects WHERE workspace_id=$1 AND id=$2 AND deleted_at IS NULL', [workspaceId, id])).rows[0];
       if (!result) throw workspaceError(404, 'Proyecto no disponible.');
       return result;
     },

@@ -23,7 +23,7 @@ export function validateAnnotation(input){
   return result;
 }
 export function validateAnchor(input,kind){
-  if(!['image','video'].includes(kind))throw workspaceError(400,'Tipo de medio inválido.');
+  if(!['image','video','web'].includes(kind))throw workspaceError(400,'Tipo de medio inválido.');
   const timeSeconds=input?.timeSeconds??null;
   if(timeSeconds!==null&&(!Number.isFinite(timeSeconds)||timeSeconds<0||kind!=='video'))throw workspaceError(400,'Tiempo del comentario inválido.');
   return {timeSeconds};

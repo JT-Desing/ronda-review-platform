@@ -6,6 +6,7 @@ COPY *.js ./
 COPY modules ./modules
 COPY repositories ./repositories
 COPY migrations ./migrations
+COPY storage ./storage
 RUN mkdir -p /data/files && chown node:node /data/files
 USER node
 EXPOSE 3000

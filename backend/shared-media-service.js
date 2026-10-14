@@ -4,6 +4,7 @@ import {requestId,UUID_PATTERN} from './project-policy.js';
 import {requireReviewAction} from './shared-review-policy.js';
 import {parseRange} from './shared-range.js';
 import {assetDto,versionDto,recordEvent} from './shared-review-dto.js';
+import {inspectLink} from './external-link.js';
 const types={'image/png':'image','image/jpeg':'image','image/webp':'image','video/mp4':'video'};
 const quota=2147483648;
 function uploadInput(input){
@@ -17,15 +18,53 @@ function signature(bytes,mime){
   if(mime==='image/webp')return bytes.subarray(0,4).toString()==='RIFF'&&bytes.subarray(8,12).toString()==='WEBP';
   return bytes.length>=12&&bytes.subarray(4,8).toString()==='ftyp';
 }
-export function sharedMediaService(repository,storage){
+export function sharedMediaService(repository,storage,inspect=inspectLink){
   const file=async(db,space,id)=>{
     const row=(await db.query('SELECT * FROM shared_media_files WHERE workspace_id=$1 AND id=$2 FOR UPDATE',[space,id])).rows[0];
-    if(!row)throw workspaceError(404,'Archivo no disponible.');return row;
+    if(!row)throw workspaceError(404,'Archivo no disponible.');await repository.project(db,space,row.project_id);return row;
   };
   return {
+    async addLink(space,actor,input){
+      if(typeof input.name!=='string'||!input.name.trim()||input.name.length>255)throw workspaceError(400,'Indica un nombre de hasta 255 caracteres.');
+      const key=requestId(input.requestId);
+      return repository.access(space,actor,async(db,role)=>{
+        requireReviewAction(role,'upload');await repository.project(db,space,input.projectId);
+        const existing=(await db.query('SELECT * FROM shared_assets WHERE workspace_id=$1 AND created_by=$2 AND request_id=$3',[space,actor,key])).rows[0];
+        if(existing){if(existing.project_id!==input.projectId)throw workspaceError(409,'Solicitud ya usada en otro proyecto.');return {asset:assetDto(existing)};}
+        const link=await inspect(input.url);
+        const asset=(await db.query('INSERT INTO shared_assets(workspace_id,project_id,name,kind,created_by,request_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING *',[space,input.projectId,input.name.trim(),link.type,actor,key])).rows[0];
+        const version=(await db.query('INSERT INTO shared_versions(workspace_id,project_id,asset_id,number,external_url,external_mime) VALUES($1,$2,$3,1,$4,$5) RETURNING id',[space,input.projectId,asset.id,link.url,link.mime])).rows[0];
+        await db.query('UPDATE shared_assets SET active_version_id=$1 WHERE id=$2',[version.id,asset.id]);
+        await recordEvent(db,space,actor,'review.link_created',{projectId:input.projectId,assetId:asset.id,versionId:version.id});
+        return {asset:assetDto({...asset,active_version_id:version.id})};
+      },true);
+    },
     async readVersion(space,actor,c){return repository.access(space,actor,async(db,role)=>({role,asset:assetDto(await repository.asset(db,space,c.projectId,c.assetId)),version:await versionDto(db,await repository.version(db,space,c.projectId,c.assetId,c.versionId)),members:(await db.query('SELECT u.id,u.name,m.role FROM workspace_members m JOIN users u ON u.id=m.user_id WHERE m.workspace_id=$1 ORDER BY u.name,u.id',[space])).rows}));},
-    async listAssets(space,actor,projectId){
-      return repository.access(space,actor,async db=>{await repository.project(db,space,projectId);const rows=(await db.query('SELECT * FROM shared_assets WHERE workspace_id=$1 AND project_id=$2 ORDER BY created_at,id',[space,projectId])).rows;return {assets:rows.map(assetDto)};});
+    async listAssets(space,actor,projectId,trashed=false){
+      return repository.access(space,actor,async(db,role)=>{await repository.project(db,space,projectId);if(trashed)requireReviewAction(role,'upload');const rows=(await db.query(`SELECT a.*,v.file_id AS preview_file_id,f.size AS preview_size,v.number AS version_number,(SELECT count(*)::integer FROM shared_version_comments c WHERE c.version_id=a.active_version_id AND c.status='open') AS open_comments,(SELECT count(*)::integer FROM shared_review_decisions d WHERE d.version_id=a.active_version_id AND d.active=true) AS reviewer_count,(SELECT count(*)::integer FROM shared_review_decisions d WHERE d.version_id=a.active_version_id AND d.active=true AND d.decision='approved') AS approved_count FROM shared_assets a LEFT JOIN shared_versions v ON v.id=a.active_version_id LEFT JOIN shared_media_files f ON f.id=v.file_id WHERE a.workspace_id=$1 AND a.project_id=$2 AND a.deleted_at IS ${trashed?'NOT NULL':'NULL'} ORDER BY a.sort_order,a.created_at,a.id`,[space,projectId])).rows;return {assets:rows.map(assetDto)};});
+    },
+    async orderAssets(space,actor,projectId,{order,previousOrder}){
+      if(!Array.isArray(order)||!Array.isArray(previousOrder)||order.length>10000||order.some(id=>!UUID_PATTERN.test(id))||new Set(order).size!==order.length)throw workspaceError(400,'Orden inválido.');
+      return repository.access(space,actor,async(db,role)=>{
+        requireReviewAction(role,'upload');await repository.project(db,space,projectId);
+        const rows=(await db.query('SELECT id FROM shared_assets WHERE workspace_id=$1 AND project_id=$2 AND deleted_at IS NULL ORDER BY sort_order,created_at,id FOR UPDATE',[space,projectId])).rows;
+        const ids=rows.map(r=>r.id);
+        if(JSON.stringify(ids)!==JSON.stringify(previousOrder)||order.length!==ids.length||order.some(id=>!ids.includes(id)))throw workspaceError(409,'La entrega cambió. Actualiza antes de organizar.');
+        await db.query('UPDATE shared_assets SET sort_order=-1 WHERE workspace_id=$1 AND project_id=$2 AND deleted_at IS NOT NULL',[space,projectId]);
+        for(let index=0;index<order.length;index++)await db.query('UPDATE shared_assets SET sort_order=$1 WHERE workspace_id=$2 AND project_id=$3 AND id=$4',[index,space,projectId,order[index]]);
+        await recordEvent(db,space,actor,'review.assets_ordered',{projectId,order});return {ok:true};
+      },true);
+    },
+    async setAssetDeleted(space,actor,projectId,assetId,deleted,{revision}){
+      if(!Number.isInteger(revision))throw workspaceError(400,'Revisión inválida.');
+      return repository.access(space,actor,async(db,role)=>{
+        requireReviewAction(role,'upload');await repository.project(db,space,projectId);
+        const row=(await db.query('SELECT * FROM shared_assets WHERE workspace_id=$1 AND project_id=$2 AND id=$3 FOR UPDATE',[space,projectId,assetId])).rows[0];
+        if(!row)throw workspaceError(404,'Pieza no disponible.');
+        if(row.revision!==revision)throw workspaceError(409,'La pieza cambió. Actualiza antes de continuar.');
+        await db.query('UPDATE shared_assets SET deleted_at=CASE WHEN $1 THEN now() ELSE NULL END,revision=revision+1 WHERE id=$2',[deleted,assetId]);
+        await recordEvent(db,space,actor,deleted?'review.asset_trashed':'review.asset_restored',{projectId,assetId});return {ok:true};
+      },true);
     },
     async listVersions(space,actor,projectId,assetId){
       return repository.access(space,actor,async db=>{

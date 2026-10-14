@@ -1,3 +1,4 @@
+import {BrandLoader} from './BrandLoader.jsx';
 import React,{useState,useRef,useEffect} from 'react';
 import {useRonda} from '../state/RondaContext.jsx';
 import {versionsForAsset} from '../domain/asset-versions.js';
@@ -9,6 +10,7 @@ export default function AssetVersionControl({media,onSelect,onNotify}){
   useEffect(()=>{live.current=true;return()=>{live.current=false;request.current++}},[]);
   useEffect(()=>{request.current++;setBusy(false)},[media?.id]);
   const asset=state.assets?.find(item=>item.id===media?.id);
+  if(asset?.externalUrl)return <span className="version-select">V1 · Enlace externo en vivo</span>;
   if(!asset)return <span className="version-select">V3 · Referencia</span>;
   const versions=versionsForAsset(state,asset.id);
   const selected=media.versionId||`asset-${asset.id}-v1`;
@@ -32,5 +34,5 @@ export default function AssetVersionControl({media,onSelect,onNotify}){
       onNotify(`V${number} creada; consulta el estado de guardado de tu cuenta.`);
     }catch(error){onNotify(error.message||'No se pudo guardar la nueva versión. El historial se conserva.');}finally{setBusy(false);}
   };
-  return <div className="version-select"><label>Versión <select aria-label="Versión de la pieza" disabled={busy} value={selected} onChange={e=>open(versions.find(v=>v.id===e.target.value))}>{versions.map(v=><option key={v.id} value={v.id}>V{v.number}{v.id===(asset.activeVersionId||`asset-${asset.id}-v1`)?' · Actual':''}</option>)}</select></label><label className="upload-button">{busy?'Procesando…':'Nueva versión'}<input className="visually-hidden" aria-label="Subir nueva versión de esta pieza" type="file" disabled={busy} onChange={upload}/></label></div>;
+  return <div className="version-select"><label>Versión <select aria-label="Versión de la pieza" disabled={busy} value={selected} onChange={e=>open(versions.find(v=>v.id===e.target.value))}>{versions.map(v=><option key={v.id} value={v.id}>V{v.number}{v.id===(asset.activeVersionId||`asset-${asset.id}-v1`)?' · Actual':''}</option>)}</select></label><label className="upload-button">{busy?<BrandLoader size="inline" label="Procesando…"/>:'Nueva versión'}<input className="visually-hidden" aria-label="Subir nueva versión de esta pieza" type="file" disabled={busy} onChange={upload}/></label></div>;
 }

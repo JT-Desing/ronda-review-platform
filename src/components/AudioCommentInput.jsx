@@ -1,8 +1,10 @@
+import {BrandLoader} from './BrandLoader.jsx';
 import React, { useEffect, useRef, useState } from 'react';
 
-export function AudioCommentInput({ onAttach, onError }) {
+export function AudioCommentInput({ onAttach, onError, onRecordingChange, disabled=false }) {
   const recorder=useRef(null);const stream=useRef(null);const timer=useRef(null);const mounted=useRef(true);
   const [recording,setRecording]=useState(false);const [pending,setPending]=useState(false);
+  useEffect(()=>{onRecordingChange?.(recording||pending);},[recording,pending,onRecordingChange]);
   useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;clearTimeout(timer.current);if(recorder.current?.state==='recording')recorder.current.stop();stream.current?.getTracks().forEach(track=>track.stop())}},[]);
   const start=async()=>{
     if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)return onError('Este navegador no permite grabar. Puedes adjuntar un MP3.');
@@ -17,5 +19,5 @@ export function AudioCommentInput({ onAttach, onError }) {
       instance.start();setRecording(true);timer.current=setTimeout(()=>{if(instance.state==='recording')instance.stop()},60000);
     } catch {onError('No se pudo acceder al micrófono. Revisa el permiso o adjunta un MP3.')} finally {if(mounted.current)setPending(false)}
   };
-  return <div className="audio-comment-input"><label>Adjuntar audio<input aria-label="Adjuntar MP3 u otro audio" type="file" accept="audio/*,.mp3" onChange={e=>{onAttach(e.target.files);e.target.value=''}}/></label><button type="button" disabled={pending} onClick={()=>recording?recorder.current?.stop():start()}>{recording?'Detener y adjuntar':pending?'Solicitando micrófono…':'Grabar voz'}</button>{recording&&<small role="status">Grabando · máximo 60 segundos. Detén para revisar antes de enviar.</small>}</div>;
+  return <div className="audio-comment-input"><label>Adjuntar audio<input disabled={disabled||pending||recording} aria-label="Adjuntar MP3 u otro audio" type="file" accept="audio/*,.mp3" onChange={e=>{onAttach(e.target.files);e.target.value=''}}/></label><button type="button" disabled={pending||disabled} aria-pressed={recording} onClick={()=>recording?recorder.current?.stop():start()}>{recording?'Detener y adjuntar':pending?<BrandLoader size="inline" label="Solicitando micrófono…"/>:'Grabar voz'}</button>{recording&&<small role="status">Grabando · máximo 60 segundos. Detén para revisar antes de enviar.</small>}</div>;
 }

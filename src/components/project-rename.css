@@ -1,0 +1,16 @@
+.studio-project .project-open-hitarea{position:absolute;inset:0;z-index:1;border:0;border-radius:inherit;background:transparent;cursor:pointer;padding:0}
+.studio-project .studio-project-copy,.studio-project .studio-tile-arrow,.studio-project .folder-project-tab{pointer-events:none}
+.studio-project .project-open-hitarea:focus-visible{outline:3px solid var(--folder-accent,#dac7ff);outline-offset:4px}
+.studio-project .project-title-row{position:relative;z-index:4;display:flex;align-items:center;gap:8px;pointer-events:none;min-width:0}
+.studio-project .project-title-row>strong{font-size:21px;line-height:1.25;overflow-wrap:anywhere;color:var(--folder-text,#faf9fc);min-width:0}
+.studio-project .project-rename-trigger{pointer-events:auto;display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;padding:0;border:1px solid transparent;border-radius:50%;background:transparent;color:var(--folder-accent,#dac7ff);cursor:pointer}
+.studio-project .project-rename-trigger:hover{background:#ffffff12;border-color:var(--folder-line,#505360)}
+.studio-project .project-rename-trigger:focus-visible,.project-rename-form button:focus-visible{outline:2px solid var(--folder-accent,#dac7ff);outline-offset:2px}
+.studio-project .project-rename-form{pointer-events:auto;display:grid;gap:10px;width:100%;text-align:left}
+.project-rename-form label{display:grid;gap:6px;font-size:12px}
+.project-rename-form input{box-sizing:border-box;width:100%;min-width:0;padding:9px 10px;border:1px solid var(--folder-accent,#dac7ff);border-radius:8px;background:#101115;color:#fff;font:inherit;font-size:16px}
+.project-rename-form>div{display:flex;gap:8px;flex-wrap:wrap}
+.project-rename-form button{padding:7px 12px;border:1px solid var(--folder-line,#505360);border-radius:8px;background:var(--folder-back,#292b32);color:#fff;cursor:pointer}
+.project-rename-form button:disabled{opacity:.5;cursor:not-allowed}
+.project-rename-form small{font-size:11px;color:var(--folder-muted,#cbc8d2)}
+.studio-next>.studio-review-cover{display:block;width:64px;height:64px;flex-shrink:0;border-radius:12px;box-shadow:0 4px 12px #00000018;outline:1px solid #ffffff12;outline-offset:-1px;object-fit:cover}

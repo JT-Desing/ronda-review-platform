@@ -1,5 +1,8 @@
+import {BrandLoader} from './components/BrandLoader.jsx';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from './components/Icon.jsx';
+import {ShortcutHelp} from './components/ShortcutHelp.jsx';
+import {OriginalMediaStage} from './components/OriginalMediaStage.jsx';
 import {AnnotationLayer} from './components/AnnotationLayer.jsx';
 import {canLeaveSharedReview} from './state/sharedReviewState.js';
 import { createRoot } from 'react-dom/client';
@@ -15,13 +18,15 @@ import { ProjectActions, TeamActions, SettingsActions, ReviewSummary } from './c
 import Pauta from './components/Pauta.jsx';
 import { TimelineMarkers } from './components/TimelineMarkers.jsx';
 import { DeliveryGrid, fileStore, fileKind } from './components/DeliveryGrid.jsx';
+import {assetReviewUrl} from './components/DeliveryGrid.jsx';
+import {ExternalWeb} from './components/ExternalWeb.jsx';
 import AssetVersionControl from './components/AssetVersionControl.jsx';
 import {resolveAssetVersion} from './domain/asset-versions.js';
 import { AudioCommentInput } from './components/AudioCommentInput.jsx';
 import { DocumentReview } from './components/DocumentReview.jsx';
 import { resolveFigureAnchor } from './domain/document-anchor.js';
 import { fileLabel } from './domain/file-label.js';
-import { StudioHome } from './components/StudioWorkspace.jsx';
+import { StudioHome, ProjectLibrary } from './components/StudioWorkspace.jsx';
 import './studio-theme.css';
 import './folder-cards.css';
 import SocialPreview from './components/SocialPreview.jsx';
@@ -37,13 +42,15 @@ import {beginDemoSession,endDemoSession} from './state/demoSession.js';
 import './company-demo.css';
 import './typography.css';
 import './studio-art.css';
+import './dropdowns.css';
 import './review-header.css';
 import './components/delivery-grid-polish.css';
 import './editorial-workspace.css';
 import './color-accents.css';
 import './section-backdrops.css';
+import './components/liquid-button.css';
 import abstractSculpture from './abstract-ribbon-inflated-v3.png';
-import rondaLogo from './ronda-logo-v2.png';
+import rondaLogo from './ronda-logo-white-silver.svg';
 import sculptureProjects from './abstract-sculpture-projects.png';
 import sculpturePauta from './abstract-sculpture-pauta.png';
 import sculpturePlanning from './abstract-sculpture-planning.png';
@@ -79,87 +86,32 @@ function Sidebar({ collapsed, setCollapsed, currentView, onNavigate, onDemo }) {
     <LensNavigation className="side-nav" label="Principal" currentView={currentView} collapsed={collapsed}>
       <button className={currentView==='home'?'active':''} onClick={()=>onNavigate('home')}><Icon name="home"/><span>Inicio</span></button>
       <button className={currentView==='pauta'?'active':''} onClick={()=>onNavigate('pauta')}><Icon name="folder"/><span>Pauta</span></button>
-      <button className={currentView==='projects'||currentView==='review'?'active':''} onClick={()=>onNavigate('projects')}><Icon name="grid"/><span>Proyectos</span></button>
+      <button className={currentView==='projects'?'active':''} onClick={()=>onNavigate('projects')}><Icon name="grid"/><span>Proyectos</span></button>
       <button className={currentView==='activity'?'active':''} onClick={()=>onNavigate('activity')}><Icon name="clock"/><span>Actividad</span></button>
       <button className={currentView==='planning'?'active':''} onClick={()=>onNavigate('planning')}><Icon name="calendar"/><span>Planificación</span></button>
       <button className={currentView==='team'?'active':''} onClick={()=>onNavigate('team')}><Icon name="users"/><span>Equipo</span></button>
     </LensNavigation>
     <div className="side-label">ESPACIO</div>
     <LensNavigation className="side-nav lower" label="Espacio" currentView={currentView} collapsed={collapsed}>
-      <button onClick={()=>onNavigate('projects')}><Icon name="folder"/><span>{state.workspace.name}</span></button>
+      <button className={currentView==='personal'||currentView==='review'?'active':''} onClick={()=>onNavigate('personal')}><Icon name="folder"/><span>{state.workspace.name}</span></button>
       <button className={currentView==='settings'?'active':''} onClick={()=>onNavigate('settings')}><Icon name="settings"/><span>Configuración</span></button>
       <button className={currentView==='branding'?'active':''} onClick={()=>onNavigate('branding')}><Icon name="image"/><span>Personalización</span></button>
     </LensNavigation>
     <div className="account">
       <span className="avatar small">{state.members[state.currentUserId]?.initials}</span>
       <span className="account-copy"><strong>{state.members[state.currentUserId]?.name}</strong><small>Mi cuenta</small></span>
-      <div className="account-menu-wrap" onKeyDown={e=>{if(e.key==='Escape')setAccountMenu(false)}}><button className="account-menu-trigger" aria-label="Opciones de mi cuenta" aria-expanded={accountMenu} onClick={()=>setAccountMenu(!accountMenu)}><Icon name="more"/></button>{accountMenu&&<div className="account-popover" aria-label="Opciones de cuenta"><strong>Mi espacio de trabajo</strong><button onClick={()=>{setAccountMenu(false);onNavigate('projects')}}>Mis proyectos</button><button onClick={()=>{setAccountMenu(false);onNavigate('branding')}}>Personalización</button><button onClick={()=>{setAccountMenu(false);onNavigate('settings')}}>Configuración</button><button onClick={()=>{setAccountMenu(false);onDemo()}}>Empresa activa · Modo demo</button><small>Datos ficticios, separados de tu cuenta.</small></div>}</div>
+      <div className="account-menu-wrap" onKeyDown={e=>{if(e.key==='Escape')setAccountMenu(false)}}><button className="account-menu-trigger" aria-label="Opciones de mi cuenta" aria-expanded={accountMenu} onClick={()=>setAccountMenu(!accountMenu)}><Icon name="more"/></button>{accountMenu&&<div className="account-popover" aria-label="Opciones de cuenta"><strong>Mi espacio de trabajo</strong><button onClick={()=>{setAccountMenu(false);onNavigate('personal')}}>Mis proyectos</button><button onClick={()=>{setAccountMenu(false);onNavigate('branding')}}>Personalización</button><button onClick={()=>{setAccountMenu(false);onNavigate('settings')}}>Configuración</button><button onClick={()=>{setAccountMenu(false);onDemo()}}>Empresa activa · Modo demo</button><small>Datos ficticios, separados de tu cuenta.</small></div>}</div>
     </div>
   </aside>;
 }
 
 function MobileNav({ currentView, onNavigate }) {
-  const items=[['home','grid','Inicio'],['projects','folder','Proyectos'],['pauta','arrow','Pauta'],['planning','calendar','Planner'],['activity','clock','Actividad'],['team','users','Equipo'],['settings','settings','Ajustes']];
-  return <nav className="mobile-nav" aria-label="Navegación móvil">{items.map(([view,icon,label])=><button key={view} className={currentView===view||(currentView==='review'&&view==='projects')?'active':''} onClick={()=>onNavigate(view)}><Icon name={icon}/><span>{label}</span></button>)}</nav>;
+  const items=[['home','grid','Inicio'],['projects','folder','Proyectos'],['personal','users','Personal'],['pauta','arrow','Pauta'],['planning','calendar','Planner'],['activity','clock','Actividad'],['team','users','Equipo'],['settings','settings','Ajustes']];
+  return <nav className="mobile-nav" aria-label="Navegación móvil">{items.map(([view,icon,label])=><button key={view} className={currentView===view||(currentView==='review'&&view==='personal')?'active':''} onClick={()=>onNavigate(view)}><Icon name={icon}/><span>{label}</span></button>)}</nav>;
 }
 
 
-function MediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, media, currentTime, setCurrentTime, remoteCursor, marks, setMarks, selectedFigure, onFigure, figureComments, onTimelineComment, reviewVersionId }) {
-  const {state}=useRonda();
-  const [playing, setPlaying] = useState(false);
-  const [muted,setMuted]=useState(false);
-  const [redoMarks,setRedoMarks]=useState([]);
-  const videoRef = useRef(null);
-  const stageRef = useRef(null);
-  const colors = ['#ff725e','#f2bd5c','#8ebd72','#67a9d4','#b89be8','#f1eee7'];
-  const stamp = formatTime(currentTime);
-  const visibleMarks=marks.filter(mark=>annotationVisibleAt(mark,currentTime,media?.type==='image'));
-  const duration = media?.duration || 36.42;
-  const togglePlayback = () => {
-    if (!videoRef.current) { setPlaying(!playing); return; }
-    if (videoRef.current.paused) videoRef.current.play(); else videoRef.current.pause();
-  };
-  const seek=value=>{const next=Math.max(0,Math.min(duration,currentTime+value));setCurrentTime(next);if(videoRef.current)videoRef.current.currentTime=next;};
-  const toggleFullscreen=()=>{if(!document.fullscreenElement)stageRef.current?.requestFullscreen?.();else document.exitFullscreen?.();};
-  useEffect(()=>{if(videoRef.current&&Math.abs(videoRef.current.currentTime-currentTime)>.2)videoRef.current.currentTime=currentTime},[currentTime]);
-  const updateMarks=next=>{setMarks(next);setRedoMarks([]);};
-  const undoMark=()=>setMarks(current=>{if(!current.length)return current;setRedoMarks(redo=>[current.at(-1),...redo]);return current.slice(0,-1)});
-  const redoMark=()=>setRedoMarks(current=>{if(!current.length)return current;setMarks(marksNow=>[...marksNow,current[0]]);return current.slice(1)});
-  useEffect(()=>{const handler=e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;const key=e.key.toLowerCase();if((e.ctrlKey||e.metaKey)&&key==='z'){e.preventDefault();e.shiftKey?redoMark():undoMark();return;}if((e.ctrlKey||e.metaKey)&&key==='y'){e.preventDefault();redoMark();return;}if(key===' '){e.preventDefault();togglePlayback();}if(key==='j')seek(-5);if(key==='l')seek(5);if(key==='arrowleft')seek(-1/24);if(key==='arrowright')seek(1/24);if(key==='m'){setMuted(value=>!value);}if(key==='f')toggleFullscreen();if(key==='d')setActiveTool(tool=>tool?'': 'pen');if(['1','2','3','4'].includes(key))setActiveTool(['pen','arrow','square','type'][Number(key)-1]);};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);});
-  return <section className="media-section">
-    <div className="media-stage" ref={stageRef}>
-      <div className="film-frame">
-        {media?.type === 'video' && <video ref={videoRef} className="uploaded-media" src={media.url} muted={muted} onTimeUpdate={e=>setCurrentTime(e.currentTarget.currentTime)} onLoadedMetadata={e=>media.setDuration(e.currentTarget.duration)} onPlay={()=>setPlaying(true)} onPause={()=>setPlaying(false)}/>} 
-        {media?.type === 'image' && <img className="uploaded-media" src={media.url} alt={media.name}/>} 
-        {!media && <div className="scene-art" role="img" aria-label="Fotograma de una campaña de producto cosmético">
-          <div className="scene-grain"/><div className="sun-disc"/><div className="product-shadow"/>
-          <div className="product"><div className="cap"/><div className="bottle"><span>AMARA</span><small>BOTANICAL SERUM</small></div></div>
-          <div className="scene-copy"><span>02 / RITUAL</span><strong>La calma<br/>también se cultiva.</strong></div>
-        </div>}
-        {media?.type==='audio'&&<audio ref={videoRef} src={media.url} controls onTimeUpdate={e=>setCurrentTime(e.currentTarget.currentTime)} onLoadedMetadata={e=>media.setDuration(e.currentTarget.duration)}/>}
-        {media?.type==='pdf'&&<iframe title={media.name} src={media.url} style={{width:'100%',height:'100%',position:'absolute',zIndex:2}}/>}
-        {media?.type==='file'&&<div style={{position:'absolute',zIndex:3,padding:24,background:'#181a16'}}><strong>{media.name}</strong><p>Sin vista previa. Comentarios generales disponibles.</p><a href={media.url} download={media.name}>Descargar archivo local</a></div>}
-        <AnnotationLayer activeTool={activeTool} activeColor={activeColor} marks={visibleMarks} setMarks={next=>updateMarks(current=>[...current.filter(mark=>!annotationVisibleAt(mark,currentTime,media?.type==='image')),...(typeof next==='function'?next(visibleMarks):next)])} selectedFigure={selectedFigure}/>
-        {visibleMarks.map(mark=>{const index=marks.findIndex(item=>item.id===mark.id);return <button key={mark.id} className={`figure-pin ${selectedFigure===mark.id?'selected':''}`} style={{left:`${mark.points[0].x*100}%`,top:`${mark.points[0].y*100}%`}} aria-label={`Figura ${index+1}, ${figureComments.filter(c=>c.annotationId===mark.id).length} comentarios`} onClick={()=>onFigure(mark)}>{index+1}</button>})}
-        {remoteCursor&&<div className="remote-cursor" style={{left:`${remoteCursor.x}%`,top:`${remoteCursor.y}%`,'--presence-color':remoteCursor.color}}><i/><span>{remoteCursor.name}</span></div>}
-        <div className="frame-badge">{stamp.time} · F{stamp.frame}</div>
-      </div>
-      <div className="annotation-tools" aria-label="Herramientas de anotación">
-        {['pen','arrow','square','type'].map((tool,index) => <button key={tool} title={`${['Lápiz','Flecha','Rectángulo','Texto'][index]} · ${index+1}`} onClick={()=>setActiveTool(tool)} className={activeTool===tool?'active':''} aria-pressed={activeTool===tool} aria-label={`${['Lápiz','Flecha','Rectángulo','Texto'][index]} (${index+1})`}><Icon name={tool}/><kbd>{index+1}</kbd></button>)}
-        <span className="tool-divider"/>
-        <div className="color-options">{colors.map((c,index)=><button key={c} aria-label={`Color ${['coral','ámbar','verde','azul','violeta','blanco'][index]}`} aria-pressed={activeColor===c} title={c} onClick={()=>setActiveColor(c)} className={activeColor===c?'selected':''} style={{'--swatch':c}}/>)}</div>
-        <span className="tool-divider"/><button onClick={undoMark} disabled={!marks.length} title="Deshacer · Ctrl/⌘ + Z" aria-label="Deshacer última anotación"><Icon name="undo"/></button><button onClick={redoMark} disabled={!redoMarks.length} title="Rehacer · Ctrl/⌘ + Shift + Z" aria-label="Rehacer anotación"><Icon name="redo"/></button>
-      </div>
-    </div>
-    <div className="player-controls">
-      <button className="play" onClick={togglePlayback} aria-label={playing?'Pausar':'Reproducir'}><Icon name={playing?'pause':'play'} size={20}/></button>
-      <span className="timecode"><strong>{stamp.time}</strong><span>/ {formatTime(duration).time}</span></span>
-      <div className="scrubber"><input aria-label="Posición del video" type="range" min="0" max={duration || 1} step="0.01" value={Math.min(currentTime,duration || 1)} onChange={e=>{const value=Number(e.target.value);setCurrentTime(value);if(videoRef.current)videoRef.current.currentTime=value}}/><div className="scrubber-fill" style={{width:`${Math.min(100,currentTime/(duration||1)*100)}%`}}/><TimelineMarkers versionId={reviewVersionId} comments={figureComments} duration={duration} members={state.members} onOpen={c=>{videoRef.current?.pause();setPlaying(false);onTimelineComment(c)}}/><span className="playhead" style={{left:`${Math.min(100,currentTime/(duration||1)*100)}%`}}/></div>
-      <button aria-label={muted?'Activar sonido':'Silenciar'} onClick={()=>setMuted(!muted)} className={muted?'active':''}><Icon name="volume"/></button><span className="fps">24 FPS</span><button aria-label="Pantalla completa (F)" onClick={toggleFullscreen}><Icon name="maximize"/></button>
-    </div>
-  </section>;
-}
-
+function MediaStage(props){const {state}=useRonda();return <OriginalMediaStage {...props} members={state.members}/>;}
 function CommentCard({ item, selected, onSelect, onResolve, onReply, onJump, members, selectedFigure, annotationContext }) {
   const {act}=useRonda();
   const [options,setOptions]=useState(false);
@@ -281,11 +233,6 @@ function PresenceStack({onFollow,followingId}) {
   return <div className="presence-wrap"><div className="presence" aria-label={`${onlineReviewers.length} personas viendo`}><button style={{background:onlineReviewers[0].color}} onClick={()=>onFollow(onlineReviewers[0])}>SC</button><button style={{background:onlineReviewers[1].color}} onClick={()=>onFollow(onlineReviewers[1])}>LM</button><button className="presence-more" onClick={()=>setOpen(!open)}>+{onlineReviewers.length-2}</button></div>{open&&<div className="presence-popover"><header><div><strong>Viendo ahora</strong><span>{onlineReviewers.length} personas conectadas</span></div><i className="live-dot"/></header>{onlineReviewers.map(person=><button key={person.id} className={followingId===person.id?'following':''} onClick={()=>{onFollow(person);setOpen(false)}}><span className="avatar" style={{background:person.color}}>{person.initials}</span><span><strong>{person.name}</strong><small>{person.activity} · {formatTime(person.time).time}</small></span><em>{followingId===person.id?'Siguiendo':'Ir'}</em></button>)}<p>Selecciona una persona para saltar a su fotograma y ver su cursor.</p></div>}</div>;
 }
 
-function ShortcutHelp({onClose}) {
-  const shortcuts=[['Ctrl/⌘ + Z','Deshacer última anotación'],['Ctrl/⌘ + Shift + Z','Rehacer anotación'],['Espacio','Reproducir / pausar'],['J / L','Retroceder / avanzar 5 s'],['← / →','Mover un fotograma'],['1–4','Lápiz, flecha, rectángulo y texto'],['D','Activar u ocultar dibujo'],['M','Silenciar'],['F','Pantalla completa'],['C','Escribir comentario'],['Ctrl/⌘ + Enter','Publicar comentario'],['Esc','Cerrar paneles']];
-  return <div className="modal-layer"><button className="modal-scrim" aria-label="Cerrar atajos" onClick={onClose}/><section className="modal shortcut-modal" role="dialog" aria-modal="true" aria-labelledby="shortcut-title"><div className="modal-title"><div><span className="eyebrow">COMANDOS RÁPIDOS</span><h2 id="shortcut-title">Atajos de revisión</h2></div><button aria-label="Cerrar" onClick={onClose}><Icon name="x"/></button></div><div className="shortcut-grid">{shortcuts.map(([keys,label])=><div key={keys}><kbd>{keys}</kbd><span>{label}</span></div>)}</div></section></div>;
-}
-
 const initialMembers=[
   {name:'Julian Torres',email:'julian@nebulastudio.co',initials:'JT',role:'Administrador',status:'Activo',color:'#67a9d4'},
   {name:'Sofía Castillo',email:'sofia@nebulastudio.co',initials:'SC',role:'Editor',status:'Activo',color:'#f2bd5c'},
@@ -311,11 +258,11 @@ function App({demo=false,onExitDemo}) {
   const [socialLoading,setSocialLoading]=useState(false);
   const [socialAssetId,setSocialAssetId]=useState(null);
   const socialRequest=useRef(0);
-  const selectSocialAsset=async asset=>{asset=resolveAssetVersion(state,asset);const request=++socialRequest.current;setSocialLoading(true);setSocialAssetId(asset.id);setCommentsOpen(false);try{const file=await fileStore(asset.fileId);if(request!==socialRequest.current)return;setMedia(current=>{if(current?.url)URL.revokeObjectURL(current.url);return {...asset,identity:asset.identity,url:URL.createObjectURL(file),duration:asset.type==='image'?1:0,setDuration:duration=>setMedia(value=>({...value,duration}))}});setCurrentTime(0);setVersion(asset.versionNumber);setSelectedFigure(null);setFocusedComment(null);}catch{if(request===socialRequest.current)setToast('No se pudo cargar la lámina; comentarios no cambiados')}finally{if(request===socialRequest.current)setSocialLoading(false)}};
+  const selectSocialAsset=async asset=>{asset=resolveAssetVersion(state,asset);const request=++socialRequest.current;setSocialLoading(true);setSocialAssetId(asset.id);setCommentsOpen(false);try{const url=await assetReviewUrl(asset);if(request!==socialRequest.current)return;setMedia(current=>{if(current?.url)URL.revokeObjectURL(current.url);return {...asset,identity:asset.identity,url:url,duration:asset.type==='image'?1:0,setDuration:duration=>setMedia(value=>({...value,duration}))}});setCurrentTime(0);setVersion(asset.versionNumber);setSelectedFigure(null);setFocusedComment(null);}catch{if(request===socialRequest.current)setToast('No se pudo cargar la lámina; comentarios no cambiados')}finally{if(request===socialRequest.current)setSocialLoading(false)}};
   const openProject=async project=>{
     const original=(state.assets||[]).find(item=>item.projectId===project.id);const asset=original?resolveAssetVersion(state,original):null;
-    if(!asset){if(project.id==='project-amara'){setMedia(null);setCurrentView('review');return;}setToast('Este proyecto todavía no tiene piezas para revisar.');setCurrentView('projects');return;}
-    try{const file=await fileStore(asset.fileId);setMedia(current=>{if(current?.url)URL.revokeObjectURL(current.url);return {...asset,identity:asset.identity,url:URL.createObjectURL(file),duration:asset.type==='image'?1:0,setDuration:duration=>setMedia(value=>({...value,duration}))}});setVersion(asset.versionNumber);setCurrentTime(0);setDocumentPage(1);setSelectedFigure(null);setFocusedComment(null);setSocialMode(false);setCurrentView('review');}catch{setToast('No se pudo abrir la pieza. Tus datos permanecen guardados.');}
+    if(!asset){if(project.id==='project-amara'){setMedia(null);setCurrentView('review');return;}setToast('Este proyecto todavía no tiene piezas para revisar.');setCurrentView('personal');return;}
+    try{const url=await assetReviewUrl(asset);setMedia(current=>{if(current?.url)URL.revokeObjectURL(current.url);return {...asset,identity:asset.identity,url:url,duration:asset.type==='image'?1:0,setDuration:duration=>setMedia(value=>({...value,duration}))}});setVersion(asset.versionNumber);setCurrentTime(0);setDocumentPage(1);setSelectedFigure(null);setFocusedComment(null);setSocialMode(false);setCurrentView('review');}catch{setToast('No se pudo abrir la pieza. Tus datos permanecen guardados.');}
   };
   const [documentPage,setDocumentPage]=useState(1);
   const pendingFigureJump=useRef(null);
@@ -327,7 +274,7 @@ function App({demo=false,onExitDemo}) {
   const setCommentDraft=value=>setDraftCache(current=>({...current,[draftKey]:typeof value==='function'?value(readDraftForContext(current,draftStorage,draftKey)):value}));
   const recoveredDraft=useRef(Boolean(commentDraft));
   const [collapsed, setCollapsed] = useState(false);
-  const [currentView, setCurrentViewRaw] = useState(location.hash.startsWith('#review/')?'review':'home');
+  const [currentView, setCurrentViewRaw] = useState(location.hash.startsWith('#team/')?'projects':location.hash.startsWith('#review/')?'review':'home');
   const [sharedDirty,setSharedDirty]=useState(false);
   const setCurrentView=next=>{if(next===currentView||canLeaveSharedReview({dirty:sharedDirty,busy:false},()=>window.confirm('Hay cambios sin publicar en la revisión compartida. ¿Descartarlos?')))setCurrentViewRaw(next);};
   const [companyDemo,setCompanyDemo]=useState(false);
@@ -346,7 +293,7 @@ function App({demo=false,onExitDemo}) {
     const sourceVersion=state.versions[comment.versionId];
     const original=(state.assets||[]).find(a=>a.id===sourceVersion?.assetId||`asset-${a.id}-v1`===comment.versionId);const asset=original?resolveAssetVersion(state,original,comment.versionId):null;
     if(!asset&&comment.versionId!=='version-amara-v3'){setToast('El archivo o versión de este comentario ya no está disponible');return;}
-    try{const file=asset?await fileStore(asset.fileId):null;plannerJump.current=comment;setSocialMode(false);setMedia(current=>{if(current?.url)URL.revokeObjectURL(current.url);return asset?{...asset,identity:asset.identity,url:URL.createObjectURL(file),duration:asset.type==='image'?1:0,setDuration:duration=>setMedia(value=>({...value,duration}))}:null});setVersion(sourceVersion?.number||3);setDocumentPage(comment.page||1);setCurrentTime(comment.timeSeconds||0);setCurrentView('review');setCommentsOpen(true);}catch{setToast('No se pudo abrir el archivo. Tus comentarios siguen guardados');}
+    try{const url=asset?await assetReviewUrl(asset):null;plannerJump.current=comment;setSocialMode(false);setMedia(current=>{if(current?.url)URL.revokeObjectURL(current.url);return asset?{...asset,identity:asset.identity,url:url,duration:asset.type==='image'?1:0,setDuration:duration=>setMedia(value=>({...value,duration}))}:null});setVersion(sourceVersion?.number||3);setDocumentPage(comment.page||1);setCurrentTime(comment.timeSeconds||0);setCurrentView('review');setCommentsOpen(true);}catch{setToast('No se pudo abrir el archivo. Tus comentarios siguen guardados');}
   };
   const annotationContext=`${media?.projectId||'project-amara'}:version-amara-v${version}:${media?.identity||'demo-amara'}${['pdf','html','document','presentation'].includes(media?.type)?`:page-${documentPage}`:''}`;
   const marks=state.annotations?.[annotationContext]||[];
@@ -375,10 +322,11 @@ function App({demo=false,onExitDemo}) {
     <main data-view={currentView} className={`workspace ${currentView!=='review'?'dashboard-workspace':''}`}>
       {sectionSculptures[currentView]&&<img className="abstract-sculpture-background" src={sectionSculptures[currentView]} alt="" aria-hidden="true" draggable={false}/>}
       {demo&&<div className="demo-company-banner" role="status"><span>DEMO · Empresa activa · Datos ficticios. Los cambios se descartan al salir.</span><button onClick={onExitDemo}>Volver a mi cuenta</button></div>}
-      {currentView!=='review' && <header className="studio-topbar"><span>{state.workspace.name} <span aria-hidden="true">/</span> <strong>{{home:'Inicio',projects:'Proyectos',pauta:'Pauta',activity:'Actividad',planning:'Planificación',team:'Equipo',settings:'Configuración',branding:'Personalización'}[currentView]}</strong></span><div><NotificationCenter onNavigate={setCurrentView}/><span className="avatar small">{state.members[state.currentUserId]?.initials}</span><span className="studio-greeting">Hola, {state.members[state.currentUserId]?.name?.split(' ')[0]}</span></div></header>}
-      {currentView==='home' && <StudioHome onNavigate={setCurrentView} onOpen={openProject}/>}
+      {currentView!=='review' && <header className="studio-topbar"><span>{currentView==='projects'?'Espacio compartido':state.workspace.name} <span aria-hidden="true">/</span> <strong>{{home:'Inicio',projects:'Proyectos del equipo',personal:'Mis proyectos personales',pauta:'Pauta',activity:'Actividad',planning:'Planificación',team:'Equipo',settings:'Configuración',branding:'Personalización'}[currentView]}</strong></span><div><NotificationCenter onNavigate={setCurrentView}/><span className="avatar small">{state.members[state.currentUserId]?.initials}</span><span className="studio-greeting">Hola, {state.members[state.currentUserId]?.name?.split(' ')[0]}</span></div></header>}
+      {currentView==='home' && <StudioHome onNavigate={view=>setCurrentView(view==='projects'?'personal':view)} onOpen={openProject}/>}
       {persistenceError&&<div className="persistence-alert" role="alert"><Icon name="alert" size={16}/><span><strong>Los cambios están solo en este dispositivo</strong><small>{persistenceError==='quota'?'El almacenamiento del navegador está lleno. Quita algunas referencias pesadas o libera espacio.':'El navegador bloqueó el almacenamiento local.'}</small></span><button onClick={retryPersistence}>Reintentar</button></div>}
       {currentView==='projects' && <ProjectActions onOpen={openProject} onNotify={setToast} onDirtyChange={setSharedDirty}/>}
+      {currentView==='personal' && <ProjectLibrary onOpen={openProject} onNotify={setToast}/>}
       {currentView==='activity' && <ActivityView onNavigate={setCurrentView}/>}
       {currentView==='planning' && <Planning onOpen={openPlanningComment}/>}
       {currentView==='team' && <TeamActions onNotify={setToast}/>}
@@ -387,7 +335,7 @@ function App({demo=false,onExitDemo}) {
       {currentView==='pauta' && <Pauta/>}
       {currentView==='review' && <>
       <header className="topbar">
-        <div className="breadcrumb"><button onClick={()=>setCurrentView('projects')}>{state.projects[media?.projectId||'project-amara']?.name}</button><Icon name="chevron" size={14}/><div><strong>{state.versions[reviewVersionId]?.name || media?.name || 'Revisión'}</strong><span>Guardado por cuenta</span></div></div>
+        <div className="breadcrumb"><button onClick={()=>setCurrentView('personal')}>{state.projects[media?.projectId||'project-amara']?.name}</button><Icon name="chevron" size={14}/><div><strong>{state.versions[reviewVersionId]?.name || media?.name || 'Revisión'}</strong><span>Guardado por cuenta</span></div></div>
         <div className="top-actions">
           <span className="avatar small" title="Tu sesión activa; presencia compartida aún no disponible">{state.members[state.currentUserId]?.initials}</span>
           <button className="shortcut-trigger" aria-label="Ver atajos de teclado" title="Atajos (?)" onClick={()=>setShortcutsOpen(true)}>?</button>
@@ -398,16 +346,16 @@ function App({demo=false,onExitDemo}) {
       </header>
       <div className="review-layout">
         <div className="review-main">
-          <DeliveryGrid projectId={media?.projectId||'project-amara'} onNotify={setToast} onSelect={asset=>{if(media?.url)URL.revokeObjectURL(media.url);setMedia({...asset,setDuration:duration=>setMedia(current=>({...current,duration}))});setCurrentTime(0);setVersion(asset.versionNumber||1);setSelectedFigure(null);setFocusedComment(null);setCommentDraft('')}}/>
-          <div className="asset-bar"><div className="asset-meta"><span className="file-type">{fileLabel(media)}</span><div><strong>{media?.name || 'AMARA_SPOT_MASTER'}</strong><span>{media?'Archivo local de revisión':'1920 × 1080 · H.264 · 48.2 MB'}</span></div></div><div className="asset-actions"><input ref={fileInput} className="visually-hidden" type="file" accept="video/*,image/*" onChange={loadMedia}/><button className="upload-button" onClick={()=>fileInput.current?.click()}><Icon name="plus" size={15}/> Cargar archivo</button><AssetVersionControl media={media} onNotify={setToast} onSelect={next=>{if(media?.url)URL.revokeObjectURL(media.url);setMedia({...next,duration:next.type==='image'?1:0,setDuration:duration=>setMedia(current=>({...current,duration}))});setVersion(next.versionNumber);setDocumentPage(1);setCurrentTime(0);setSelectedFigure(null);setFocusedComment(null);setSocialMode(false)}}/></div></div>
-          <div className="social-mode-switch" role="group" aria-label="Modo de visualización"><div className="review-mode-options"><button aria-pressed={!socialMode} onClick={()=>{socialRequest.current++;setSocialMode(false)}}><Icon name="pen" size={16}/><span>Revisión y anotaciones</span></button><button aria-pressed={socialMode} onClick={()=>setSocialMode(true)}><Icon name="image" size={16}/><span>Preview social</span></button></div><span className="review-mode-hint">{socialMode?'Vista de publicación':'Revisa cada detalle'}</span></div>
+          <DeliveryGrid projectId={media?.projectId||'project-amara'} onRemove={id=>{if(media?.id===id){setCurrentView('personal');if(media.url)URL.revokeObjectURL(media.url);setMedia(null);setSelectedFigure(null);setFocusedComment(null);setCommentDraft('');}}} onNotify={setToast} onSelect={asset=>{if(media?.url)URL.revokeObjectURL(media.url);setMedia({...asset,setDuration:duration=>setMedia(current=>({...current,duration}))});setCurrentTime(0);setVersion(asset.versionNumber||1);setSelectedFigure(null);setFocusedComment(null);setCommentDraft('')}}/>
+          <div className="asset-bar"><div className="asset-meta"><span className="file-type">{fileLabel(media)}</span><div><strong>{media?.name || 'AMARA_SPOT_MASTER'}</strong><span>{media?.externalUrl?'Enlace externo · contenido en vivo':media?'Archivo local de revisión':'1920 × 1080 · H.264 · 48.2 MB'}</span></div></div><div className="asset-actions"><input ref={fileInput} className="visually-hidden" type="file" accept="video/*,image/*" onChange={loadMedia}/><button className="upload-button" onClick={()=>fileInput.current?.click()}><Icon name="plus" size={15}/> Cargar archivo</button><AssetVersionControl media={media} onNotify={setToast} onSelect={next=>{if(media?.url)URL.revokeObjectURL(media.url);setMedia({...next,duration:next.type==='image'?1:0,setDuration:duration=>setMedia(current=>({...current,duration}))});setVersion(next.versionNumber);setDocumentPage(1);setCurrentTime(0);setSelectedFigure(null);setFocusedComment(null);setSocialMode(false)}}/></div></div>
+          <div className="social-mode-switch" role="group" aria-label="Modo de visualización"><div className="review-mode-options"><button aria-pressed={!socialMode} onClick={()=>{socialRequest.current++;setSocialMode(false)}}><Icon name="pen" size={16}/><span>Revisión y anotaciones</span></button><button disabled={media?.type==='web'} aria-pressed={socialMode} onClick={()=>setSocialMode(true)}><Icon name="image" size={16}/><span>Preview social</span></button></div><span className="review-mode-hint">{socialMode?'Vista de publicación':'Revisa cada detalle'}</span></div>
           {socialMode?<SocialPreview projectId={media?.projectId||'project-amara'} onSelect={selectSocialAsset} onTime={setCurrentTime} onNotify={setToast} onReview={asset=>{selectSocialAsset(asset);setSocialMode(false)}}/>:['pdf','html','document','presentation'].includes(media?.type)?<DocumentReview media={media} page={documentPage} setPage={setDocumentPage} renderAnnotations={drawing=><><AnnotationLayer activeTool={drawing?activeTool:'' } activeColor={activeColor} marks={marks} setMarks={saveMarks} selectedFigure={selectedFigure}/>{marks.map((mark,index)=><button key={mark.id} className={`figure-pin ${selectedFigure===mark.id?'selected':''}`} style={{left:`${mark.points[0].x*100}%`,top:`${mark.points[0].y*100}%`}} aria-label={`Abrir figura ${index+1}`} onClick={()=>selectFigure(mark)}>{index+1}</button>)}{drawing&&<div className="annotation-tools">{['pen','arrow','square','type'].map((tool,index)=><button key={tool} aria-label={['Lápiz','Flecha','Rectángulo','Texto'][index]} aria-pressed={activeTool===tool} className={activeTool===tool?'active':''} onClick={()=>setActiveTool(tool)}><Icon name={tool}/></button>)}{['#ff725e','#f2bd5c','#8ebd72','#67a9d4'].map(color=><button key={color} aria-label={`Color ${color}`} aria-pressed={activeColor===color} onClick={()=>setActiveColor(color)} style={{color}}><span style={{background:color,width:16,height:16,borderRadius:'50%'}}/></button>)}<button aria-label="Deshacer figura" disabled={!marks.length} onClick={()=>saveMarks(marks.slice(0,-1))}><Icon name="undo"/></button></div>}</>} onComment={()=>{setCommentsOpen(true);setSelectedFigure(null);setTimeout(()=>document.querySelector('.comments-drawer textarea, .composer textarea')?.focus(),50)}}/>:<><MediaStage key={annotationContext} activeTool={activeTool} setActiveTool={setActiveTool} activeColor={activeColor} setActiveColor={setActiveColor} media={media} currentTime={currentTime} setCurrentTime={setCurrentTime} remoteCursor={remoteCursor} marks={marks} setMarks={saveMarks} selectedFigure={selectedFigure} onFigure={selectFigure} figureComments={Object.values(state.comments).filter(c=>c.versionId===reviewVersionId)} reviewVersionId={reviewVersionId} onTimelineComment={comment=>{setCurrentTime(comment.timeSeconds);setFocusedComment(comment.id);setCommentsOpen(true);jumpFigure(comment)}}/></>}
           <div className="review-summary">
             <div><span className="eyebrow">RONDA DE REVISIÓN</span><strong>{openCount} comentarios pendientes</strong><small>Decisiones guardadas en tu cuenta; acceso compartido aún no disponible.</small></div>
             <button className="ai-button" onClick={()=>setSummaryOpen(true)}><Icon name="spark"/><span><strong>Resumir cambios</strong><small>Ver pendientes y bloqueantes</small></span></button>
           </div>
         </div>
-        {socialMode&&(socialLoading||media?.id!==socialAssetId||!state.projects[media?.projectId||'project-amara']?.socialPreview?.assetIds.includes(media?.id))?<aside className="comments-panel"><div className="social-preview"><strong>Comentarios de la lámina</strong><p>{socialLoading?'Cargando la pieza seleccionada…':'Selecciona un medio de la preview para revisar sus comentarios.'}</p></div></aside>:<CommentsPanel {...figureProps} onClose={()=>setCommentsOpen(false)} currentTime={currentTime} setCurrentTime={setCurrentTime} draft={commentDraft} setDraft={setCommentDraft} recoveredDraft={recoveredDraft}/>}
+        {socialMode&&(socialLoading||media?.id!==socialAssetId||!state.projects[media?.projectId||'project-amara']?.socialPreview?.assetIds.includes(media?.id))?<aside className="comments-panel"><div className="social-preview"><strong>Comentarios de la lámina</strong>{socialLoading?<BrandLoader label="Cargando la pieza seleccionada…"/>:<p>Selecciona un medio de la preview para revisar sus comentarios.</p>}</div></aside>:<CommentsPanel {...figureProps} onClose={()=>setCommentsOpen(false)} currentTime={currentTime} setCurrentTime={setCurrentTime} draft={commentDraft} setDraft={setCommentDraft} recoveredDraft={recoveredDraft}/>}
       </div>
       {(!socialMode||(!socialLoading&&media?.id===socialAssetId))&&<button className="mobile-comments" onClick={()=>setCommentsOpen(true)}>{Object.values(state.comments).filter(c=>c.versionId===reviewVersionId).length} comentarios <span>{openCount} abiertos</span></button>}
       {commentsOpen && <div className="comments-drawer"><div className="drawer-scrim" onClick={()=>setCommentsOpen(false)}/><CommentsPanel {...figureProps} onClose={()=>setCommentsOpen(false)} currentTime={currentTime} setCurrentTime={setCurrentTime} draft={commentDraft} setDraft={setCommentDraft} recoveredDraft={recoveredDraft}/></div>}

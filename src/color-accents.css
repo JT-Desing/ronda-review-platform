@@ -23,7 +23,8 @@
 @media(forced-colors:active){.studio-home,.studio-library,.studio-home .studio-home-panel,.studio-home .studio-counts>span{background-image:none}.studio-home .studio-section-heading,.studio-library .dashboard-header{border-image:none;border-bottom-color:CanvasText}}
 
 /* Shared pigment language outside media: backgrounds, section seams and chrome only. */
-.app-shell .dashboard-page:not(.studio-home):not(.studio-library){background-image:radial-gradient(ellipse 55% 220px at 100% 0%,#c8b1f50b,transparent 75%),radial-gradient(ellipse 35% 260px at 0% 95%,#b9eeeb07,transparent 75%)}
+/* The project gallery shares the canvas; a content-height gradient here creates hard rectangular seams. */
+.app-shell .dashboard-page:not(.studio-home):not(.studio-library):not(.shared-projects){background-image:radial-gradient(ellipse 55% 220px at 100% 0%,#c8b1f50b,transparent 75%),radial-gradient(ellipse 35% 260px at 0% 95%,#b9eeeb07,transparent 75%)}
 .app-shell .dashboard-page:not(.studio-home):not(.studio-library)>.dashboard-header{border-bottom:1px solid transparent;border-image:linear-gradient(90deg,#c8b1f550,#f4c5dc28,#b9eeeb15,transparent) 1;padding-bottom:20px}
 .app-shell :is(.settings-section,.identity-section){border-top-color:#c8b1f53b;background-image:radial-gradient(ellipse 65% 120px at 100% 0%,#c8b1f508,transparent 75%)}
 .app-shell :is(.settings-section,.identity-section):nth-child(even){border-top-color:#b9eeeb35;background-image:radial-gradient(ellipse 65% 120px at 100% 0%,#b9eeeb08,transparent 75%)}

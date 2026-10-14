@@ -10,6 +10,23 @@
 .app-shell .delivery-grid.storyboard .delivery-open>small{display:block;padding:0 16px;font-size:11px;line-height:1.8;font-variant-numeric:tabular-nums}
 .app-shell .delivery-grid.storyboard .delivery-open>small:last-child{padding-bottom:16px;color:var(--muted)}
 .app-shell .delivery-grid.storyboard .storyboard-order{padding:6px 12px;background:transparent;gap:8px;flex-wrap:nowrap}
+.app-shell .shared-delivery-controls .storyboard-order{display:flex;align-items:center;justify-content:space-between;border:0;margin:0;min-width:0}
+.app-shell .shared-delivery-controls .delivery-open{outline:0;border:0;background:transparent;width:100%;text-align:left;color:inherit;cursor:pointer}
+.shared-asset-trash{margin-top:20px;padding:16px;border:1px solid var(--line);border-radius:12px}
+.shared-asset-trash>div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0}
+.shared-asset-trash>div>span{overflow-wrap:anywhere;min-width:0}
+.shared-asset-trash button{min-height:40px;flex-shrink:0}
+.app-shell .delivery-grid.storyboard .delivery-add-actions{display:flex;align-items:center;gap:8px;position:relative;flex-wrap:wrap}
+.app-shell .delivery-add-actions .link-import{margin:0;position:static}
+.app-shell .delivery-grid.storyboard .delivery-add-actions .link-import>button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin:0;padding:0 16px;border:1px solid var(--line-strong);border-radius:10px;background:transparent;color:var(--text);font-size:12px;white-space:nowrap;cursor:pointer;transition:background-color 150ms ease,border-color 150ms ease}
+.app-shell .delivery-add-actions .link-import>button:hover:not(:disabled),.app-shell .delivery-add-actions .link-import>button[aria-expanded=true]{background:var(--surface-3);border-color:var(--accent)}
+.app-shell .delivery-add-actions .link-import>form{position:absolute;right:0;top:calc(100% + 10px);z-index:30;box-sizing:border-box;width:min(420px,calc(100vw - 48px));margin:0;padding:20px;border:1px solid var(--line-strong);border-radius:14px;background:var(--surface-2);box-shadow:0 16px 40px #0006}
+.app-shell .delivery-add-actions .link-import>form input{box-sizing:border-box;width:100%;min-width:0}
+.app-shell .delivery-add-actions .link-import>form label{display:flex;flex-direction:column;align-items:stretch;gap:8px;width:100%;font-size:12px}
+.app-shell .delivery-add-actions .link-import>form>div{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.app-shell .delivery-add-actions .link-import>form button{min-height:40px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface-3);color:var(--text);font-size:12px}
+.app-shell .delivery-add-actions .link-import>form small{white-space:normal;line-height:1.5}
+@media(max-width:600px){.app-shell .delivery-grid.storyboard .delivery-add-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.app-shell .delivery-add-actions .upload-button,.app-shell .delivery-add-actions .link-import>button{width:100%}.app-shell .delivery-add-actions .link-import>form{width:100%;padding:16px}}
 .app-shell .delivery-grid.storyboard .storyboard-order button{width:40px;height:40px;min-height:40px;padding:0;border:0;border-radius:8px;background:transparent;font-size:18px;transition:background-color 160ms ease,transform 160ms ease}
 .app-shell .delivery-grid.storyboard .storyboard-order button:hover:not(:disabled){background:#cbb0f015}
 .app-shell .delivery-grid.storyboard .storyboard-order button:active:not(:disabled){transform:scale(.95)}

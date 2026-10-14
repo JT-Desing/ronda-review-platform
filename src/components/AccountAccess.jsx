@@ -1,5 +1,8 @@
+import {BrandLoader} from './BrandLoader.jsx';
 import React, { useEffect, useState } from 'react';
 import './account-access.css';
+import rondaLogo from '../ronda-logo-white-silver.svg';
+import './account-brand.css';
 import {readLegacyFile, fileStore} from './DeliveryGrid.jsx';
 import {importAccountState} from '../domain/account-import.js';
 import { createSeedState, STORAGE_KEY } from '../data/seed.js';
@@ -69,9 +72,9 @@ export default function AccountAccess({ children }) {
       await flushAccount(); setImporting(false); setMount(v => v + 1);
     } catch (e) { setError(e.message); } finally { setBusy(false); }
   }
-  if (loading) return <main className="account-access"><p role="status">Comprobando tu sesión…</p></main>;
+  if (loading) return <main className="account-access"><BrandLoader size="stage" label="Comprobando tu sesión…"/></main>;
   if (!user || !ready) return <main className="account-access"><section className="account-card">
-    <span className="account-wordmark">ronda<span>®</span></span>
+    <span className="account-brand"><img src={rondaLogo} alt=""/><span>Ronda</span></span>
     <h1>{mode === 'login' ? 'Tu próxima ronda empieza aquí.' : 'Crea tu espacio de revisión.'}</h1>
     <p>Proyectos, archivos y comentarios guardados en tu servidor.</p>
     <div className="account-tabs"><button aria-pressed={mode === 'login'} onClick={() => { setMode('login'); setError(''); }}>Iniciar sesión</button><button aria-pressed={mode === 'register'} onClick={() => { setMode('register'); setError(''); }}>Crear cuenta</button></div>
@@ -82,7 +85,7 @@ export default function AccountAccess({ children }) {
       <label>Contraseña<input name="password" type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} required minLength={12} maxLength={128}/></label>
       {mode === 'register' && <small>Usa al menos 12 caracteres. La verificación por correo y recuperación aún no están habilitadas.</small>}
       {error && <p role="alert" className="account-error">{error}</p>}
-      <button className="account-primary" disabled={busy}>{busy ? 'Conectando…' : mode === 'login' ? 'Entrar a Ronda' : 'Crear cuenta'}</button>
+      <button className="account-primary" disabled={busy}>{busy ? <BrandLoader size="inline" label="Conectando…"/> : mode === 'login' ? 'Entrar a Ronda' : 'Crear cuenta'}</button>
     </form>
     <p className="account-note">{!google && 'Google pendiente de configuración. '}Los datos viven en el PC que aloja Ronda; si está apagado, el servicio no estará disponible.</p>
   </section></main>;

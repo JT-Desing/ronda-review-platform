@@ -1,0 +1,141 @@
+/* A review room is a full workspace, not a column inside the project directory. */
+.project-share-dialog{width:min(500px,calc(100vw - 32px));box-sizing:border-box;padding:24px;border:1px solid var(--line);border-radius:16px;background:var(--surface-1);color:var(--text)}
+.project-share-dialog p,.project-share-dialog small{font-size:13px;line-height:1.6;color:var(--muted)}
+.project-share-dialog label{display:flex;flex-direction:column;gap:8px;margin:16px 0;font-size:12px}
+.project-share-dialog input{width:100%;min-width:0;box-sizing:border-box;min-height:44px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--text)}
+.project-share-dialog footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}.project-share-dialog footer button{min-height:40px;padding:0 16px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--text)}
+.project-share-dialog [role=status]{display:block;min-height:20px;margin-top:8px;font-size:12px;color:var(--muted)}
+.share-project-trigger{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px}
+.shared-conversation:has(.shared-project-media){padding:28px!important;box-sizing:border-box;max-width:1280px;margin:0 auto!important;border:0!important;background:transparent!important}
+.shared-conversation:has(.shared-project-media)>.shared-all-projects{display:inline-flex;align-items:center;min-height:40px;padding:0 12px;margin:0 0 20px;border:1px solid var(--line);border-radius:9px;background:transparent;color:var(--muted);font-size:12px}
+.shared-conversation:has(.shared-project-media)>header{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:0 0 24px;padding:0 0 24px;border:0;border-bottom:1px solid var(--line)}
+.shared-conversation:has(.shared-project-media)>header h2{margin:6px 0;font-size:26px;letter-spacing:-.03em}
+.shared-conversation:has(.shared-project-media)>header p{margin:0;color:var(--muted);font-size:13px}
+.shared-conversation:has(.shared-project-media)>header button{min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);font-size:12px}
+.shared-conversation .shared-project-media{padding:0;border:0;margin:0}
+.shared-delivery-controls.is-empty>details>.storyboard-toggle{display:none}
+.app-shell .shared-delivery-controls.is-empty .delivery-grid{border:1px solid var(--line);border-radius:16px;padding:24px}
+.delivery-empty-state{display:flex;flex-direction:column;align-items:center;text-align:center;padding:36px 20px;gap:12px}
+.delivery-empty-icon{display:grid;place-items:center;width:64px;height:64px;border-radius:18px;background:var(--surface-3);color:var(--accent)}
+.delivery-empty-state h3{margin:4px 0 0;font-size:20px;letter-spacing:-.02em}
+.delivery-empty-state p{max-width:440px;margin:0;color:var(--muted);font-size:13px;line-height:1.6}
+.delivery-empty-state small{color:var(--muted);font-size:12px;line-height:1.5}
+.shared-conversation:has(.shared-project-media)>.shared-general-conversation{margin:24px 0 0;padding:20px;border:1px solid var(--line);border-radius:14px;background:var(--surface-1)}
+.shared-conversation:has(.shared-project-media) .shared-general-conversation .shared-empty{min-height:0;padding:16px 0;margin:0;text-align:left}
+@media(max-width:680px){.shared-conversation:has(.shared-project-media){padding:16px!important}.app-shell .shared-delivery-controls.is-empty .delivery-grid{padding:16px}.delivery-empty-state{padding:28px 8px}.delivery-empty-state h3{font-size:18px}.shared-conversation:has(.shared-project-media)>header{align-items:flex-start}}
+.shared-conversation:has(.shared-media-opening)>.shared-all-projects,.shared-conversation:has(.shared-media-opening)>header,.shared-conversation:has(.shared-media-opening)>form,.shared-conversation:has(.shared-media-opening)>.shared-general-conversation{display:none}
+.review-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;box-sizing:border-box;min-height:calc(100vh - 100px);padding:40px;background:var(--canvas);color:var(--muted);font-size:13px}
+.review-loading strong{font-weight:500;font-size:13px}
+.shared-projects .shared-room-opening,.shared-projects .shared-media-opening{margin:0;padding:0;background:var(--canvas)}
+.workspace:has(.shared-projects[data-mode="project"])>.studio-topbar,.workspace:has(.shared-projects[data-mode="project"])>.abstract-sculpture-background{display:none}
+.app-shell .dashboard-page.shared-projects[data-mode="project"]{padding:0;max-width:none;margin:0}
+.shared-projects .shared-original-review .review-summary{box-sizing:border-box;max-width:960px;margin:16px auto 12px;padding:20px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;border-top:1px solid var(--line)}
+.shared-projects .shared-original-review .review-summary>div{display:flex;flex-direction:column;gap:5px;min-width:0}
+.shared-projects .shared-original-review .review-summary .eyebrow{font-size:10px;letter-spacing:.14em;color:var(--muted)}
+.shared-projects .shared-original-review .review-summary strong{font-size:13px;line-height:1.4}
+.shared-projects .shared-original-review .review-summary small{font-size:11px;line-height:1.5;color:var(--muted)}
+.shared-projects .shared-original-review .ai-button{display:flex;align-items:center;gap:10px;flex-shrink:0;min-height:44px;padding:10px 14px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--text);cursor:pointer}
+.shared-projects .shared-original-review .ai-button>span{display:flex;flex-direction:column;text-align:left}
+.shared-projects .shared-original-review .ai-button strong{font-size:12px}.shared-projects .shared-original-review .ai-button small{font-size:10px}
+.shared-projects .shared-original-review .shared-review-people{margin:0 28px 24px;padding:0;border:0;border-radius:0;background:transparent}
+.shared-projects .shared-original-review .shared-review-people>summary{display:list-item;min-height:40px;line-height:40px;font-size:12px;color:var(--muted);cursor:pointer}
+.shared-projects .shared-original-review .shared-review-people[open]{padding-bottom:16px;border-bottom:1px solid var(--line)}
+.shared-projects .shared-original-review .shared-review-people>label{display:flex;flex-direction:row;align-items:center;gap:10px;padding:8px 0;font-size:12px}
+.shared-projects .shared-original-review .shared-review-people>label input{width:16px;height:16px;min-height:0;accent-color:var(--accent)}
+.shared-projects .shared-original-review .shared-review-people button{min-height:38px;padding:8px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:7px;color:var(--text);cursor:pointer}
+.review-summary-dialog{width:min(520px,calc(100vw - 32px));max-height:80vh;overflow:auto;padding:24px;background:var(--surface-1);border:1px solid var(--line);border-radius:16px;color:var(--text)}
+.review-summary-dialog .modal-title{display:flex;align-items:center;justify-content:space-between;gap:16px}.review-summary-dialog .modal-title button{display:grid;place-items:center;width:40px;height:40px;background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--muted);cursor:pointer}
+.review-summary-dialog .settings-section{padding:12px 0;margin:12px 0;border:0;border-top:1px solid var(--line)}.review-summary-dialog p{font-size:13px;line-height:1.6}.review-summary-dialog small{font-size:11px;color:var(--muted)}
+@media(max-width:680px){.shared-projects .shared-original-review .review-summary{padding:16px;flex-wrap:wrap}.shared-projects .shared-original-review .shared-review-people{margin:0 16px 20px}.shared-projects .shared-original-review .ai-button>span{display:flex}}
+/* Dashboard button defaults must never paint over the folder cover. */
+.shared-projects .studio-project .project-open-hitarea{background:transparent;border:0;padding:0;border-radius:inherit;min-height:0;box-shadow:none}
+.shared-projects .studio-project .project-rename-trigger{width:32px;height:32px;min-height:32px;min-width:32px;flex:0 0 32px;padding:0;border:0;background:transparent;border-radius:50%;color:var(--folder-accent)}
+.shared-projects .studio-project .project-rename-trigger:hover{background:#ffffff12}
+.studio-project .project-delete-trigger{position:absolute;z-index:5;top:16px;right:16px;pointer-events:auto;display:grid;place-items:center;width:34px;height:34px;min-height:34px;padding:0;border:1px solid #ffffff24;border-radius:50%;color:#f7d5df;background:#15111ed9;cursor:pointer}
+.shared-projects .studio-project .project-delete-trigger{min-height:34px;padding:0;border-radius:50%;background:#15111ed9}
+.project-delete-trigger:hover{color:#ffb4b4;border-color:#ffb4b4}
+.project-delete-dialog{max-width:480px;width:calc(100% - 32px);padding:28px;background:var(--surface-1);border:1px solid var(--line);border-radius:18px}
+.project-delete-dialog footer{display:flex;justify-content:flex-end;gap:12px;margin-top:20px}
+.project-delete-dialog .project-delete-confirm{color:#ffb4b4;border-color:#905358}
+.project-trash{margin:20px 0;padding:16px;border:1px solid var(--line);border-radius:12px}
+.project-trash summary{cursor:pointer;color:var(--muted);font-size:13px}
+.project-trash>div{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:12px}
+.workspace:has(.shared-review-room)>.studio-topbar,.workspace:has(.shared-review-room)>.abstract-sculpture-background,.shared-projects:has(.shared-review-room) .shared-all-projects{display:none}
+.app-shell .dashboard-page.shared-projects:has(.shared-review-room){padding:0;max-width:none;margin:0}
+.shared-projects:has(.shared-review-room)>.shared-layout{margin:0}
+.shared-projects .shared-review-room>.topbar{position:sticky;top:0;z-index:25;background:var(--surface-1);padding:16px 24px;border-bottom:1px solid var(--line)}
+.shared-review-room .topbar .breadcrumb button{border:0;background:transparent;color:var(--muted);cursor:pointer}
+.shared-projects .shared-review-room .shared-original-review{grid-template-columns:minmax(0,1fr) 350px;min-height:calc(100vh - 130px)}
+.shared-projects .shared-review-room .shared-original-comments{height:calc(100vh - 130px);max-height:none;position:sticky;top:80px}
+.shared-original-review .asset-bar,.shared-original-review .social-mode-switch{flex-shrink:0}
+.shared-original-review .shared-version-picker select{width:auto;min-height:34px;background:var(--surface-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.shared-original-review .storyboard-preview>img,.shared-original-review .storyboard-preview>video{width:100%;height:100%;object-fit:contain}
+.shared-original-review .storyboard-disclosure details>summary{list-style:none;cursor:pointer}
+.shared-original-review .storyboard-disclosure details>summary::-webkit-details-marker{display:none}
+.shared-original-review .storyboard-disclosure .delivery-grid{margin:0}
+.shared-original-review .shared-review-people{margin:16px 24px}
+.shared-original-review .shared-review-people>summary{cursor:pointer;font-size:13px;font-weight:600}
+@media(max-width:1050px){.shared-projects .shared-review-room .shared-original-review{grid-template-columns:minmax(0,1fr)}.shared-projects .shared-review-room .shared-original-comments{position:relative;top:auto;height:650px}}
+/* Reuse the original review surface; only adapt its containing workspace. */
+.shared-projects .shared-original-review{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:0;min-height:700px;overflow:visible}
+.shared-original-review>.review-main{min-width:0;overflow:visible}
+.shared-projects .shared-original-comments{display:flex;position:relative;flex-direction:column;width:auto;min-width:0;height:780px;max-height:90vh;border-left:1px solid var(--line);background:var(--surface-1)}
+.shared-original-comments .comments-scroll{flex:1;overflow:auto;padding-bottom:16px}
+.app-shell .shared-original-comments .shared-original-composer{position:static;display:flex;flex-direction:column;align-items:stretch;flex-shrink:0}
+.shared-original-comments .shared-original-composer>div{display:flex;align-items:end;justify-content:space-between;gap:12px}
+.shared-original-comments .comment-card>form{display:flex;gap:6px;margin:10px 8px;flex-wrap:wrap}
+.shared-original-comments .comment-card>form input{flex:1;min-width:80px}
+.shared-projects .shared-original-review .annotation-tools>button{padding:0;min-width:32px;min-height:32px;background:transparent;border:0}
+.shared-projects .shared-original-review .color-options button{width:20px;height:20px;min-width:20px;min-height:20px;padding:0;border:2px solid #15131b;border-radius:50%;background:var(--swatch);box-shadow:0 0 0 1px #655a73;position:relative;cursor:pointer}
+.shared-projects .shared-original-review .color-options button[aria-pressed=true]{box-shadow:0 0 0 2px #fff}
+.shared-projects .shared-original-review .color-options button:focus-visible{outline:2px solid #fff;outline-offset:4px}
+.shared-projects .shared-original-review .color-options button::after{content:'';position:absolute;inset:-2px}
+.shared-projects .shared-original-review .player-controls button{padding:6px;background:transparent;border:0;min-height:32px}
+.shared-projects .shared-original-review .scrubber input{padding:0;min-height:0;border:0}
+.shared-room-delivery{border-bottom:1px solid var(--line);padding:16px;margin-bottom:16px}
+.shared-room-delivery>summary{cursor:pointer;font-weight:600;min-height:32px}
+.shared-room-delivery .shared-delivery-grid{grid-template-columns:repeat(auto-fill,minmax(160px,220px))}
+.shared-room-delivery [aria-current=true]{outline:2px solid var(--accent)}
+@media(max-width:1050px){.shared-projects .shared-original-review{grid-template-columns:minmax(0,1fr)}.shared-projects .shared-original-comments{display:flex;height:650px;max-height:none;border-left:0;border-top:1px solid var(--line)}}
+.shared-projects[data-mode="project"]>.shared-layout{display:block}
+.shared-projects[data-mode="project"]>.shared-layout>.shared-list{display:none}
+.shared-projects[data-mode="project"] .shared-conversation{width:100%;min-width:0;border:0;padding:0}
+.shared-projects[data-mode="project"]>.dashboard-header,.shared-projects[data-mode="project"]>.shared-scope-help,.shared-projects[data-mode="project"]>.shared-toolbar{display:none}
+.shared-all-projects{display:inline-flex;align-items:center;gap:8px;background:transparent;border:0;color:var(--muted,#bdb5c7);padding:10px 0;margin-bottom:16px;cursor:pointer;font-size:13px}
+.shared-all-projects:hover{color:var(--text,#fff)}
+.shared-projects:has(.shared-review-room) .shared-conversation>header,.shared-projects:has(.shared-review-room) .shared-conversation>form,.shared-projects:has(.shared-review-room) .shared-general-conversation{display:none}
+.shared-projects .shared-review-room{width:100%;min-width:0}
+.shared-projects .shared-review-room .shared-review-layout{grid-template-columns:minmax(0,1fr) minmax(300px,350px);gap:24px;align-items:start}
+.shared-projects .shared-review-room .shared-review-comments{border:1px solid var(--line,#39313f);border-radius:18px;padding:20px;background:var(--surface-1,#15121b);max-height:calc(100vh - 120px);overflow:auto;position:sticky;top:20px;scrollbar-width:thin}
+.shared-projects .shared-review-comments>header{padding-bottom:16px;border-bottom:1px solid var(--line,#39313f)}
+.shared-projects .shared-review-comments article{padding:16px 0}
+.shared-projects .shared-review-comments article:last-of-type{border-bottom:0}
+.shared-projects .shared-review-comments textarea,.shared-projects .shared-review-comments input{box-sizing:border-box;max-width:100%;min-width:0;border:1px solid var(--line,#49404e);border-radius:10px;background:var(--surface-0,#100e15);color:var(--text,#f7f3fc);padding:12px;font:inherit;font-size:13px}
+.shared-projects .shared-review-comments textarea:focus-visible,.shared-projects .shared-review-comments input:focus-visible{outline:2px solid var(--accent,#ccb5ed);outline-offset:2px}
+.shared-projects .shared-review-composer>div{flex-wrap:wrap}
+.shared-projects .shared-review-composer>div>button{min-height:40px}
+.shared-projects .shared-review-room .shared-review-surface{border:1px solid var(--line,#39313f);border-radius:18px;min-height:260px}
+.shared-projects .shared-review-tools{border-bottom:1px solid var(--line,#39313f);margin-bottom:10px;padding:14px 0}
+.shared-projects .shared-review-tools button{border-radius:10px;min-width:40px;min-height:40px}
+.shared-projects .shared-review-toolbar{margin-bottom:8px}
+.shared-projects .shared-review-people{border:1px solid var(--line,#39313f);border-radius:14px;padding:18px;margin-top:24px}
+.shared-projects .shared-general-conversation{margin-top:28px;border-top:1px solid var(--line,#39313f);padding-top:24px}
+@media(max-width:1050px){.shared-projects .shared-review-room .shared-review-layout{grid-template-columns:1fr}.shared-projects .shared-review-room .shared-review-comments{position:static;max-height:none;width:100%}.shared-projects .shared-review-room .shared-review-surface{min-height:200px}}
+.shared-projects[data-mode="gallery"]>.shared-layout{display:block}
+.shared-projects[data-mode="gallery"]>.shared-layout>.shared-list.studio-project-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:28px;border:0;border-radius:0;background:transparent;overflow:visible;padding-top:16px}
+.shared-projects:has(.folder-project) .shared-project-welcome{display:none}
+.shared-projects .shared-delivery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:20px;margin:20px 0}
+.shared-projects .shared-piece-card{display:flex;flex-direction:column;min-width:0;padding:0;overflow:hidden;border:1px solid var(--line,#44374e);border-radius:16px;background:var(--surface-1,#15121b);color:var(--text,#f9f5ff);text-align:left;cursor:pointer;transition:border-color 160ms ease,box-shadow 160ms ease}
+.shared-projects .shared-piece-card:hover{border-color:var(--accent,#cbb4ee);box-shadow:0 8px 24px #0003}
+.shared-projects .shared-piece-card:focus-visible{outline:2px solid var(--accent,#cbb4ee);outline-offset:4px}
+.shared-projects .shared-piece-preview{position:relative;display:block;width:100%;aspect-ratio:16/10;overflow:hidden;background:#0b0a0e}
+.shared-projects .shared-piece-preview>img,.shared-projects .shared-piece-preview>video{display:block;width:100%;height:100%;object-fit:contain}
+.shared-projects .shared-piece-number,.shared-projects .shared-piece-kind{position:absolute;top:10px;padding:4px 8px;background:#0c0a11d9;color:#fff;border-radius:7px;font-size:11px;line-height:1.3}
+.shared-projects .shared-piece-number{left:10px;font-variant-numeric:tabular-nums}.shared-projects .shared-piece-kind{right:10px}
+.shared-projects .shared-piece-copy{display:flex;flex-direction:column;gap:9px;padding:18px;width:100%;box-sizing:border-box;border-top:1px solid var(--line,#44374e)}
+.shared-projects .shared-piece-copy>strong{font-size:15px;line-height:1.4;overflow-wrap:anywhere}
+.shared-projects .shared-piece-copy>small{font-size:12px;margin:0}
+.shared-projects .shared-piece-action{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--accent,#cbb4ee);padding-top:8px}
+.shared-projects .shared-piece-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;height:100%;background:radial-gradient(ellipse at top left,#3c2f52,#14111c 75%);color:#d1bde9}
+@media(max-width:680px){.shared-projects .shared-delivery-grid{grid-template-columns:1fr}.shared-projects[data-mode="gallery"]>.shared-layout>.shared-list.studio-project-grid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.shared-projects .shared-piece-card{transition:none}}

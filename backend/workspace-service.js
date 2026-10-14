@@ -60,6 +60,15 @@ export function workspaceService(repository) {
         return { ok: true };
       });
     },
+    async updateInvitation(workspaceId,actorId,id,role) {
+      validateRole(role);
+      return repository.transaction(workspaceId,actorId,async client=>{
+        const row=(await client.query('UPDATE workspace_invitations SET role=$3 WHERE workspace_id=$1 AND id=$2 AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at>now() RETURNING id,email,role,expires_at',[workspaceId,id,role])).rows[0];
+        if(!row)throw workspaceError(404,'Invitación no disponible; puede haber sido aceptada, revocada o vencida.');
+        await event(client,workspaceId,actorId,'invitation.role_changed',{email:row.email,role});
+        return {invitation:row};
+      });
+    },
     async revoke(workspaceId, actorId, id) {
       return repository.transaction(workspaceId, actorId, async client => {
         const result = await client.query('UPDATE workspace_invitations SET revoked_at=now() WHERE id=$1 AND workspace_id=$2 AND accepted_at IS NULL AND revoked_at IS NULL RETURNING id', [id, workspaceId]);

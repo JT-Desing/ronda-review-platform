@@ -17,6 +17,8 @@ const media=sharedMediaService(sharedReviewRepository(f.pool),localStorage(f.roo
 await f.pool.query("UPDATE users SET name=CASE id WHEN $1 THEN 'Ana · Administradora QA' WHEN $2 THEN 'Mateo · Editor QA' WHEN $3 THEN 'Laura · Revisora QA' ELSE 'Externo QA' END",[f.admin,f.editor,f.reviewer]);
 await f.pool.query("UPDATE workspaces SET name='Estudio Norte · QA' WHERE id=$1",[f.space]);
 await f.pool.query("UPDATE shared_projects SET name='Lanzamiento · QA',client='Empresa ficticia' WHERE id=$1",[f.project]);
+const emptyProject=(await f.pool.query("INSERT INTO shared_projects(workspace_id,name,client,created_by,request_id) VALUES($1,'Proyecto vacío · QA','Empresa ficticia',$2,$3) RETURNING id",[f.space,f.admin,randomUUID()])).rows[0].id;
+await f.pool.query("INSERT INTO shared_assets(workspace_id,project_id,name,kind,created_by,request_id,deleted_at) VALUES($1,$2,'Pieza recuperable · QA','image',$3,$4,now())",[f.space,emptyProject,f.admin,randomUUID()]);
 const image=await readFile(new URL('../src/components/brand-preview-reference-2.png',import.meta.url));
 const {uploadId}=await media.reserve(f.space,f.admin,{projectId:f.project,name:'Campaña visual · QA.png',mime:'image/png',size:image.length,requestId:randomUUID()});
 await media.receive(f.space,f.admin,uploadId,Readable.from([image]));const {asset,version}=await media.completeUpload(f.space,f.admin,uploadId);
@@ -31,10 +33,10 @@ const server=http.createServer(async(req,res)=>{
       res.writeHead(302,{'Set-Cookie':`ronda_session=${value}; HttpOnly; SameSite=Lax; Path=/`,Location:'/'});res.end();return;
     }
     if(req.url==='/qa/stop'){res.end('QA stopped');server.close(async()=>{await f.close();});return;}
-    if(req.url.startsWith('/api/'))return await app(req,res);
+    if(req.url.startsWith('/api/')){const latency=Math.min(2000,Math.max(0,Number(process.env.RONDA_QA_LATENCY_MS)||0));if(latency)await new Promise(resolve=>setTimeout(resolve,latency));return await app(req,res);}
     const path=req.url.split('?')[0];const full=resolve(dist,'.'+decodeURIComponent(path));
     if(!full.startsWith(dist+ '/' )&&!full.startsWith(dist+'\\')&&full!==dist){res.writeHead(404);res.end();return;}
-    const types={'.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.png':'image/png','.html':'text/html','.woff2':'font/woff2'};
+    const types={'.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.html':'text/html','.woff2':'font/woff2'};
     const file=path==='/'?resolve(dist,'index.html'):full;
     const data=await readFile(file).catch(()=>readFile(resolve(dist,'index.html')));res.writeHead(200,{'Content-Type':types[extname(file)]||'application/octet-stream'});res.end(data);
   }catch{if(!res.headersSent)res.writeHead(500);res.end('QA error');}

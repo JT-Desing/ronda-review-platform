@@ -1,18 +1,14 @@
+import {ReviewSummaryDialog} from './ReviewSummaryDialog.jsx';
 import React, { useState,useEffect } from 'react';
 import { useRonda, selectPlanUsage } from '../state/RondaContext.jsx';
 import { SharedProjects } from './SharedProjects.jsx';
 import { ProjectLibrary } from './StudioWorkspace.jsx';
 import {demoSession} from '../state/demoSession.js';
 
-export function ProjectActions({ onOpen, onNotify,onDirtyChange }) {
-  const [scope, setScope] = useState('private');
-  const [sharedDirty, setSharedDirty] = useState(false), [pendingScope, setPendingScope] = useState(null);
-  useEffect(()=>{onDirtyChange?.(sharedDirty);return()=>onDirtyChange?.(false);},[sharedDirty,onDirtyChange]);
-  const changeScope = next => { if (next === scope) return; if(next==='shared'&&demoSession())return onNotify('El demo no accede a los proyectos compartidos reales.'); if (scope === 'shared' && sharedDirty) setPendingScope(next); else setScope(next); };
-  return <><nav className="project-scope-switch" aria-label="Tipo de proyectos"><button aria-pressed={scope === 'private'} onClick={() => changeScope('private')}>Mis proyectos privados</button><button aria-pressed={scope === 'shared'} onClick={() => changeScope('shared')}>Compartidos con el equipo</button></nav>{pendingScope && <div className="shared-feedback" role="alert"><p>Hay texto sin publicar en proyectos compartidos. Cambiar de vista descartará estos borradores.</p><button onClick={() => setPendingScope(null)}>Seguir escribiendo</button><button onClick={() => { setScope(pendingScope); setPendingScope(null); }}>Descartar y cambiar vista</button></div>}{scope === 'private' ? <PrivateProjectActions onOpen={onOpen} onNotify={onNotify} /> : <SharedProjects onNotify={onNotify} onDirtyChange={setSharedDirty} />}</>;
+export function ProjectActions({onNotify,onDirtyChange}) {
+  if(demoSession())return <div className="dashboard-page"><h1>Proyectos del equipo</h1><p>El modo demo no accede a los proyectos reales. Vuelve a tu cuenta para trabajar con ePayco MKT.</p></div>;
+  return <SharedProjects onNotify={onNotify} onDirtyChange={onDirtyChange}/>;
 }
-
-function PrivateProjectActions(props) { return <ProjectLibrary {...props}/>; }
 
 
 export { WorkspaceTeam as TeamActions } from './WorkspaceTeam.jsx';
@@ -29,6 +25,5 @@ export function SettingsActions({ onNotify }) {
 export function ReviewSummary({ onClose, versionId }) {
   const { state } = useRonda();
   const comments = Object.values(state.comments).filter(c => c.versionId === versionId);
-  const open = comments.filter(c => c.status === 'open');
-  return <div className="modal-layer"><button className="modal-scrim" aria-label="Cerrar resumen" onClick={onClose}/><section className="modal" role="dialog" aria-modal="true" aria-labelledby="summary-title"><div className="modal-title"><h2 id="summary-title">Resumen de revisión</h2><button onClick={onClose} aria-label="Cerrar resumen">×</button></div><p>{open.length} pendientes · {open.filter(c => c.priority === 'blocking').length} bloqueantes · {comments.length - open.length} resueltos</p>{open.length ? open.map(c => <div className="settings-section" key={c.id}><strong>{state.members[c.authorId]?.name || 'Invitado'} · fotograma {c.frame}</strong><p>{c.text}</p></div>) : <p>No hay cambios pendientes.</p>}<small>Resumen calculado a partir de los comentarios. No utiliza IA ni envía datos externos.</small></section></div>;
+  return <ReviewSummaryDialog comments={comments} members={state.members} onClose={onClose}/>;
 }

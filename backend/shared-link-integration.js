@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {reviewFixture} from './shared-review-qa-fixture.js';
+import {sharedReviewRepository} from './repositories/shared-review.js';
+import {sharedMediaService} from './shared-media-service.js';
+import {sharedCommentService} from './shared-comment-service.js';
+import {sharedProjectService} from './shared-project-service.js';
+const f=await reviewFixture();
+try{
+  let queries=0;
+  const repo=sharedReviewRepository(f.pool);
+  const service=sharedMediaService(repo,null,async url=>{queries++;return {url,type:'web',mime:'text/html'};});
+  const input={projectId:f.project,name:'Artefacto web',url:'https://example.com/',requestId:randomUUID()};
+  await assert.rejects(service.addLink(f.space,f.reviewer,input),{status:403});
+  await assert.rejects(service.addLink(f.space,f.outsider,input),{status:404});
+  assert.equal(queries,0);
+  const added=await service.addLink(f.space,f.admin,input);
+  const again=await service.addLink(f.space,f.admin,input);
+  assert.equal(again.asset.id,added.asset.id);assert.equal(queries,1);
+  const context={projectId:f.project,assetId:added.asset.id,versionId:added.asset.activeVersionId};
+  const room=await service.readVersion(f.space,f.reviewer,context);
+  assert.equal(room.version.externalUrl,input.url);assert.equal(room.version.fileId,null);
+  const comment=await sharedCommentService(repo).addComment(f.space,f.reviewer,context,{text:'Cambiar el encabezado',requestId:randomUUID(),anchor:{timeSeconds:null}});
+  assert.equal(comment.comment.text,'Cambiar el encabezado');
+  assert.equal((await sharedCommentService(repo).listComments(f.space,f.admin,context)).comments.length,1);
+  const gallery=(await service.listAssets(f.space,f.reviewer,f.project)).assets;
+  assert.equal(gallery[0].previewFileId,null);
+  assert.equal(gallery[0].openComments,1);
+  const project=(await sharedProjectService(repo).list(f.space,f.reviewer)).projects.find(p=>p.id===f.project);
+  assert.equal(project.asset_count,1);
+  assert.equal(project.open_review_comments,1);
+  await assert.rejects(sharedCommentService(repo).addComment(f.space,f.reviewer,context,{text:'Tiempo ficticio',requestId:randomUUID(),anchor:{timeSeconds:5}}),{status:400});
+  assert.equal((await service.listVersions(f.space,f.admin,f.project,added.asset.id)).versions[0].externalUrl,input.url);
+  console.log('PASS shared links: migration, authorization before network, idempotency, persistence, version listing and web comments.');
+}finally{await f.close();}

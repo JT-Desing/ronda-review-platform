@@ -5,8 +5,9 @@ export function sharedProjectService(repository) {
   return {
     list(space, actor) {
       return repository.access(space, actor, async (db, role, workspace) => {
-        const projects = (await db.query("SELECT p.id,p.name,p.client,p.revision,p.updated_at,(SELECT count(*)::integer FROM shared_project_comments c WHERE c.project_id=p.id AND c.status='open') AS open_comments FROM shared_projects p WHERE p.workspace_id=$1 ORDER BY p.created_at DESC,p.id LIMIT 100", [space])).rows;
-        return { workspace: { ...workspace, role }, projects };
+        const projects = (await db.query("SELECT p.id,p.name,p.client,p.revision,p.updated_at,(SELECT count(*)::integer FROM shared_assets a WHERE a.project_id=p.id AND a.deleted_at IS NULL) AS asset_count,(SELECT count(*)::integer FROM shared_version_comments c WHERE c.project_id=p.id AND c.status='open' AND EXISTS(SELECT 1 FROM shared_assets a WHERE a.id=c.asset_id AND a.deleted_at IS NULL)) AS open_review_comments,(SELECT count(*)::integer FROM shared_project_comments c WHERE c.project_id=p.id AND c.status='open') AS open_comments FROM shared_projects p WHERE p.workspace_id=$1 AND p.deleted_at IS NULL ORDER BY p.created_at DESC,p.id LIMIT 100", [space])).rows;
+        const deletedProjects=role==='admin'?(await db.query('SELECT id,name,revision,deleted_at FROM shared_projects WHERE workspace_id=$1 AND deleted_at IS NOT NULL ORDER BY deleted_at DESC LIMIT 100',[space])).rows:[];
+        return { workspace: { ...workspace, role }, projects, deletedProjects };
       });
     },
     create(space, actor, input) {
@@ -42,6 +43,19 @@ export function sharedProjectService(repository) {
         await event(db, space, actor, 'project.updated', { projectId: id, name: fields.name });
         return { project: await repository.project(db, space, id) };
       }, true);
+    },
+    trash(space,actor,id,input,restore=false) {
+      if(!Number.isInteger(input.revision)||input.revision<0||typeof input.confirmName!=='string')throw workspaceError(400,'Confirma el nombre y la revisión del proyecto.');
+      return repository.access(space,actor,async(db,role)=>{
+        if(role!=='admin')throw workspaceError(403,'Solo un administrador puede eliminar o restaurar proyectos.');
+        const project=(await db.query('SELECT id,name,revision,deleted_at FROM shared_projects WHERE workspace_id=$1 AND id=$2 FOR UPDATE',[space,id])).rows[0];
+        if(!project)throw workspaceError(404,'Proyecto no disponible.');
+        if(project.revision!==input.revision||project.name!==input.confirmName)throw workspaceError(409,'El proyecto cambió. Actualiza antes de continuar.');
+        if(Boolean(project.deleted_at)===!restore)throw workspaceError(409,'El estado del proyecto cambió. Actualiza.');
+        await db.query('UPDATE shared_projects SET deleted_at=CASE WHEN $3 THEN NULL ELSE now() END,revision=revision+1,updated_at=now() WHERE workspace_id=$1 AND id=$2',[space,id,restore]);
+        await event(db,space,actor,restore?'project.restored':'project.trashed',{projectId:id,name:project.name});
+        return {ok:true};
+      },true);
     },
     comment(space, actor, id, input) {
       const text = commentInput(input), key = requestId(input.requestId);

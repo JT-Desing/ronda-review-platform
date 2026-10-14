@@ -1,3 +1,4 @@
+import {BrandLoader} from './BrandLoader.jsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { Heart, ChatBubble, Bookmark, RefreshDouble, SocialReferenceIcon } from './SocialReferenceIcons.jsx';
 import { useRonda } from '../state/RondaContext.jsx';
@@ -12,7 +13,7 @@ function SocialMedia({asset, active, autoplay, ratio, onTime}) {
   useEffect(()=>{let live=true,objectUrl;setUrl(null);setError(false);fileStore(asset.fileId||asset.id).then(file=>{if(live){objectUrl=URL.createObjectURL(file);setUrl(objectUrl)}}).catch(()=>{if(live)setError(true)});return()=>{live=false;if(objectUrl)URL.revokeObjectURL(objectUrl)}},[asset.id,asset.fileId]);
   useEffect(()=>{const observer=new IntersectionObserver(([entry])=>setVisible(entry.isIntersecting),{threshold:.6});observer.observe(container.current);return()=>observer.disconnect()},[]);
   useEffect(()=>{const player=video.current;if(!player)return;if(active&&visible&&autoplay&&!matchMedia('(prefers-reduced-motion: reduce)').matches)player.play().catch(()=>{});else player.pause()},[active,visible,autoplay,url]);
-  return <div ref={container} className="social-media" style={{aspectRatio:ratio}}>{error?<p role="alert">Média no disponible. Vuelve a seleccionar la lámina para reintentar.</p>:!url?<p>{active?'Cargando medio…':asset.name}</p>:asset.type==='image'?<img src={url} alt={asset.name} draggable={false}/>:<video ref={video} src={url} controls muted playsInline preload="metadata" onTimeUpdate={e=>active&&onTime(e.currentTarget.currentTime)} onError={()=>setError(true)}/>}</div>;
+  return <div ref={container} className="social-media" style={{aspectRatio:ratio}}>{error?<p role="alert">Média no disponible. Vuelve a seleccionar la lámina para reintentar.</p>:!url?<BrandLoader size="compact" label={active?'Cargando medio…':asset.name}/>:asset.type==='image'?<img src={url} alt={asset.name} draggable={false}/>:<video ref={video} src={url} controls muted playsInline preload="metadata" onTimeUpdate={e=>active&&onTime(e.currentTarget.currentTime)} onError={()=>setError(true)}/>}</div>;
 }
 
 export default function SocialPreview({projectId,onSelect,onTime,onReview,onNotify}) {

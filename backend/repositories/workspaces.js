@@ -2,7 +2,7 @@ import { requireWorkspaceAdmin, requireWorkspaceMember, workspaceError, WORKSPAC
 export function workspaceRepository(pool) {
   return {
     async list(userId) {
-      return (await pool.query('SELECT w.id,w.name,m.role FROM workspaces w JOIN workspace_members m ON m.workspace_id=w.id WHERE m.user_id=$1 ORDER BY w.created_at,w.id', [userId])).rows;
+      return (await pool.query('SELECT w.id,w.name,w.kind,m.role FROM workspaces w JOIN workspace_members m ON m.workspace_id=w.id WHERE m.user_id=$1 ORDER BY w.created_at,w.id', [userId])).rows;
     },
     async read(workspaceId, userId) {
       const client = await pool.connect();

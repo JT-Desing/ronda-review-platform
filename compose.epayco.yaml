@@ -1,0 +1,56 @@
+name: ronda-epayco-mkt
+services:
+  ronda:
+    build: .
+    restart: unless-stopped
+    ports: ["127.0.0.1:8082:8080"]
+    depends_on:
+      api:
+        condition: service_healthy
+  database:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file: ${RONDA_BACKEND_ENV:?Set the existing private backend environment path}
+    volumes: ["epayco-database:/var/lib/postgresql/data"]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  api:
+    build: ./backend
+    restart: unless-stopped
+    env_file: ${RONDA_BACKEND_ENV}
+    environment:
+      APP_ORIGIN: https://ronda.repolite.link
+    volumes: ["epayco-files:/data/files"]
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, 'fetch("http://127.0.0.1:3000/api/health").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file: ${RONDA_BACKEND_ENV}
+    entrypoint: [sh, /scripts/backup.sh]
+    volumes:
+      - ./backend/backup.sh:/scripts/backup.sh:ro
+      - epayco-files:/data/files:ro
+      - ./.backups/epayco-mkt:/backups
+    depends_on:
+      database:
+        condition: service_healthy
+  tunnel:
+    image: cloudflare/cloudflared:2026.8.0
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:?Existing named tunnel token required}
+    depends_on:
+      ronda:
+        condition: service_healthy
+volumes:
+  epayco-database:
+  epayco-files:

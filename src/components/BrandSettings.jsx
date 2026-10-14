@@ -1,3 +1,4 @@
+import {BrandLoader} from './BrandLoader.jsx';
 import React, { useState } from 'react';
 import { useRonda } from '../state/RondaContext.jsx';
 import Icon from './Icon.jsx';
@@ -28,7 +29,7 @@ export default function BrandSettings({onNotify}) {
     <div className="identity-layout"><div className="identity-fields">
       <section className="identity-section"><header><h2>Identidad de marca</h2><p>Define cómo aparece tu empresa en este espacio.</p></header>
         <label className="identity-field">Nombre comercial<input maxLength={80} placeholder="Nombre de tu empresa" value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/></label>
-        <div className="identity-upload">{avatar}<div><strong>Logo de la empresa</strong><p>PNG, JPG o WebP · hasta 512 KB</p><div className="identity-upload-actions"><label className="identity-file-button"><Icon name="plus" size={16}/>{loading?'Leyendo…':'Subir logo'}<input aria-label="Subir logo de la empresa" type="file" accept="image/png,image/jpeg,image/webp" disabled={loading} onChange={e=>{upload(e.target.files[0]);e.target.value='';}}/></label>{draft.logo&&<button type="button" onClick={()=>setDraft({...draft,logo:''})}>Quitar</button>}</div></div></div>
+        <div className="identity-upload">{avatar}<div><strong>Logo de la empresa</strong><p>PNG, JPG o WebP · hasta 512 KB</p><div className="identity-upload-actions"><label className="identity-file-button"><Icon name="plus" size={16}/>{loading?<BrandLoader size="inline" label="Leyendo…"/>:'Subir logo'}<input aria-label="Subir logo de la empresa" type="file" accept="image/png,image/jpeg,image/webp" disabled={loading} onChange={e=>{upload(e.target.files[0]);e.target.value='';}}/></label>{draft.logo&&<button type="button" onClick={()=>setDraft({...draft,logo:''})}>Quitar</button>}</div></div></div>
         <p className="identity-helper">Usa una imagen cuadrada. Se aplicará en la navegación y en el avatar de tus previews sociales.</p>
       </section>
       <section className="identity-section identity-domain"><header><div><h2>Dominio personalizado</h2><p>Guarda la dirección que quieres conectar.</p></div><span className="identity-pending">Sin conectar</span></header>
@@ -37,6 +38,6 @@ export default function BrandSettings({onNotify}) {
       </section>
     </div><aside className="identity-preview" aria-label="Vista previa de identidad"><span className="eyebrow">VISTA PREVIA</span><h2>Así se verá tu marca</h2><p>Los cambios se reflejan aquí antes de guardar.</p><div className="identity-preview-nav">{avatar}<div><strong>{name}</strong><small>Espacio de trabajo</small></div></div><div className="identity-preview-social"><div>{avatar}<strong>{name}</strong><Icon name="more" size={18}/></div><BrandReferenceCarousel/></div><p className="identity-helper">Imágenes fijas de referencia. Cada publicación conserva su contenido y nombre específico.</p></aside></div>
     {error&&<p className="identity-error" role="alert">{error}</p>}
-    <footer className="identity-savebar"><span role="status">{loading?'Leyendo logo…':dirty?'Cambios sin guardar':'Consulta el estado de guardado en la barra superior'}</span><div><button type="button" disabled={!dirty||loading} onClick={()=>{setDraft(baseline);setError('')}}>Descartar</button><button className="identity-save" disabled={!dirty||loading} type="submit"><Icon name="check" size={16}/>Guardar cambios</button></div></footer>
+    <footer className="identity-savebar"><span role="status">{loading?<BrandLoader size="inline" label="Leyendo logo…"/>:dirty?'Cambios sin guardar':'Consulta el estado de guardado en la barra superior'}</span><div><button type="button" disabled={!dirty||loading} onClick={()=>{setDraft(baseline);setError('')}}>Descartar</button><button className="identity-save" disabled={!dirty||loading} type="submit"><Icon name="check" size={16}/>Guardar cambios</button></div></footer>
   </form>;
 }
