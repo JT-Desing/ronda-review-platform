@@ -8,6 +8,18 @@ PostgreSQL y los archivos persisten en los volúmenes `epayco-database` y
 `epayco-files` del proyecto. No ejecutar `docker compose down -v` ni borrar
 esos volúmenes. Los respaldos diarios están en `.backups/epayco-mkt`.
 Los respaldos en el mismo PC no protegen frente a pérdida del disco.
+Para eso está el respaldo externo en Cloudflare R2 (configuración en
+`backend/README.md`, sección "Respaldo externo en Cloudflare R2"). Con el
+archivo privado ya creado fuera del repositorio:
+
+```powershell
+$env:RONDA_BACKEND_ENV='C:/Users/Julian T/Documents/Codex/2026-10-07/necesi-6/outputs/ronda-prototype/backend/.env'
+$env:RONDA_OFFSITE_ENV='RUTA_PRIVADA/.env.offsite'
+docker compose --env-file 'C:/Users/Julian T/Documents/Codex/2026-10-07/necesi-6/outputs/ronda-prototype/.env' -f compose.epayco.yaml --profile offsite up -d --build offsite
+```
+
+Solo se construye y arranca `offsite`. Compose no recrea los demás servicios
+mientras su configuración no cambie.
 
 Para iniciar, desde esta carpeta en PowerShell, indicando los archivos privados
 ya existentes (no copiar sus valores al repositorio):
