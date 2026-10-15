@@ -9,6 +9,7 @@ import { handleSharedProjects } from './modules/shared-projects.js';
 import {handleSharedReview,isSharedReviewPath} from './modules/shared-review.js';
 import {inspectLink} from './external-link.js';
 import {body} from './http.js';
+import {rateLimiter} from './rate-limit.js';
 
 // Composition root: infrastructure is supplied, no listening or schema mutation here.
 export function createApp({ pool, origin, mailer, sharedStorage }) {
@@ -29,8 +30,7 @@ export function createApp({ pool, origin, mailer, sharedStorage }) {
       const account = await sessions.findAccount(sessionToken);
       if(req.method==='POST'&&(path==='/api/links/inspect'||/^\/api\/workspaces\/[^/]+\/projects\/[^/]+\/assets$/.test(path))){
         if(!account)return reply(res,401,{error:'Inicia sesión.'});
-        const limit=await pool.query("INSERT INTO auth_attempts(key,attempts) VALUES($1,1) ON CONFLICT(key) DO UPDATE SET attempts=CASE WHEN auth_attempts.window_start<now()-interval '1 minute' THEN 1 ELSE auth_attempts.attempts+1 END,window_start=CASE WHEN auth_attempts.window_start<now()-interval '1 minute' THEN now() ELSE auth_attempts.window_start END RETURNING attempts",['links:'+account.id]);
-        if(limit.rows[0].attempts>15)return reply(res,429,{error:'Espera un minuto antes de consultar más enlaces.'});
+        if(!await rateLimiter(pool)('links:'+account.id,15,60))return reply(res,429,{error:'Espera un minuto antes de consultar más enlaces.'});
         if(path==='/api/links/inspect')return reply(res,200,await inspectLink((await body(req))?.url));
       }
       const context = { req, res, path, account, sessionToken, pool, cookie, sharedStorage, mailer, origin };

@@ -2,21 +2,23 @@ import { token, digest } from '../security.js';
 import { reply, body } from '../http.js';
 import { authService } from '../auth-service.js';
 import { userRepository } from '../repositories/users.js';
+import { clientAddress, rateLimiter } from '../rate-limit.js';
 export async function handleAuth({ req, res, path, sessionToken, pool, cookie }) {
   if (req.method === 'POST' && path === '/api/auth/logout') {
     if (sessionToken) await pool.query('DELETE FROM sessions WHERE token_hash=$1', [digest(sessionToken)]);
     return reply(res, 200, { ok: true }, { 'Set-Cookie': cookie('', 0) });
   }
   if (req.method === 'POST' && ['/api/auth/register', '/api/auth/login'].includes(path)) {
-    const globalLimit=await pool.query(`INSERT INTO auth_attempts(key,attempts) VALUES('global-auth',1) ON CONFLICT(key) DO UPDATE SET attempts=CASE WHEN auth_attempts.window_start<now()-interval '1 minute' THEN 1 ELSE auth_attempts.attempts+1 END, window_start=CASE WHEN auth_attempts.window_start<now()-interval '1 minute' THEN now() ELSE auth_attempts.window_start END RETURNING attempts`);
-    if(globalLimit.rows[0].attempts>60)return reply(res,429,{error:'Servicio de acceso ocupado; vuelve a intentar en un minuto.'},{'Retry-After':'60'});
+    // Per address, not global: a single source must not be able to lock everyone out.
+    const allow = rateLimiter(pool), address = digest(clientAddress(req));
+    if (!await allow(`auth-ip:${address}`, 30, 300)) return reply(res, 429, { error: 'Demasiados intentos desde esta conexión. Espera 5 minutos.' }, { 'Retry-After': '300' });
     const input = await body(req);
     const email = typeof input.email === 'string' ? input.email.trim().toLowerCase() : '';
     const password = typeof input.password === 'string' ? input.password : '';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254 || password.length < 12 || password.length > 128) return reply(res, 400, { error: 'Usa un correo válido y una contraseña de 12 a 128 caracteres.' });
-    const key = digest(email);
-    const limit = await pool.query(`INSERT INTO auth_attempts(key,attempts) VALUES($1,1) ON CONFLICT(key) DO UPDATE SET attempts=CASE WHEN auth_attempts.window_start<now()-interval '15 minutes' THEN 1 ELSE auth_attempts.attempts+1 END, window_start=CASE WHEN auth_attempts.window_start<now()-interval '15 minutes' THEN now() ELSE auth_attempts.window_start END RETURNING attempts`, [key]);
-    if (limit.rows[0].attempts > 10) return reply(res, 429, { error: 'Demasiados intentos. Espera 15 minutos.' }, { 'Retry-After': '900' });
+    // Scoped to email and address so nobody can lock a victim's account from elsewhere;
+    // the per-email cap still bounds distributed guessing.
+    if (!await allow(`auth-email-ip:${digest(`${email}\n${address}`)}`, 10, 900) || !await allow(`auth-email:${digest(email)}`, 50, 3600)) return reply(res, 429, { error: 'Demasiados intentos. Espera 15 minutos.' }, { 'Retry-After': '900' });
     const service = authService(userRepository(pool));
     const user = path.endsWith('/register')
       ? await service.register({ email, password, name: input.name })
