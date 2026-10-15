@@ -3,8 +3,10 @@ import { createReadStream, createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import { Transform } from 'node:stream';
 import { randomUUID } from 'node:crypto';
+import { dirname } from 'node:path';
 import { reply } from '../http.js';
 import { servedFileType, decodeFileName } from '../file-policy.js';
+import { syncDirectories } from '../storage/durable.js';
 export async function handleFiles({ req, res, path, account, pool }) {
   const fileMatch = path?.match(/^\/api\/files\/([0-9a-f-]{36})$/);
   if (fileMatch) {
@@ -31,7 +33,7 @@ export async function handleFiles({ req, res, path, account, pool }) {
         await mkdir(dir, { recursive: true });
         let received = 0;
         const limit = new Transform({ transform(chunk, encoding, callback) { received += chunk.length; callback(received > size ? new Error('Tamaño incorrecto') : null, chunk); } });
-        await pipeline(req, limit, createWriteStream(temporary, { flags: 'wx', mode: 0o600 }));
+        await pipeline(req, limit, createWriteStream(temporary, { flags: 'wx', mode: 0o600, flush: true }));
         if (received !== size) throw new Error('Carga incompleta');
         const name = decodeFileName(req.headers['x-file-name']);
         const mime = String(req.headers['content-type'] ?? 'application/octet-stream').slice(0, 100);
@@ -42,6 +44,8 @@ export async function handleFiles({ req, res, path, account, pool }) {
         if (await used(client) + size > quota) throw overQuota();
         await client.query('INSERT INTO files(id,user_id,name,mime,size) VALUES($1,$2,$3,$4,$5)', [id, account.id, name, mime, size]);
         await rename(temporary, location); moved = true;
+        // The row must not commit before the file and its directory entry are on disk.
+        await syncDirectories(dir, dirname(dir));
         await client.query('COMMIT');
         return reply(res, 201, { id });
       } catch (error) {
