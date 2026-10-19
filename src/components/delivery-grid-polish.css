@@ -17,6 +17,7 @@
 .shared-asset-trash>div>span{overflow-wrap:anywhere;min-width:0}
 .shared-asset-trash button{min-height:40px;flex-shrink:0}
 .app-shell .delivery-grid.storyboard .delivery-add-actions{display:flex;align-items:center;gap:8px;position:relative;flex-wrap:wrap}
+.app-shell .delivery-grid.storyboard .delivery-add-actions>.upload-button{box-sizing:border-box;width:auto;min-width:120px;min-height:44px;padding:0 14px;font-size:12px;white-space:nowrap}
 .app-shell .delivery-add-actions .link-import{margin:0;position:static}
 .app-shell .delivery-grid.storyboard .delivery-add-actions .link-import>button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin:0;padding:0 16px;border:1px solid var(--line-strong);border-radius:10px;background:transparent;color:var(--text);font-size:12px;white-space:nowrap;cursor:pointer;transition:background-color 150ms ease,border-color 150ms ease}
 .app-shell .delivery-add-actions .link-import>button:hover:not(:disabled),.app-shell .delivery-add-actions .link-import>button[aria-expanded=true]{background:var(--surface-3);border-color:var(--accent)}
@@ -57,6 +58,8 @@
 @media(max-width:600px){.app-shell .delivery-grid.storyboard{padding:12px;--delivery-gap:12px}.app-shell .delivery-grid.storyboard>header>div:first-child{flex-basis:100%}.app-shell .delivery-grid.storyboard .upload-button{width:auto}.app-shell .delivery-grid.storyboard.organize ol{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}}
 .app-shell .delivery-grid.storyboard li{overflow:visible}
 .app-shell .delivery-grid.storyboard .storyboard-preview{border-radius:13px 13px 0 0}
+.app-shell .delivery-grid.storyboard .delivery-open>.asset-name-disambiguator{display:inline-flex;align-self:flex-start;box-sizing:border-box;width:max-content;max-width:calc(100% - 32px);margin:5px 16px 2px;padding:3px 9px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:10px;font-weight:500;line-height:1.35;white-space:normal}
+.app-shell .delivery-grid.storyboard .storyboard-preview>.asset-name-disambiguator{position:absolute;z-index:3;bottom:9px;left:50%;box-sizing:border-box;max-width:calc(100% - 16px);transform:translateX(-50%);padding:3px 8px;border:1px solid var(--line-strong);border-radius:999px;background:#16131ddd;color:var(--text);font-size:9px;font-weight:500;line-height:1.35;text-align:center;white-space:nowrap;pointer-events:none}
 .delivery-position-picker{position:relative;font-size:12px;color:var(--muted)}
 .delivery-position-picker summary{list-style:none;display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 8px;cursor:pointer;border-radius:8px;transition:background-color 160ms ease}
 .delivery-position-picker summary::-webkit-details-marker{display:none}

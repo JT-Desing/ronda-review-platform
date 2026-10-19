@@ -1,7 +1,7 @@
 import React,{useEffect,useId,useRef,useState} from 'react';
 import Icon from './Icon.jsx';
 
-export default function WorkspacePicker({spaces,value,onChange,disabled}){
+export default function WorkspacePicker({spaces,value,onChange,disabled,loading=false}){
   const id=useId(),root=useRef(null),trigger=useRef(null),search=useRef({text:'',time:0});
   const [open,setOpen]=useState(false),[active,setActive]=useState(0);
   const selected=spaces.findIndex(space=>space.id===value),space=spaces[selected];
@@ -24,11 +24,11 @@ export default function WorkspacePicker({spaces,value,onChange,disabled}){
       if(index>=0){e.preventDefault();setActive(index);setOpen(true)}
     }
   };
-  return <div className="workspace-picker" ref={root} onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))setOpen(false)}}>
+  return <div className="workspace-picker" ref={root} aria-busy={loading||undefined} onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))setOpen(false)}}>
     <span id={`${id}-label`} className="team-field-label">Espacio de trabajo</span>
     <button ref={trigger} type="button" className="workspace-picker-trigger" role="combobox" aria-labelledby={`${id}-label ${id}-value`} aria-haspopup="listbox" aria-expanded={open} aria-controls={open?`${id}-list`:undefined} aria-activedescendant={open?`${id}-option-${active}`:undefined} disabled={disabled} onKeyDown={keyDown} onClick={()=>open?setOpen(false):show()}>
       <span className="workspace-picker-mark"><Icon name="folder" size={18}/></span>
-      <span id={`${id}-value`}>{space?.name||'Sin espacios disponibles'}</span><Icon name="chevron" size={16}/>
+      <span id={`${id}-value`}>{loading?'Cargando espacios…':space?.name||'Sin espacios disponibles'}</span><Icon name="chevron" size={16}/>
     </button>
     {open&&<div className="workspace-picker-popup"><div className="workspace-picker-caption">TUS ESPACIOS <span>{spaces.length}</span></div>
       <div role="listbox" aria-labelledby={`${id}-label`} id={`${id}-list`}>

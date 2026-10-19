@@ -2,7 +2,20 @@ import { token, digest } from '../security.js';
 import { reply, body } from '../http.js';
 import { authService } from '../auth-service.js';
 import { userRepository } from '../repositories/users.js';
-export async function handleAuth({ req, res, path, sessionToken, pool, cookie }) {
+import { requestPasswordReset, deliverPasswordReset, completePasswordReset } from '../password-reset.js';
+export async function handleAuth({ req, res, path, sessionToken, pool, cookie, mailer, origin }) {
+  if (req.method === 'POST' && path === '/api/auth/password-reset/request') {
+    const input = await body(req);
+    if (!mailer?.enabled) return reply(res, 503, { error: 'La recuperación de contraseña no está disponible en este momento.' });
+    const result = await requestPasswordReset({ pool, origin, email: input?.email, requestAddress: req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown' });
+    if (result.delivery) setImmediate(() => { void deliverPasswordReset({ pool, mailer, delivery: result.delivery }); });
+    return reply(res, 202, { accepted: true });
+  }
+  if (req.method === 'POST' && path === '/api/auth/password-reset/complete') {
+    const input = await body(req);
+    const result = await completePasswordReset({ pool, value: input?.token, password: input?.password });
+    return reply(res, 200, result);
+  }
   if (req.method === 'POST' && path === '/api/auth/logout') {
     if (sessionToken) await pool.query('DELETE FROM sessions WHERE token_hash=$1', [digest(sessionToken)]);
     return reply(res, 200, { ok: true }, { 'Set-Cookie': cookie('', 0) });

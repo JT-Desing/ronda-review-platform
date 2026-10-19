@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 test('team projects open the review room rather than a second project interface',()=>{
   const source=readFileSync(new URL('./SharedProjectMedia.jsx',import.meta.url),'utf8');
-  assert.match(source,/setSelected\(active\.assets\[0\]\?\.id/);
+  assert.match(source,/setSelected\(current=>active\.assets\.some\(asset=>asset\.id===current\)\?current:active\.assets\[0\]\?\.id/);
   assert.match(source,/<SharedDeliveryGrid/);
   const grid=readFileSync(new URL('./SharedDeliveryGrid.jsx',import.meta.url),'utf8');
   assert.match(grid,/storyboard-disclosure expanded shared-delivery-controls/);

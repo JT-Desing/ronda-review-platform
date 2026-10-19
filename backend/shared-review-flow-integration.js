@@ -27,6 +27,7 @@ try{
   assert.equal(gallery[0].versionNumber,1);
   assert.equal((await call(versionPath+'/reviewers','PUT',{reviewerIds:[f.reviewer],revision:0})).status,200);
   const created=await call(versionPath+'/comments','POST',{text:'Cambiar título',priority:'blocking',requestId:randomUUID()},f.reviewer);assert.equal(created.status,201);const {comment}=await created.json();
+  assert.equal((await (await call(versionPath)).json()).asset.openComments,1,'room summary must include full active-version pending count');
   assert.equal((await call(versionPath+'/decisions','POST',{decision:'approved',revision:1,requestId:randomUUID()},f.reviewer)).status,409);
   assert.equal((await call(versionPath+`/comments/${comment.id}/status`,'PATCH',{status:'resolved',revision:0},f.editor)).status,200);
   assert.equal((await call(versionPath+'/decisions','POST',{decision:'approved',revision:1,requestId:randomUUID()},f.reviewer)).status,200);
@@ -57,6 +58,20 @@ try{
   assert.equal((await call(path+'/assets/'+asset.id+'/restore','POST',{revision:deleted.revision})).status,200);
   assert.equal((await call(versionPath)).status,200);
   assert.equal((await (await call(versionPath+'/comments')).json()).comments[0].id,comment.id);
+  // A role update affects the existing authenticated session on the next request.
+  await f.pool.query("UPDATE workspace_members SET role='reviewer' WHERE workspace_id=$1 AND user_id=$2",[f.space,f.editor]);
+  assert.equal((await call(`${path}/assets`,'GET',undefined,f.editor)).status,200,'the member session remains active for reads after demotion');
+  assert.equal((await call(`${path}/uploads`,'POST',{name:'role-check.png',mime:'image/png',size:png.length,requestId:randomUUID()},f.editor)).status,403,'an open session loses upload permission immediately after role change');
+  await f.pool.query("UPDATE workspace_members SET role='editor' WHERE workspace_id=$1 AND user_id=$2",[f.space,f.editor]);
+  assert.equal((await call(`${path}/uploads`,'POST',{name:'role-restored.png',mime:'image/png',size:png.length,requestId:randomUUID()},f.editor)).status,201,'the same session regains upload permission after editor role is restored');
+  console.log('PASS role change in an open session: read access remains, write permissions are re-evaluated per request and restore with role.');
   console.log('PASS delivery: persisted order, role/scope checks, stale conflicts, soft delete and restore with comments.');
-  console.log('PASS HTTP shared review: auth, upload, scoped comments, approval and Range.');
+  // Expiration rejects reads and writes without mutating already saved feedback.
+  await f.pool.query("UPDATE sessions SET expires_at=now()-interval '1 second' WHERE token_hash=$1",[digest(tokens[f.reviewer])]);
+  assert.equal((await call(versionPath,'GET',undefined,f.reviewer)).status,401);
+  assert.equal((await call(versionPath+'/comments','POST',{text:'Must not persist after expiration',requestId:randomUUID()},f.reviewer)).status,401);
+  await f.pool.query("UPDATE sessions SET expires_at=now()+interval '1 day' WHERE token_hash=$1",[digest(tokens[f.reviewer])]);
+  const afterExpiry=await call(versionPath+'/comments','GET',undefined,f.reviewer);assert.equal(afterExpiry.status,200);
+  const preserved=await afterExpiry.json();assert.equal(preserved.comments.length,1);assert.equal(preserved.comments[0].id,comment.id);
+  console.log('PASS HTTP shared review: auth, upload, scoped comments, approval, Range and expired-session rejection without data loss.');
 }finally{if(server)await new Promise(r=>server.close(r));await f.close();}

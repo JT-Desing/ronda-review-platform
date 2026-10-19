@@ -2,18 +2,20 @@
 .app-shell .dashboard-workspace{position:relative;isolation:isolate;background-image:none;--sculpture-top:120px}
 .app-shell .dashboard-workspace::before{content:none}
 .app-shell .dashboard-workspace .dashboard-page{background-image:none}
-.abstract-sculpture-background{position:absolute;z-index:-1;right:-105px;top:var(--sculpture-top);width:clamp(220px,23vw,300px);height:auto;pointer-events:none;user-select:none;opacity:.6;filter:none;object-fit:contain}
+.abstract-sculpture-background{position:absolute;z-index:-1;right:24px;top:var(--sculpture-top);width:clamp(180px,20vw,260px);height:auto;pointer-events:none;user-select:none;opacity:.6;filter:none;object-fit:contain}
 .dashboard-workspace[data-view='home']{--sculpture-top:420px}
 .dashboard-workspace[data-view='planning']{--sculpture-top:180px}
 .dashboard-workspace[data-view='branding']{--sculpture-top:210px}
-.dashboard-workspace[data-view='projects'] .abstract-sculpture-background{left:-100px;right:auto;top:90px}
-.dashboard-workspace[data-view='pauta'] .abstract-sculpture-background{top:auto;bottom:16px;right:-95px}
-.dashboard-workspace[data-view='planning'] .abstract-sculpture-background{left:-110px;right:auto;top:180px}
-.dashboard-workspace[data-view='activity'] .abstract-sculpture-background{right:-90px;top:100px}
-.dashboard-workspace[data-view='team'] .abstract-sculpture-background{left:-110px;right:auto;top:auto;bottom:16px}
-.dashboard-workspace[data-view='branding'] .abstract-sculpture-background{top:100px;right:-90px}
-.dashboard-workspace[data-view='settings'] .abstract-sculpture-background{top:auto;bottom:16px;right:-95px}
+.dashboard-workspace[data-view='projects'] .abstract-sculpture-background{right:168px;top:148px}
+.dashboard-workspace[data-view='pauta'] .abstract-sculpture-background{top:auto;bottom:16px;right:24px}
+.dashboard-workspace[data-view='planning'] .abstract-sculpture-background{right:24px;top:180px}
+.dashboard-workspace[data-view='planning'] .abstract-sculpture-background{display:none}
+.dashboard-workspace[data-view='activity'] .abstract-sculpture-background,
+.dashboard-workspace[data-view='team'] .abstract-sculpture-background,
+.dashboard-workspace[data-view='settings'] .abstract-sculpture-background{display:none}
+.dashboard-workspace[data-view='team'] .abstract-sculpture-background{right:24px;top:auto;bottom:16px}
+.dashboard-workspace[data-view='branding'] .abstract-sculpture-background{top:100px;right:24px}
 /* Functional surfaces stay opaque where the decoration passes behind them. */
 .app-shell .studio-home-panel,.app-shell .shared-project-welcome{background-color:var(--canvas)}
-@media(max-width:680px){.abstract-sculpture-background{width:200px;right:-125px;top:120px}}
+@media(max-width:1200px){.abstract-sculpture-background{display:none}}
 @media(forced-colors:active),(prefers-reduced-transparency:reduce){.abstract-sculpture-background{display:none}}

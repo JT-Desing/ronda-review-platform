@@ -12,3 +12,5 @@
 .shared-review-room button:focus-visible,.shared-project-media button:focus-visible{outline:2px solid #cab4f4;outline-offset:3px}.shared-review-room .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media(max-width:1050px){.shared-review-layout{grid-template-columns:1fr}.shared-review-comments{padding-left:0;border-left:0;border-top:1px solid #302a3a;padding-top:20px}}
 @media(prefers-reduced-motion:reduce){.shared-review-room *{scroll-behavior:auto!important;transition:none!important}}
+.shared-review-room>.review-refresh-hint{margin:0;padding:8px 20px;border-bottom:1px solid #302a3a;background:#17141d;color:#c7bfce;font-size:12px;line-height:1.45}
+@media(max-width:780px){.shared-review-room>.review-refresh-hint{padding:8px 12px}}

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useRonda } from '../state/RondaContext.jsx';
-import { projectOverview, projectStatusLabels } from '../domain/project-presentation.js';
+import { projectOverview, projectStatusLabels, projectDetailMessage } from '../domain/project-presentation.js';
 import { AssetPreview } from './DeliveryGrid.jsx';
 import Icon from './Icon.jsx';
 import {LiquidButton} from './LiquidButton.js';
@@ -26,7 +26,7 @@ function StudioPreview({ asset }) {
   return <span ref={container} className="studio-media">{visible ? <AssetPreview asset={asset}/> : <span className="preview-placeholder">Vista previa</span>}</span>;
 }
 
-export function ProjectTile({ project, onOpen, onRename, onDelete, canRename=true }) {
+export function ProjectTile({ project, onOpen, onRename, onDelete, canRename=true, renameHelpText='El cambio solo afecta tu biblioteca privada.' }) {
   const {act} = useRonda();
   const [editing,setEditing] = useState(false), [draft,setDraft] = useState(project.name);
   const [saving,setSaving]=useState(false),[nameError,setNameError]=useState('');
@@ -53,7 +53,7 @@ export function ProjectTile({ project, onOpen, onRename, onDelete, canRename=tru
     <div className="studio-project-copy"><span className="studio-category">{media ? media.type === 'video' ? 'Video' : 'Imagen' : 'Proyecto'}</span>
       <div className="project-title-row">{editing ? <form className="project-rename-form" onSubmit={saveName} onKeyDown={event => {if(event.key === 'Escape'){event.preventDefault();closeEditor();}}}>
         <label>Nombre del proyecto<input autoFocus disabled={saving} required maxLength={100} value={draft} onChange={event=>setDraft(event.target.value)} onFocus={event=>event.target.select()}/></label>
-        <div><button type="submit" disabled={!draft.trim()}>Guardar</button><button type="button" onClick={closeEditor}>Cancelar</button></div><small>El cambio se guarda en tu cuenta.</small>
+        <div><button type="submit" disabled={!draft.trim()}>Guardar</button><button type="button" onClick={closeEditor}>Cancelar</button></div><small>{renameHelpText}</small>
       </form> : <><strong>{project.name}</strong>{canRename&&<button ref={editButton} type="button" className="project-rename-trigger" aria-label={`Editar nombre de ${project.name}`} title="Editar nombre" onClick={()=>{setDraft(project.name);setEditing(true);}}><Icon name="pen" size={18}/></button>}</>}</div>
       <span className="studio-client">{project.client || 'Sin cliente'}</span><footer><span>{project.assetCount ?? project.assets.length} piezas · {project.pending} pendientes</span><span className={`studio-status ${project.status}`}>{projectStatusLabels[project.status]}</span></footer></div>
   </article>;
@@ -65,6 +65,7 @@ export function ProjectLibrary({ onOpen, onNotify }) {
   const [creating, setCreating] = useState(false), [name, setName] = useState(''), [client, setClient] = useState(''), [detail, setDetail] = useState(null);
   const all = projectOverview(state).projects;
   const projects = all.filter(project => `${project.name} ${project.client || ''}`.toLowerCase().includes(query.toLowerCase()) && (filter === 'all' || project.status === filter));
+  const selectedDetail = detail ? all.find(project => project.id === detail.id) : null;
   const open = project => project.activeVersionId ? onOpen(project) : setDetail(project);
   return <div className="dashboard-page studio-library">
     <header className="dashboard-header"><div><span className="eyebrow">TU BIBLIOTECA CREATIVA</span><h1>Mis proyectos personales</h1><p>Solo tú puedes ver los proyectos y piezas de esta sección.</p></div><LiquidButton onClick={() => setCreating(true)}>＋ Nuevo proyecto</LiquidButton></header>
@@ -72,8 +73,8 @@ export function ProjectLibrary({ onOpen, onNotify }) {
     {creating && <form className="studio-create" onSubmit={event => { event.preventDefault(); if(!name.trim())return; act('project/add',{name,client}); setName('');setClient('');setCreating(false);onNotify('Proyecto creado; guardado en curso'); }}><header><h2>Nuevo proyecto</h2><p>Se guarda en tu cuenta privada.</p></header><label>Nombre del proyecto<input autoFocus required maxLength={100} placeholder="Ej. Campaña de octubre" value={name} onChange={event => setName(event.target.value)}/></label><label>Cliente <small>Opcional</small><input maxLength={100} placeholder="Nombre del cliente" value={client} onChange={event => setClient(event.target.value)}/></label><footer><button type="button" onClick={() => setCreating(false)}>Cancelar</button><button className="studio-primary" disabled={!name.trim()}>Crear proyecto</button></footer></form>}
     <section className={`studio-project-grid ${layout}`} aria-label="Proyectos privados">{projects.map(project => <ProjectTile key={project.id} project={project} onOpen={open}/>)}</section>
     {!projects.length && <div className="studio-empty"><h2>{all.length ? 'No encontramos esos proyectos' : 'Tu primera campaña empieza aquí'}</h2><p>{all.length ? 'Cambia los filtros o prueba otro nombre.' : 'Crea un proyecto para organizar tu trabajo.'}</p>{all.length ? <button onClick={() => {setQuery('');setFilter('all');}}>Limpiar filtros</button> : <button className="studio-primary" onClick={() => setCreating(true)}>Crear proyecto</button>}</div>}
-    {detail && <section className="studio-create" aria-label="Detalle del proyecto"><h2>{detail.name}</h2><p>{detail.client || 'Sin cliente'}</p><p>Este proyecto está guardado sin piezas. Puedes agregar un enlace para iniciar su revisión.</p><LinkImport onAdd={async link=>{act('asset/add',{id:crypto.randomUUID(),projectId:detail.id,name:link.name,type:link.type,externalUrl:link.url,mime:link.mime,size:0,extension:'URL'});setDetail(null);onNotify('Enlace añadido; abre el proyecto para revisar');}}/><DeletedAssets projectId={detail.id}/><button onClick={() => setDetail(null)}>Cerrar detalle</button></section>}
-    <p className="studio-private-note">{projects.length} {projects.length === 1 ? 'proyecto' : 'proyectos'} · Privados de tu cuenta. Abre Proyectos en el menú principal para trabajar con ePayco MKT.</p>
+    {selectedDetail && <section className="studio-create" aria-label="Detalle del proyecto"><h2>{selectedDetail.name}</h2><p>{selectedDetail.client || 'Sin cliente'}</p><p>{projectDetailMessage(selectedDetail)}</p><button className="secondary" onClick={()=>{onOpen(selectedDetail);setDetail(null);}}>Abrir parrilla de piezas</button><LinkImport onAdd={async link=>{act('asset/add',{id:crypto.randomUUID(),projectId:selectedDetail.id,name:link.name,type:link.type,externalUrl:link.url,mime:link.mime,size:0,extension:'URL'});setDetail(null);onNotify('Enlace añadido; abre el proyecto para revisar');}}/><DeletedAssets projectId={selectedDetail.id}/><button onClick={() => setDetail(null)}>Cerrar detalle</button></section>}
+    <p className="studio-private-note">{projects.length} {projects.length === 1 ? 'proyecto' : 'proyectos'} · Privados de tu cuenta. Abre Proyectos en el menú principal para trabajar con tu equipo.</p>
   </div>;
 }
 

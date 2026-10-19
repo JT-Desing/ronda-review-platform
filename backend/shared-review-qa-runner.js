@@ -3,6 +3,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import pg from 'pg';
 import { fileURLToPath } from 'node:url';
+import { cleanupQaRunnerContainer } from './qa-container-cleanup.js';
 const name='ronda-review-qa-'+randomUUID().replaceAll('-','');
 const password=randomUUID()+randomUUID();
 const db='ronda_qa_'+randomUUID().replaceAll('-','');
@@ -27,8 +28,11 @@ try{
   });
   process.exitCode=exit||0;
 }finally{
-  if(container){
-    const label=docker('inspect','--format','{{index .Config.Labels "ronda.qa"}}',name);
-    if(label==='shared-review')docker('rm','-f','-v',name);
-  }
+  const cleanup=cleanupQaRunnerContainer({
+    container,
+    script,
+    inspectLabel:containerName=>docker('inspect','--format','{{index .Config.Labels "ronda.qa"}}',containerName),
+    removeContainer:containerName=>docker('rm','-f','-v',containerName),
+  });
+  if(cleanup==='pending')process.exitCode=process.exitCode||1;
 }

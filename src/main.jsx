@@ -5,9 +5,14 @@ import {ShortcutHelp} from './components/ShortcutHelp.jsx';
 import {OriginalMediaStage} from './components/OriginalMediaStage.jsx';
 import {AnnotationLayer} from './components/AnnotationLayer.jsx';
 import {canLeaveSharedReview} from './state/sharedReviewState.js';
+import {sharedProjectGalleryWorkspace,setSharedProjectLocation} from './domain/shared-project-link.js';
+import {readStudioView, setStudioViewLocation, watchSharedProjectLinks} from './domain/shared-link-navigation.js';
+import {readReviewRoute,setReviewRoute,reviewRoute,resolveReviewRouteAsset} from './domain/review-route.js';
+import {activityItem} from './domain/activity-item.js';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 import AccountAccess from './components/AccountAccess.jsx';
+import { AccountProfileMenu } from './components/AccountProfileMenu.jsx';
 import { accountStorage } from './state/accountStorage.js';
 import { RondaProvider, selectUnreadNotifications, selectVersionStatus, useRonda } from './state/RondaContext.jsx';
 import { REVIEW_DECISION, validateReviewDecision } from './domain/review.js';
@@ -15,7 +20,6 @@ import { getCommentEmptyState } from './domain/comments.js';
 import { annotationVisibleAt, finalizeAnnotation, toNormalizedPoint } from './domain/annotations.js';
 import { readDraftForContext, saveSessionDraft } from './state/migration.js';
 import { ProjectActions, TeamActions, SettingsActions, ReviewSummary } from './components/WorkspaceActions.jsx';
-import Pauta from './components/Pauta.jsx';
 import { TimelineMarkers } from './components/TimelineMarkers.jsx';
 import { DeliveryGrid, fileStore, fileKind } from './components/DeliveryGrid.jsx';
 import {assetReviewUrl} from './components/DeliveryGrid.jsx';
@@ -29,14 +33,12 @@ import { fileLabel } from './domain/file-label.js';
 import { StudioHome, ProjectLibrary } from './components/StudioWorkspace.jsx';
 import './studio-theme.css';
 import './folder-cards.css';
-import SocialPreview from './components/SocialPreview.jsx';
 import './social-preview.css';
 import LensNavigation from './components/LensNavigation.jsx';
 import './lens-navigation.css';
 import BrandSettings from './components/BrandSettings.jsx';
 import './brand-settings.css';
 import DrawingTrail from './components/DrawingTrail.jsx';
-import Planning from './components/Planning.jsx';
 import {createCompanyDemo} from './data/company-demo.js';
 import {beginDemoSession,endDemoSession} from './state/demoSession.js';
 import './company-demo.css';
@@ -60,6 +62,11 @@ import sculptureBranding from './abstract-sculpture-branding.png';
 import sculptureSettings from './abstract-sculpture-settings.png';
 const sectionSculptures={home:abstractSculpture,projects:sculptureProjects,pauta:sculpturePauta,planning:sculpturePlanning,activity:sculptureActivity,team:sculptureTeam,branding:sculptureBranding,settings:sculptureSettings};
 import ShareReviewDialog from './components/ShareReviewDialog.jsx';
+import {RetryableFeature} from './components/FeatureLoadBoundary.jsx';
+import {consumeFeatureRetry} from './domain/feature-retry.js';
+const loadPauta=()=>import('./components/Pauta.jsx');
+const loadPlanning=()=>import('./components/Planning.jsx');
+const loadSocialPreview=()=>import('./components/SocialPreview.jsx');
 
 const formatTime = value => {
   const seconds = Math.max(0, Number(value) || 0);
@@ -107,7 +114,7 @@ function Sidebar({ collapsed, setCollapsed, currentView, onNavigate, onDemo }) {
 
 function MobileNav({ currentView, onNavigate }) {
   const items=[['home','grid','Inicio'],['projects','folder','Proyectos'],['personal','users','Personal'],['pauta','arrow','Pauta'],['planning','calendar','Planner'],['activity','clock','Actividad'],['team','users','Equipo'],['settings','settings','Ajustes']];
-  return <nav className="mobile-nav" aria-label="Navegación móvil">{items.map(([view,icon,label])=><button key={view} className={currentView===view||(currentView==='review'&&view==='personal')?'active':''} onClick={()=>onNavigate(view)}><Icon name={icon}/><span>{label}</span></button>)}</nav>;
+  return <nav className="mobile-nav" aria-label="Navegación móvil">{items.map(([view,icon,label])=><button key={view} aria-label={label} title={label} className={currentView===view||(currentView==='review'&&view==='personal')||(currentView==='branding'&&view==='settings')?'active':''} onClick={()=>onNavigate(view)}><Icon name={icon}/><span>{label}</span></button>)}</nav>;
 }
 
 
@@ -168,8 +175,8 @@ function CommentsPanel({ onClose, currentTime, setCurrentTime, draft, setDraft, 
   </aside>;
 }
 
-function ShareDialog({ onClose, onNotify }) {
-  const reviewUrl = `${location.origin}${import.meta.env.BASE_URL}#review/version-amara-v3`;
+function ShareDialog({ onClose, onNotify, reviewVersionId }) {
+  const reviewUrl = `${location.origin}${import.meta.env.BASE_URL}${reviewRoute(reviewVersionId)}`;
   return <ShareReviewDialog reviewUrl={reviewUrl} onClose={onClose} onNotify={onNotify}/>;
 }
 
@@ -181,7 +188,8 @@ const projectData = [
 ];
 
 function DashboardHeader({ title, subtitle, action, onAction }) {
-  return <header className="dashboard-header"><div><span className="eyebrow">NÉBULA STUDIO</span><h1>{title}</h1><p>{subtitle}</p></div><div className="dashboard-actions"><button aria-label="Buscar"><Icon name="search"/></button>{action && <button className="primary-action" onClick={onAction}><Icon name="plus" size={16}/>{action}</button>}</div></header>;
+  const {state}=useRonda();
+  return <header className="dashboard-header"><div><span className="eyebrow">{state.workspace.name}</span><h1>{title}</h1><p>{subtitle}</p></div><div className="dashboard-actions">{action && <button className="primary-action" onClick={onAction}><Icon name="plus" size={16}/>{action}</button>}</div></header>;
 }
 
 function ProjectsView({ onOpen, onNotify }) {
@@ -199,12 +207,12 @@ const activities=[
   {who:'Camila P.',initials:'CP',color:'#b89be8',action:'invitó a 2 revisores',where:'Informe de impacto',detail:'El enlace vence el 22 de octubre.',time:'Ayer',type:'invite'},
 ];
 
-function ActivityView({onNavigate}) {
+function ActivityView({onNavigate,onOpenProject,onOpenComment}) {
   const {state,act}=useRonda();
   const [type,setType]=useState('Todo'); const [project,setProject]=useState('Todos'); const [person,setPerson]=useState('Todas'); const [period,setPeriod]=useState('30'); const [query,setQuery]=useState(''); const [onlyUnread,setOnlyUnread]=useState(false);
   const [readIds,setReadIds]=useState(()=>{try{return JSON.parse(accountStorage.getItem('ronda-activity-read'))||[]}catch{return[]}});
   useEffect(()=>accountStorage.setItem('ronda-activity-read',JSON.stringify(readIds)),[readIds]);
-  const live=state.activity.map(event=>{const actor=state.members[event.actorId];const isComment=event.kind.startsWith('comment');return {id:event.id,who:actor?.name||'Equipo',initials:actor?.initials||'EQ',color:'#67a9d4',action:event.kind==='comment.created'?'creó un comentario':event.kind==='comment.resolved'?'resolvió un comentario':event.kind==='comment.reopened'?'reabrió un comentario':'registró una decisión',where:'Campaña Amara · Spot principal',project:'Campaña Amara',detail:isComment?(state.comments[event.commentId]?.text||'Actividad de comentario'):(event.decision==='approved'?'Aprobó la versión':'Solicitó cambios'),time:'Ahora',occurredAt:event.occurredAt,type:isComment?'comment':'approval'};});
+  const live=state.activity.map(event=>activityItem(state,event));
   const seeded=[].map((item,index)=>({...item,id:`seed-${index}`,project:item.where.split(' · ')[0],occurredAt:new Date(Date.now()-[4,22,60,120,1500][index]*60000).toISOString()}));
   const all=[...live,...seeded].map(item=>({...item,unread:!readIds.includes(item.id)}));
   const people=[...new Set(all.map(item=>item.who))]; const projects=[...new Set(all.map(item=>item.project))];
@@ -212,13 +220,13 @@ function ActivityView({onNavigate}) {
   const groups=[['Hoy',visible.filter(item=>(Date.now()-new Date(item.occurredAt).getTime())<86400000)],['Ayer',visible.filter(item=>{const age=Date.now()-new Date(item.occurredAt).getTime();return age>=86400000&&age<172800000})],['Esta semana',visible.filter(item=>(Date.now()-new Date(item.occurredAt).getTime())>=172800000)]];
   const markAll=()=>{setReadIds(all.map(item=>item.id));act('notification/readAll',{})};
   const clear=()=>{setType('Todo');setProject('Todos');setPerson('Todas');setPeriod('30');setQuery('');setOnlyUnread(false)};
-  return <div className="dashboard-page activity-page"><DashboardHeader title="Actividad" subtitle="Filtra decisiones, cambios y conversaciones de todo el espacio."/><section className="activity-metrics"><div><strong>{all.filter(item=>item.unread).length}</strong><span>Sin leer</span></div><div><strong>{all.filter(item=>item.type==='comment').length}</strong><span>Comentarios</span></div><div><strong>{all.filter(item=>item.type==='approval').length}</strong><span>Decisiones</span></div><div><strong>{projects.length}</strong><span>Proyectos activos</span></div></section><section className="activity-filters"><div className="search-field"><Icon name="search" size={16}/><input aria-label="Buscar en actividad" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar persona, proyecto o contenido"/></div><div className="filter-row"><select aria-label="Filtrar por tipo" value={type} onChange={e=>setType(e.target.value)}><option>Todo</option><option value="comment">Comentarios</option><option value="approval">Aprobaciones</option><option value="upload">Versiones</option><option value="resolved">Resueltos</option><option value="invite">Invitaciones</option></select><select aria-label="Filtrar por proyecto" value={project} onChange={e=>setProject(e.target.value)}><option>Todos</option>{projects.map(value=><option key={value}>{value}</option>)}</select><select aria-label="Filtrar por persona" value={person} onChange={e=>setPerson(e.target.value)}><option>Todas</option>{people.map(value=><option key={value}>{value}</option>)}</select><select aria-label="Filtrar por período" value={period} onChange={e=>setPeriod(e.target.value)}><option value="1">Últimas 24 horas</option><option value="7">Últimos 7 días</option><option value="30">Últimos 30 días</option></select><label className="unread-filter"><input type="checkbox" checked={onlyUnread} onChange={e=>setOnlyUnread(e.target.checked)}/> Sin leer</label></div><div className="filter-actions"><span>{visible.length} eventos encontrados</span><button onClick={clear}>Limpiar filtros</button><button className="quiet-button" onClick={markAll}><Icon name="check" size={15}/> Marcar todo como leído</button></div></section><section className="activity-timeline">{groups.map(([label,items])=>items.length>0&&<div className="activity-group" key={label}><h2>{label}<span>{items.length}</span></h2><div className="activity-list">{items.map(item=><article className={`activity-item ${item.unread?'unread':''}`} key={item.id}><span className="activity-dot"/><span className="avatar" style={{background:item.color}}>{item.initials}</span><div><p><strong>{item.who}</strong> {item.action}</p><button onClick={()=>{setReadIds(current=>[...new Set([...current,item.id])]);onNavigate(item.project==='Campaña Amara'?'review':'projects')}}>{item.where}</button><blockquote>{item.detail}</blockquote></div><div className="activity-end"><time>{item.time}</time>{item.unread&&<button onClick={()=>setReadIds(current=>[...current,item.id])}>Marcar leído</button>}</div></article>)}</div></div>)}{visible.length===0&&<div className="activity-empty"><Icon name="search" size={26}/><strong>No encontramos actividad</strong><p>Prueba otro período o elimina algunos filtros.</p><button onClick={clear}>Restablecer filtros</button></div>}</section></div>;
+  return <div className="dashboard-page activity-page"><DashboardHeader title="Actividad" subtitle="Actividad de tus proyectos personales. La actividad compartida está en Equipo."/><section className="activity-metrics"><div><strong>{all.filter(item=>item.unread).length}</strong><span>Sin leer</span></div><div><strong>{all.filter(item=>item.type==='comment').length}</strong><span>Comentarios</span></div><div><strong>{all.filter(item=>item.type==='approval').length}</strong><span>Decisiones</span></div><div><strong>{projects.length}</strong><span>Proyectos activos</span></div></section><section className="activity-filters"><div className="search-field"><Icon name="search" size={16}/><input aria-label="Buscar en actividad" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar persona, proyecto o contenido"/></div><div className="filter-row"><select aria-label="Filtrar por tipo" value={type} onChange={e=>setType(e.target.value)}><option>Todo</option><option value="comment">Comentarios</option><option value="approval">Aprobaciones</option><option value="upload">Versiones</option><option value="resolved">Resueltos</option><option value="invite">Invitaciones</option></select><select aria-label="Filtrar por proyecto" value={project} onChange={e=>setProject(e.target.value)}><option>Todos</option>{projects.map(value=><option key={value}>{value}</option>)}</select><select aria-label="Filtrar por persona" value={person} onChange={e=>setPerson(e.target.value)}><option>Todas</option>{people.map(value=><option key={value}>{value}</option>)}</select><select aria-label="Filtrar por período" value={period} onChange={e=>setPeriod(e.target.value)}><option value="1">Últimas 24 horas</option><option value="7">Últimos 7 días</option><option value="30">Últimos 30 días</option></select><label className="unread-filter"><input type="checkbox" checked={onlyUnread} onChange={e=>setOnlyUnread(e.target.checked)}/> Sin leer</label></div><div className="filter-actions"><span>{visible.length} eventos encontrados</span><button onClick={clear}>Limpiar filtros</button><button className="quiet-button" onClick={markAll}><Icon name="check" size={15}/> Marcar todo como leído</button></div></section><section className="activity-timeline">{groups.map(([label,items])=>items.length>0&&<div className="activity-group" key={label}><h2>{label}<span>{items.length}</span></h2><div className="activity-list">{items.map(item=><article className={`activity-item ${item.unread?'unread':''}`} key={item.id}><span className="activity-dot"/><span className="avatar" style={{background:item.color}}>{item.initials}</span><div><p><strong>{item.who}</strong> {item.action}</p><button onClick={()=>{setReadIds(current=>[...new Set([...current,item.id])]);item.commentId&&state.comments[item.commentId]?onOpenComment(state.comments[item.commentId]):state.projects[item.projectId]?onOpenProject(state.projects[item.projectId]):onNavigate('personal')}}>{item.where}</button><blockquote>{item.detail}</blockquote></div><div className="activity-end"><time>{item.time}</time>{item.unread&&<button onClick={()=>setReadIds(current=>[...current,item.id])}>Marcar leído</button>}</div></article>)}</div></div>)}{visible.length===0&&<div className="activity-empty"><Icon name="search" size={26}/><strong>No encontramos actividad</strong><p>Prueba otro período o elimina algunos filtros.</p><button onClick={clear}>Restablecer filtros</button></div>}</section></div>;
 }
 
 function NotificationCenter({onNavigate}) {
   const {state,act}=useRonda(); const [open,setOpen]=useState(false);
   const unread=selectUnreadNotifications(state);
-  return <div className="notification-center"><button className="notification-trigger" aria-label={`${unread.length} notificaciones sin leer`} onClick={()=>setOpen(!open)}><Icon name="bell" size={17}/>{unread.length>0&&<b>{unread.length}</b>}</button>{open&&<div className="notification-popover"><header><strong>Notificaciones</strong><button onClick={()=>act('notification/readAll',{})}>Marcar leídas</button></header>{unread.length===0?<p>Estás al día.</p>:unread.map(item=><button key={item.id} onClick={()=>{act('notification/read',{id:item.id});onNavigate('review');setOpen(false)}}><strong>Nueva actividad asignada</strong><span>Campaña Amara · abrir revisión</span></button>)}</div>}</div>;
+  return <div className="notification-center"><button className="notification-trigger" aria-label={`${unread.length} notificaciones sin leer`} aria-expanded={open} onClick={()=>setOpen(!open)}><Icon name="bell" size={17}/>{unread.length>0&&<b>{unread.length}</b>}</button>{open&&<div className="notification-popover"><header><strong>Notificaciones</strong><button onClick={()=>act('notification/readAll',{})}>Marcar leídas</button></header>{unread.length===0?<p>Estás al día.</p>:unread.map(item=><button key={item.id} onClick={()=>{act('notification/read',{id:item.id});onNavigate('review');setOpen(false)}}><strong>Nueva actividad asignada</strong><span>Campaña Amara · abrir revisión</span></button>)}</div>}</div>;
 }
 
 const onlineReviewers=[
@@ -253,20 +261,37 @@ function SettingsView({onNotify}) {
 
 function App({demo=false,onExitDemo}) {
   const {state,act,persistenceError,retryPersistence}=useRonda();
+  const [retryRequest]=useState(()=>{let storage=null;try{storage=window.sessionStorage}catch{}return consumeFeatureRetry(storage)});
   const [media, setMedia] = useState(null);
-  const [socialMode,setSocialMode]=useState(false);
+  const [personalProjectId,setPersonalProjectId]=useState('project-amara');
+  const [socialMode,setSocialMode]=useState(retryRequest?.mode==='social');
+  const [retryRestoring,setRetryRestoring]=useState(retryRequest?.view==='review');
   const [socialLoading,setSocialLoading]=useState(false);
   const [socialAssetId,setSocialAssetId]=useState(null);
   const socialRequest=useRef(0);
   const selectSocialAsset=async asset=>{asset=resolveAssetVersion(state,asset);const request=++socialRequest.current;setSocialLoading(true);setSocialAssetId(asset.id);setCommentsOpen(false);try{const url=await assetReviewUrl(asset);if(request!==socialRequest.current)return;setMedia(current=>{if(current?.url)URL.revokeObjectURL(current.url);return {...asset,identity:asset.identity,url:url,duration:asset.type==='image'?1:0,setDuration:duration=>setMedia(value=>({...value,duration}))}});setCurrentTime(0);setVersion(asset.versionNumber);setSelectedFigure(null);setFocusedComment(null);}catch{if(request===socialRequest.current)setToast('No se pudo cargar la lámina; comentarios no cambiados')}finally{if(request===socialRequest.current)setSocialLoading(false)}};
   const openProject=async project=>{
     const original=(state.assets||[]).find(item=>item.projectId===project.id);const asset=original?resolveAssetVersion(state,original):null;
-    if(!asset){if(project.id==='project-amara'){setMedia(null);setCurrentView('review');return;}setToast('Este proyecto todavía no tiene piezas para revisar.');setCurrentView('personal');return;}
-    try{const url=await assetReviewUrl(asset);setMedia(current=>{if(current?.url)URL.revokeObjectURL(current.url);return {...asset,identity:asset.identity,url:url,duration:asset.type==='image'?1:0,setDuration:duration=>setMedia(value=>({...value,duration}))}});setVersion(asset.versionNumber);setCurrentTime(0);setDocumentPage(1);setSelectedFigure(null);setFocusedComment(null);setSocialMode(false);setCurrentView('review');}catch{setToast('No se pudo abrir la pieza. Tus datos permanecen guardados.');}
+    setPersonalProjectId(project.id);
+    if(!asset){if(media?.url)URL.revokeObjectURL(media.url);setMedia(null);setCurrentView('review');return;}
+    try{const url=await assetReviewUrl(asset);setMedia(current=>{if(current?.url)URL.revokeObjectURL(current.url);return {...asset,identity:asset.identity,url:url,duration:asset.type==='image'?1:0,setDuration:duration=>setMedia(value=>({...value,duration}))}});setVersion(asset.versionNumber);setCurrentTime(0);setDocumentPage(1);setSelectedFigure(null);setFocusedComment(null);setSocialMode(false);setCurrentView('review',{versionId:asset.versionId||`asset-${asset.id}-v${asset.versionNumber||1}`});}catch{setToast('No se pudo abrir la pieza. Tus datos permanecen guardados.');}
   };
   const [documentPage,setDocumentPage]=useState(1);
   const pendingFigureJump=useRef(null);
   const [version, setVersion] = useState(3);
+  useEffect(()=>{
+    if(!retryRestoring||retryRequest?.view!=='review')return;
+    let active=true;
+    const original=(state.assets||[]).find(asset=>String(asset.id)===retryRequest.mediaId);
+    const restored=original?resolveAssetVersion(state,original,retryRequest.versionId||original.versionId):null;
+    if(!restored){setToast('No se pudo restaurar la pieza; vuelve a abrirla desde el proyecto.');setSocialMode(false);setCurrentViewRaw('personal');setRetryRestoring(false);return;}
+    assetReviewUrl(restored).then(url=>{
+      if(!active)return;
+      setMedia({...restored,identity:restored.identity||restored.id,url,duration:restored.type==='image'?1:0,setDuration:duration=>setMedia(value=>({...value,duration}))});
+      setPersonalProjectId(restored.projectId||'project-amara');setVersion(restored.versionNumber||1);setDocumentPage(1);setCurrentTime(0);setRetryRestoring(false);
+    }).catch(()=>{if(active){setToast('No se pudo restaurar la pieza; vuelve a abrirla desde el proyecto.');setSocialMode(false);setCurrentViewRaw('personal');setRetryRestoring(false);}});
+    return()=>{active=false};
+  },[retryRequest,retryRestoring,state.assets,state.versions]);
   const draftKey=`ronda:draft:${state.workspace.id}:${media?.projectId||'project-amara'}:${media?.id||'demo'}:version-${version}:${state.currentUserId}`;
   const draftStorage=typeof sessionStorage==='undefined'?null:sessionStorage;
   const [draftCache,setDraftCache]=useState({});
@@ -274,9 +299,63 @@ function App({demo=false,onExitDemo}) {
   const setCommentDraft=value=>setDraftCache(current=>({...current,[draftKey]:typeof value==='function'?value(readDraftForContext(current,draftStorage,draftKey)):value}));
   const recoveredDraft=useRef(Boolean(commentDraft));
   const [collapsed, setCollapsed] = useState(false);
-  const [currentView, setCurrentViewRaw] = useState(location.hash.startsWith('#team/')?'projects':location.hash.startsWith('#review/')?'review':'home');
+  const [currentView, setCurrentViewRaw] = useState(()=>{
+    const fallback=readStudioView(location.hash)||(location.hash.startsWith('#team/')?'projects':location.hash.startsWith('#review/')?'review':'home');
+    return retryRequest?.view||fallback;
+  });
+  const [requestedReviewVersion,setRequestedReviewVersion]=useState(()=>readReviewRoute(location.hash));
+  const [reviewRouteLoading,setReviewRouteLoading]=useState(()=>Boolean(readReviewRoute(location.hash)));
+  const [reviewRouteError,setReviewRouteError]=useState('');
   const [sharedDirty,setSharedDirty]=useState(false);
-  const setCurrentView=next=>{if(next===currentView||canLeaveSharedReview({dirty:sharedDirty,busy:false},()=>window.confirm('Hay cambios sin publicar en la revisión compartida. ¿Descartarlos?')))setCurrentViewRaw(next);};
+  const [sharedLinkKey,setSharedLinkKey]=useState(location.hash);
+  const sharedNavigationDirty=useRef(false);
+  sharedNavigationDirty.current=sharedDirty;
+  useEffect(()=>watchSharedProjectLinks(window,{
+    canNavigate:()=>{if(!sharedNavigationDirty.current)return true;setToast('Termina la carga o publica tus cambios antes de abrir otro enlace. Tu trabajo se conserva.');return false;},
+    onRouteSynced:hash=>setSharedLinkKey(hash),
+    onNavigate:(hash,view)=>{setSharedLinkKey(hash);setRequestedReviewVersion(readReviewRoute(hash));setSharedDirty(false);setCurrentViewRaw(view);},
+  }),[]);
+  const setCurrentView=(next,{versionId}={})=>{
+    const galleryWorkspace=next==='projects'?sharedProjectGalleryWorkspace(location.hash):null;
+    const returningToTeamGallery=next===currentView&&Boolean(galleryWorkspace);
+    if(next===currentView&&!(next==='review'&&versionId)&&!returningToTeamGallery)return;
+    if(!canLeaveSharedReview({dirty:sharedDirty,busy:false},()=>window.confirm('Hay cambios sin publicar en la revisión compartida. ¿Descartarlos?')))return;
+    if(returningToTeamGallery){setSharedProjectLocation(window,galleryWorkspace,'');return;}
+    setCurrentViewRaw(next);
+    if(next==='review'){
+      const targetVersion=versionId||media?.versionId||(media?.id?`asset-${media.id}-v${media.versionNumber||version}`:null);
+      setRequestedReviewVersion(targetVersion);
+      if(targetVersion)setReviewRoute(window,targetVersion);else setStudioViewLocation(window,'review');
+    }else{setRequestedReviewVersion(null);setReviewRouteError('');setStudioViewLocation(window,next);}
+  };
+  useEffect(()=>{
+    if(currentView!=='review'||!requestedReviewVersion||retryRequest?.view==='review'){
+      setReviewRouteLoading(false);
+      setReviewRouteError('');
+      return;
+    }
+    if(media?.versionId===requestedReviewVersion){setReviewRouteLoading(false);setReviewRouteError('');return;}
+    let active=true;
+    const restored=resolveReviewRouteAsset(state,requestedReviewVersion);
+    if(!restored){
+      setReviewRouteLoading(false);
+      setReviewRouteError('Esta pieza no está disponible en esta cuenta o versión. Inicia sesión con una cuenta que ya tenga acceso y vuelve a abrir el enlace.');
+      return;
+    }
+    setReviewRouteLoading(true);
+    setReviewRouteError('');
+    assetReviewUrl(restored).then(url=>{
+      if(!active)return;
+      setMedia(current=>{if(current?.url)URL.revokeObjectURL(current.url);return {...restored,identity:restored.identity||restored.id,url,duration:restored.type==='image'?1:0,setDuration:duration=>setMedia(value=>({...value,duration}))}});
+      setPersonalProjectId(restored.projectId||'project-amara');
+      setVersion(restored.versionNumber||1);
+      setDocumentPage(1);
+      setCurrentTime(0);
+    }).catch(()=>{
+      if(active)setReviewRouteError('No se pudo cargar esta pieza. Reintenta desde el proyecto; el enlace no cambia sus permisos.');
+    }).finally(()=>{if(active)setReviewRouteLoading(false)});
+    return()=>{active=false};
+  },[currentView,requestedReviewVersion,retryRequest?.view,state.assets,state.versions,media?.versionId]);
   const [companyDemo,setCompanyDemo]=useState(false);
   const [activeTool, setActiveTool] = useState('pen');
   const [activeColor, setActiveColor] = useState('#ff725e');
@@ -293,7 +372,7 @@ function App({demo=false,onExitDemo}) {
     const sourceVersion=state.versions[comment.versionId];
     const original=(state.assets||[]).find(a=>a.id===sourceVersion?.assetId||`asset-${a.id}-v1`===comment.versionId);const asset=original?resolveAssetVersion(state,original,comment.versionId):null;
     if(!asset&&comment.versionId!=='version-amara-v3'){setToast('El archivo o versión de este comentario ya no está disponible');return;}
-    try{const url=asset?await assetReviewUrl(asset):null;plannerJump.current=comment;setSocialMode(false);setMedia(current=>{if(current?.url)URL.revokeObjectURL(current.url);return asset?{...asset,identity:asset.identity,url:url,duration:asset.type==='image'?1:0,setDuration:duration=>setMedia(value=>({...value,duration}))}:null});setVersion(sourceVersion?.number||3);setDocumentPage(comment.page||1);setCurrentTime(comment.timeSeconds||0);setCurrentView('review');setCommentsOpen(true);}catch{setToast('No se pudo abrir el archivo. Tus comentarios siguen guardados');}
+    try{const url=asset?await assetReviewUrl(asset):null;plannerJump.current=comment;setSocialMode(false);setMedia(current=>{if(current?.url)URL.revokeObjectURL(current.url);return asset?{...asset,identity:asset.identity,url:url,duration:asset.type==='image'?1:0,setDuration:duration=>setMedia(value=>({...value,duration}))}:null});setVersion(sourceVersion?.number||3);setDocumentPage(comment.page||1);setCurrentTime(comment.timeSeconds||0);setCurrentView('review',{versionId:sourceVersion?.id||'version-amara-v3'});setCommentsOpen(true);}catch{setToast('No se pudo abrir el archivo. Tus comentarios siguen guardados');}
   };
   const annotationContext=`${media?.projectId||'project-amara'}:version-amara-v${version}:${media?.identity||'demo-amara'}${['pdf','html','document','presentation'].includes(media?.type)?`:page-${documentPage}`:''}`;
   const marks=state.annotations?.[annotationContext]||[];
@@ -313,43 +392,48 @@ function App({demo=false,onExitDemo}) {
   useEffect(()=>{saveSessionDraft(draftStorage,draftKey,commentDraft)},[draftStorage,draftKey,commentDraft]);
   useEffect(()=>{ if(!toast)return; const timer=setTimeout(()=>setToast(''),2200); return()=>clearTimeout(timer); },[toast]);
   useEffect(()=>{const handler=e=>{if(e.key==='Escape'){setShareOpen(false);setShortcutsOpen(false);setCommentsOpen(false);}if(e.key==='?'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))setShortcutsOpen(value=>!value);if(e.key.toLowerCase()==='c'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){e.preventDefault();document.querySelector('.composer textarea')?.focus();}};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler)},[]);
-  const loadMedia = async event => { const file=event.target.files?.[0]; if(!file)return;event.target.value='';const type=fileKind(file);if(!['video','image'].includes(type)){setToast('Para documentos y otros formatos, usa Agregar archivos en la parrilla.');return;}try{setToast('Guardando archivo en el servidor…');const id=crypto.randomUUID();await fileStore(id,file);const asset={id,name:file.name,type,mime:file.type,size:file.size,extension:file.name.split('.').at(-1).toUpperCase(),projectId:media?.projectId||'project-amara'};act('asset/add',asset);if(media?.url)URL.revokeObjectURL(media.url);setCurrentTime(0);setMedia({...asset,identity:id,url:URL.createObjectURL(file),duration:type==='image'?1:0,setDuration:duration=>setMedia(current=>({...current,duration}))});setToast('Archivo guardado en tu cuenta');}catch(error){setToast(error.message||'No se pudo guardar el archivo');} };
+  const loadMedia = async event => { const file=event.target.files?.[0]; if(!file)return;event.target.value='';const type=fileKind(file);if(!['video','image'].includes(type)){setToast('Para documentos y otros formatos, usa Agregar archivos en la parrilla.');return;}try{setToast('Guardando archivo en el servidor…');const id=crypto.randomUUID();await fileStore(id,file);const asset={id,name:file.name,type,mime:file.type,size:file.size,extension:file.name.split('.').at(-1).toUpperCase(),projectId:media?.projectId||'project-amara'};act('asset/add',asset);if(media?.url)URL.revokeObjectURL(media.url);setCurrentTime(0);setMedia({...asset,identity:id,versionId:`asset-${id}-v1`,versionNumber:1,url:URL.createObjectURL(file),duration:type==='image'?1:0,setDuration:duration=>setMedia(current=>({...current,duration}))});const versionId=`asset-${id}-v1`;setRequestedReviewVersion(versionId);setReviewRoute(window,versionId);setToast('Archivo guardado en tu cuenta');}catch(error){setToast(error.message||'No se pudo guardar el archivo');} };
   const followReviewer=person=>{setCurrentTime(person.time);setRemoteCursor(person);setToast(`Siguiendo a ${person.name} en ${formatTime(person.time).time}`)};
   if(companyDemo)return <RondaProvider initialState={companyDemo} ephemeral><App demo onExitDemo={()=>{endDemoSession();setCompanyDemo(false)}}/></RondaProvider>;
+  if(retryRestoring)return <BrandLoader label="Recuperando la revisión…"/>;
   return <div className="app-shell">
     <DrawingTrail enabled={currentView==='review'&&!socialMode&&activeTool!=='type'&&Boolean(activeTool)} color={activeColor}/>
     <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} currentView={currentView} onNavigate={setCurrentView} onDemo={()=>{if(demo||!canLeaveSharedReview({dirty:sharedDirty,busy:false},()=>window.confirm('Hay cambios sin publicar en la revisión compartida. ¿Descartarlos para abrir el demo?')))return;const fixture=createCompanyDemo();beginDemoSession(fixture);setCompanyDemo(fixture)}}/>
     <main data-view={currentView} className={`workspace ${currentView!=='review'?'dashboard-workspace':''}`}>
       {sectionSculptures[currentView]&&<img className="abstract-sculpture-background" src={sectionSculptures[currentView]} alt="" aria-hidden="true" draggable={false}/>}
       {demo&&<div className="demo-company-banner" role="status"><span>DEMO · Empresa activa · Datos ficticios. Los cambios se descartan al salir.</span><button onClick={onExitDemo}>Volver a mi cuenta</button></div>}
-      {currentView!=='review' && <header className="studio-topbar"><span>{currentView==='projects'?'Espacio compartido':state.workspace.name} <span aria-hidden="true">/</span> <strong>{{home:'Inicio',projects:'Proyectos del equipo',personal:'Mis proyectos personales',pauta:'Pauta',activity:'Actividad',planning:'Planificación',team:'Equipo',settings:'Configuración',branding:'Personalización'}[currentView]}</strong></span><div><NotificationCenter onNavigate={setCurrentView}/><span className="avatar small">{state.members[state.currentUserId]?.initials}</span><span className="studio-greeting">Hola, {state.members[state.currentUserId]?.name?.split(' ')[0]}</span></div></header>}
+      {currentView!=='review' && <header className="studio-topbar"><span>{currentView==='projects'?'Espacio compartido':currentView==='team'?'Espacio de trabajo':state.workspace.name} <span aria-hidden="true">/</span> <strong>{{home:'Inicio',projects:'Proyectos del equipo',personal:'Mis proyectos personales',pauta:'Pauta',activity:'Actividad',planning:'Planificación',team:'Equipo',settings:'Configuración',branding:'Personalización'}[currentView]}</strong></span><div><NotificationCenter onNavigate={setCurrentView}/><AccountProfileMenu initials={state.members[state.currentUserId]?.initials} onNavigate={setCurrentView}/></div></header>}
       {currentView==='home' && <StudioHome onNavigate={view=>setCurrentView(view==='projects'?'personal':view)} onOpen={openProject}/>}
       {persistenceError&&<div className="persistence-alert" role="alert"><Icon name="alert" size={16}/><span><strong>Los cambios están solo en este dispositivo</strong><small>{persistenceError==='quota'?'El almacenamiento del navegador está lleno. Quita algunas referencias pesadas o libera espacio.':'El navegador bloqueó el almacenamiento local.'}</small></span><button onClick={retryPersistence}>Reintentar</button></div>}
-      {currentView==='projects' && <ProjectActions onOpen={openProject} onNotify={setToast} onDirtyChange={setSharedDirty}/>}
+      {currentView==='projects' && <ProjectActions key={sharedLinkKey} onOpen={openProject} onNotify={setToast} onDirtyChange={setSharedDirty}/>}
       {currentView==='personal' && <ProjectLibrary onOpen={openProject} onNotify={setToast}/>}
-      {currentView==='activity' && <ActivityView onNavigate={setCurrentView}/>}
-      {currentView==='planning' && <Planning onOpen={openPlanningComment}/>}
+      {currentView==='activity' && <ActivityView onNavigate={setCurrentView} onOpenProject={openProject} onOpenComment={openPlanningComment}/>}
+      {currentView==='planning' && <RetryableFeature load={loadPlanning} retryView="planning" message="No se pudo cargar Planificación. Comprueba tu conexión e inténtalo de nuevo." loadingLabel="Cargando planificación…" onOpen={openPlanningComment}/>}
       {currentView==='team' && <TeamActions onNotify={setToast}/>}
-      {currentView==='settings' && <SettingsActions onNotify={setToast}/>}
+      {currentView==='settings' && <SettingsActions onNotify={setToast} onNavigate={setCurrentView}/>}
       {currentView==='branding' && <BrandSettings onNotify={setToast}/>}
-      {currentView==='pauta' && <Pauta/>}
-      {currentView==='review' && <>
+      {currentView==='pauta' && <RetryableFeature load={loadPauta} retryView="pauta" message="No se pudo cargar Pauta. Comprueba tu conexión e inténtalo de nuevo." loadingLabel="Cargando Pauta…"/>}
+      {currentView==='review'&&!media&&!demo&&<section className="dashboard-page personal-project-empty">
+        <header className="dashboard-header"><div><span className="eyebrow">{reviewRouteError?'ENLACE DE REVISIÓN':'PROYECTO PERSONAL'}</span><h1>{reviewRouteError?'Revisión no disponible':state.projects[personalProjectId]?.name||'Tu proyecto'}</h1><p>{reviewRouteError||'Solo tú puedes ver estas piezas. Agrega archivos o un enlace para comenzar la revisión.'}</p></div><button className="secondary" onClick={()=>{setRequestedReviewVersion(null);setCurrentView('personal')}}>Volver a mis proyectos</button></header>
+        {!requestedReviewVersion&&<DeliveryGrid projectId={personalProjectId} onNotify={setToast} onSelect={asset=>{setMedia({...asset,setDuration:duration=>setMedia(current=>({...current,duration}))});setCurrentTime(0);setVersion(asset.versionNumber||1);setDocumentPage(1);setSelectedFigure(null);setFocusedComment(null);setCommentDraft('');setSocialMode(false);const versionId=asset.versionId||`asset-${asset.id}-v${asset.versionNumber||1}`;setRequestedReviewVersion(versionId);setReviewRoute(window,versionId);}}/>}
+      </section>}
+      {currentView==='review'&&(media||demo) && <>
       <header className="topbar">
         <div className="breadcrumb"><button onClick={()=>setCurrentView('personal')}>{state.projects[media?.projectId||'project-amara']?.name}</button><Icon name="chevron" size={14}/><div><strong>{state.versions[reviewVersionId]?.name || media?.name || 'Revisión'}</strong><span>Guardado por cuenta</span></div></div>
         <div className="top-actions">
-          <span className="avatar small" title="Tu sesión activa; presencia compartida aún no disponible">{state.members[state.currentUserId]?.initials}</span>
           <button className="shortcut-trigger" aria-label="Ver atajos de teclado" title="Atajos (?)" onClick={()=>setShortcutsOpen(true)}>?</button>
           <NotificationCenter onNavigate={setCurrentView}/>
           <button className="secondary" aria-label="Compartir revisión" onClick={()=>setShareOpen(true)}><Icon name="share" size={17}/><span>Compartir</span></button>
           <div className="approval-menu"><button className={`approval ${approval==='Aprobado'?'approved':''}`} onClick={()=>{const check=validateReviewDecision(state,{versionId:reviewVersionId,reviewerId:state.currentUserId,decision:REVIEW_DECISION.APPROVED});if(!check.allowed){setToast(check.reason);return;}act('review/decide',{versionId:reviewVersionId,reviewerId:state.currentUserId,decision:REVIEW_DECISION.APPROVED});setToast('Tu aprobación quedó registrada')}}><Icon name="check" size={16}/>{approval}</button></div>
+          <AccountProfileMenu initials={state.members[state.currentUserId]?.initials} onNavigate={setCurrentView}/>
         </div>
       </header>
       <div className="review-layout">
         <div className="review-main">
-          <DeliveryGrid projectId={media?.projectId||'project-amara'} onRemove={id=>{if(media?.id===id){setCurrentView('personal');if(media.url)URL.revokeObjectURL(media.url);setMedia(null);setSelectedFigure(null);setFocusedComment(null);setCommentDraft('');}}} onNotify={setToast} onSelect={asset=>{if(media?.url)URL.revokeObjectURL(media.url);setMedia({...asset,setDuration:duration=>setMedia(current=>({...current,duration}))});setCurrentTime(0);setVersion(asset.versionNumber||1);setSelectedFigure(null);setFocusedComment(null);setCommentDraft('')}}/>
-          <div className="asset-bar"><div className="asset-meta"><span className="file-type">{fileLabel(media)}</span><div><strong>{media?.name || 'AMARA_SPOT_MASTER'}</strong><span>{media?.externalUrl?'Enlace externo · contenido en vivo':media?'Archivo local de revisión':'1920 × 1080 · H.264 · 48.2 MB'}</span></div></div><div className="asset-actions"><input ref={fileInput} className="visually-hidden" type="file" accept="video/*,image/*" onChange={loadMedia}/><button className="upload-button" onClick={()=>fileInput.current?.click()}><Icon name="plus" size={15}/> Cargar archivo</button><AssetVersionControl media={media} onNotify={setToast} onSelect={next=>{if(media?.url)URL.revokeObjectURL(media.url);setMedia({...next,duration:next.type==='image'?1:0,setDuration:duration=>setMedia(current=>({...current,duration}))});setVersion(next.versionNumber);setDocumentPage(1);setCurrentTime(0);setSelectedFigure(null);setFocusedComment(null);setSocialMode(false)}}/></div></div>
+          <DeliveryGrid projectId={media?.projectId||'project-amara'} onRemove={id=>{if(media?.id===id){setCurrentView('personal');if(media.url)URL.revokeObjectURL(media.url);setMedia(null);setSelectedFigure(null);setFocusedComment(null);setCommentDraft('');}}} onNotify={setToast} onSelect={asset=>{if(media?.url)URL.revokeObjectURL(media.url);setMedia({...asset,setDuration:duration=>setMedia(current=>({...current,duration}))});setCurrentTime(0);setVersion(asset.versionNumber||1);setSelectedFigure(null);setFocusedComment(null);setCommentDraft('');const versionId=asset.versionId||`asset-${asset.id}-v${asset.versionNumber||1}`;setRequestedReviewVersion(versionId);setReviewRoute(window,versionId)}}/>
+          <div className="asset-bar"><div className="asset-meta"><span className="file-type">{fileLabel(media)}</span><div><strong>{media?.name || 'AMARA_SPOT_MASTER'}</strong><span>{media?.externalUrl?'Enlace externo · contenido en vivo':media?'Archivo local de revisión':'1920 × 1080 · H.264 · 48.2 MB'}</span></div></div><div className="asset-actions"><input ref={fileInput} className="visually-hidden" type="file" accept="video/*,image/*" onChange={loadMedia}/><button className="upload-button" onClick={()=>fileInput.current?.click()}><Icon name="plus" size={15}/> Cargar archivo</button><AssetVersionControl media={media} onNotify={setToast} onSelect={next=>{if(media?.url)URL.revokeObjectURL(media.url);setMedia({...next,duration:next.type==='image'?1:0,setDuration:duration=>setMedia(current=>({...current,duration}))});setVersion(next.versionNumber);setDocumentPage(1);setCurrentTime(0);setSelectedFigure(null);setFocusedComment(null);setSocialMode(false);setRequestedReviewVersion(next.versionId);setReviewRoute(window,next.versionId)}}/></div></div>
           <div className="social-mode-switch" role="group" aria-label="Modo de visualización"><div className="review-mode-options"><button aria-pressed={!socialMode} onClick={()=>{socialRequest.current++;setSocialMode(false)}}><Icon name="pen" size={16}/><span>Revisión y anotaciones</span></button><button disabled={media?.type==='web'} aria-pressed={socialMode} onClick={()=>setSocialMode(true)}><Icon name="image" size={16}/><span>Preview social</span></button></div><span className="review-mode-hint">{socialMode?'Vista de publicación':'Revisa cada detalle'}</span></div>
-          {socialMode?<SocialPreview projectId={media?.projectId||'project-amara'} onSelect={selectSocialAsset} onTime={setCurrentTime} onNotify={setToast} onReview={asset=>{selectSocialAsset(asset);setSocialMode(false)}}/>:['pdf','html','document','presentation'].includes(media?.type)?<DocumentReview media={media} page={documentPage} setPage={setDocumentPage} renderAnnotations={drawing=><><AnnotationLayer activeTool={drawing?activeTool:'' } activeColor={activeColor} marks={marks} setMarks={saveMarks} selectedFigure={selectedFigure}/>{marks.map((mark,index)=><button key={mark.id} className={`figure-pin ${selectedFigure===mark.id?'selected':''}`} style={{left:`${mark.points[0].x*100}%`,top:`${mark.points[0].y*100}%`}} aria-label={`Abrir figura ${index+1}`} onClick={()=>selectFigure(mark)}>{index+1}</button>)}{drawing&&<div className="annotation-tools">{['pen','arrow','square','type'].map((tool,index)=><button key={tool} aria-label={['Lápiz','Flecha','Rectángulo','Texto'][index]} aria-pressed={activeTool===tool} className={activeTool===tool?'active':''} onClick={()=>setActiveTool(tool)}><Icon name={tool}/></button>)}{['#ff725e','#f2bd5c','#8ebd72','#67a9d4'].map(color=><button key={color} aria-label={`Color ${color}`} aria-pressed={activeColor===color} onClick={()=>setActiveColor(color)} style={{color}}><span style={{background:color,width:16,height:16,borderRadius:'50%'}}/></button>)}<button aria-label="Deshacer figura" disabled={!marks.length} onClick={()=>saveMarks(marks.slice(0,-1))}><Icon name="undo"/></button></div>}</>} onComment={()=>{setCommentsOpen(true);setSelectedFigure(null);setTimeout(()=>document.querySelector('.comments-drawer textarea, .composer textarea')?.focus(),50)}}/>:<><MediaStage key={annotationContext} activeTool={activeTool} setActiveTool={setActiveTool} activeColor={activeColor} setActiveColor={setActiveColor} media={media} currentTime={currentTime} setCurrentTime={setCurrentTime} remoteCursor={remoteCursor} marks={marks} setMarks={saveMarks} selectedFigure={selectedFigure} onFigure={selectFigure} figureComments={Object.values(state.comments).filter(c=>c.versionId===reviewVersionId)} reviewVersionId={reviewVersionId} onTimelineComment={comment=>{setCurrentTime(comment.timeSeconds);setFocusedComment(comment.id);setCommentsOpen(true);jumpFigure(comment)}}/></>}
+          {socialMode?<RetryableFeature load={loadSocialPreview} retryView="review" retryMedia={media} retryMode="social" message="No se pudo cargar la vista previa social. Comprueba tu conexión e inténtalo de nuevo." loadingLabel="Cargando vista previa social…" projectId={media?.projectId||'project-amara'} onSelect={selectSocialAsset} onTime={setCurrentTime} onNotify={setToast} onReview={asset=>{selectSocialAsset(asset);setSocialMode(false)}}/>:['pdf','html','document','presentation'].includes(media?.type)?<DocumentReview media={media} page={documentPage} setPage={setDocumentPage} renderAnnotations={drawing=><><AnnotationLayer activeTool={drawing?activeTool:'' } activeColor={activeColor} marks={marks} setMarks={saveMarks} selectedFigure={selectedFigure}/>{marks.map((mark,index)=><button key={mark.id} className={`figure-pin ${selectedFigure===mark.id?'selected':''}`} style={{left:`${mark.points[0].x*100}%`,top:`${mark.points[0].y*100}%`}} aria-label={`Abrir figura ${index+1}`} onClick={()=>selectFigure(mark)}>{index+1}</button>)}{drawing&&<div className="annotation-tools">{['pen','arrow','square','type'].map((tool,index)=><button key={tool} aria-label={['Lápiz','Flecha','Rectángulo','Texto'][index]} aria-pressed={activeTool===tool} className={activeTool===tool?'active':''} onClick={()=>setActiveTool(tool)}><Icon name={tool}/></button>)}{['#ff725e','#f2bd5c','#8ebd72','#67a9d4'].map(color=><button key={color} aria-label={`Color ${color}`} aria-pressed={activeColor===color} onClick={()=>setActiveColor(color)} style={{color}}><span style={{background:color,width:16,height:16,borderRadius:'50%'}}/></button>)}<button aria-label="Deshacer figura" disabled={!marks.length} onClick={()=>saveMarks(marks.slice(0,-1))}><Icon name="undo"/></button></div>}</>} onComment={()=>{setCommentsOpen(true);setSelectedFigure(null);setTimeout(()=>document.querySelector('.comments-drawer textarea, .composer textarea')?.focus(),50)}}/>:<><MediaStage key={annotationContext} activeTool={activeTool} setActiveTool={setActiveTool} activeColor={activeColor} setActiveColor={setActiveColor} media={media} currentTime={currentTime} setCurrentTime={setCurrentTime} remoteCursor={remoteCursor} marks={marks} setMarks={saveMarks} selectedFigure={selectedFigure} onFigure={selectFigure} figureComments={Object.values(state.comments).filter(c=>c.versionId===reviewVersionId)} reviewVersionId={reviewVersionId} onTimelineComment={comment=>{setCurrentTime(comment.timeSeconds);setFocusedComment(comment.id);setCommentsOpen(true);jumpFigure(comment)}}/></>}
           <div className="review-summary">
             <div><span className="eyebrow">RONDA DE REVISIÓN</span><strong>{openCount} comentarios pendientes</strong><small>Decisiones guardadas en tu cuenta; acceso compartido aún no disponible.</small></div>
             <button className="ai-button" onClick={()=>setSummaryOpen(true)}><Icon name="spark"/><span><strong>Resumir cambios</strong><small>Ver pendientes y bloqueantes</small></span></button>
@@ -360,7 +444,7 @@ function App({demo=false,onExitDemo}) {
       {(!socialMode||(!socialLoading&&media?.id===socialAssetId))&&<button className="mobile-comments" onClick={()=>setCommentsOpen(true)}>{Object.values(state.comments).filter(c=>c.versionId===reviewVersionId).length} comentarios <span>{openCount} abiertos</span></button>}
       {commentsOpen && <div className="comments-drawer"><div className="drawer-scrim" onClick={()=>setCommentsOpen(false)}/><CommentsPanel {...figureProps} onClose={()=>setCommentsOpen(false)} currentTime={currentTime} setCurrentTime={setCurrentTime} draft={commentDraft} setDraft={setCommentDraft} recoveredDraft={recoveredDraft}/></div>}
       </>}
-      {shareOpen && <ShareDialog onClose={()=>setShareOpen(false)} onNotify={setToast}/>} 
+      {shareOpen && <ShareDialog reviewVersionId={reviewVersionId} onClose={()=>setShareOpen(false)} onNotify={setToast}/>}
       {shortcutsOpen && <ShortcutHelp onClose={()=>setShortcutsOpen(false)}/>} 
       {summaryOpen && <ReviewSummary versionId={reviewVersionId} onClose={()=>setSummaryOpen(false)}/>}
       {toast && <div className="toast" role="status">{toast}</div>}
