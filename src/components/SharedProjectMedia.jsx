@@ -31,6 +31,8 @@ export function SharedProjectMedia({workspaceId,projectId,role,onRoleUpdate,perm
     finally{if(token===generation.current){operation.current=false;setBusy(false);onDirtyChange?.(false);}}
   }
   const add=async file=>{if(!file)return;await mutate(async()=>{const attempt=failedUpload.current?.file===file?failedUpload.current:{file,requestId:crypto.randomUUID()};failedUpload.current=attempt;abort.current=new AbortController();const result=await uploadFile(context,file,attempt.requestId,setProgress,abort.current.signal);if(!abort.current.signal.aborted){setSelected(result.asset.id);failedUpload.current=null;}},'Pieza compartida guardada');};
+  const addWebCapture=async file=>{if(!file)return;await mutate(async()=>{const result=await uploadFile(context,file,crypto.randomUUID(),setProgress);setSelected(result.asset.id);},'Captura web guardada como pieza del proyecto');};
+  useEffect(()=>{const capture=event=>addWebCapture(event.detail?.file);window.addEventListener('ronda:web-capture',capture);return()=>window.removeEventListener('ronda:web-capture',capture);},[workspaceId,projectId]);
   const deliveryGrid=<><SharedDeliveryGrid assets={assets} trash={trash} workspaceId={workspaceId} projectName={projectName} role={role} selected={selected} busy={busy} refreshing={refreshingAssets} error={error} progress={progress}
     onSelect={id=>{if(id!==selected&&(!reviewDirty.current||window.confirm('Hay cambios sin publicar. ¿Descartarlos?')))setSelected(id);}}
     onOrder={order=>mutate(()=>reviewSend(path+'/assets/order','PUT',{order,previousOrder:assets.map(a=>a.id)}),'Orden guardado para el equipo')}
