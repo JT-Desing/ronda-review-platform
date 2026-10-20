@@ -15,17 +15,16 @@ test('version counters use server totals even with only the first page loaded',(
  assert.deepEqual(sharedFilters.sharedCommentCounts(room),{total:123,open:120,resolved:3,blocking:2,partial:false});
  assert.deepEqual(sharedFilters.sharedCommentCounts({comments:room.comments,nextCursor:'more'}),{total:1,open:1,resolved:0,blocking:0,partial:true});
 });
-test('filter searches author, text and replies while respecting status',()=>{
+test('active review filters hide resolved comments while searching author, text and replies',()=>{
  const comments=[{author:'Eva',text:'Contraste',status:'open',replies:[{text:'Recibido'}]},{author:'Ana',text:'Título',status:'resolved',replies:[]}];
  assert.deepEqual(filterSharedComments(comments,'Abiertos','RECIBIDO'),[comments[0]]);
- assert.deepEqual(filterSharedComments(comments,'Resueltos','Eva'),[]);
- assert.deepEqual(filterSharedComments(comments,'Todos','ana'),[comments[1]]);
+ assert.deepEqual(filterSharedComments(comments,'Todos','ana'),[]);
 });
 test('no matches explains filter, search and partial pagination instead of a blank panel',()=>{
  assert.match(sharedCommentsEmptyMessage({comments:[],visible:[],filter:'Todos',search:''}),/No hay comentarios/);
- const comments=[{text:'test'}];
+ const comments=[{text:'test',status:'open'}];
  assert.match(sharedCommentsEmptyMessage({comments,visible:[],filter:'Todos',search:'x'}),/coincidencias/);
- assert.match(sharedCommentsEmptyMessage({comments,visible:[],filter:'Abiertos',search:''}),/abiertos/);
+ assert.match(sharedCommentsEmptyMessage({comments,visible:[],filter:'Abiertos',search:''}),/pendientes/);
  assert.match(sharedCommentsEmptyMessage({comments,visible:[],filter:'Todos',search:'x',nextCursor:'more'}),/cargados/);
  assert.equal(sharedCommentsEmptyMessage({comments,visible:comments,filter:'Todos',search:''}),'');
 });

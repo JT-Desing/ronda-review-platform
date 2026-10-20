@@ -13,4 +13,6 @@ test('comment page carries totals for the requested version, not just loaded row
  assert.deepEqual(page.comments,[]);
  const aggregate=queries.find(q=>q.sql.includes('count(*)'));
  assert.deepEqual(aggregate.params,[versionId]);
+ const listing=queries.find(q=>q.sql.includes('ORDER BY c.created_at,c.id'));
+ assert.match(listing.sql,/status='open'/,'the active review queue must never return resolved rows');
 });

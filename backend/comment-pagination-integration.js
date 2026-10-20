@@ -23,10 +23,10 @@ try{
  for(const index of [0,60,122])await json(`${commentsPath}/${created[index].id}/status`,'PATCH',{status:'resolved',revision:0},f.editor);
  // A shared timestamp stresses UUID tie-breaking across both 50-row boundaries.
  await f.pool.query("UPDATE shared_version_comments SET created_at='2026-01-01 12:00:00.123456+00' WHERE version_id=$1",[version.id]);
- const expected=(await f.pool.query('SELECT id FROM shared_version_comments WHERE version_id=$1 ORDER BY created_at,id',[version.id])).rows.map(r=>r.id);
+ const expected=(await f.pool.query("SELECT id FROM shared_version_comments WHERE version_id=$1 AND status='open' ORDER BY created_at,id",[version.id])).rows.map(r=>r.id);
  let cursor=null;const pages=[],seen=[];
  do{const page=await json(commentsPath+(cursor?'?cursor='+encodeURIComponent(cursor):''));pages.push(page);seen.push(...page.comments.map(c=>c.id));cursor=page.nextCursor;assert.ok(pages.length<=3,'cursor must terminate');}while(cursor);
- assert.deepEqual(pages.map(p=>p.comments.length),[50,50,23]);assert.equal(new Set(seen).size,123);assert.deepEqual(seen,expected);
+ assert.deepEqual(pages.map(p=>p.comments.length),[50,50,20]);assert.equal(new Set(seen).size,120);assert.deepEqual(seen,expected);assert.ok(pages.every(page=>page.comments.every(comment=>comment.status==='open')));
  assert.deepEqual((await json(commentsPath+'?cursor='+encodeURIComponent(pages[0].nextCursor))).comments.map(c=>c.id),pages[1].comments.map(c=>c.id),'cursor replay is stable');
  const last=expected.at(-1),terminal=Buffer.from(JSON.stringify({versionId:version.id,time:'2026-01-01 12:00:00.123456+00',id:last})).toString('base64url');
  const terminalPage=await json(commentsPath+'?cursor='+terminal);
@@ -35,10 +35,10 @@ try{
  for(const actor of [null,f.outsider])for(const suffix of ['', '?cursor='+pages[0].nextCursor])assert.equal((await call(commentsPath+suffix,'GET',undefined,actor)).status,actor?404:401);
  for(const bad of ['not-json','x'.repeat(513),Buffer.from(JSON.stringify({versionId:randomUUID(),id:last,time:'2026-01-01T00:00:00Z'})).toString('base64url')])assert.equal((await call(commentsPath+'?cursor='+bad)).status,400);
  const room=await json(versionPath),gallery=await json(projectPath+'/assets');
- assert.equal(room.asset.openComments,120);assert.equal(gallery.assets[0].openComments,120);assert.ok(pages[0].comments.filter(c=>c.status==='open').length<120);
+ assert.equal(room.asset.openComments,120);assert.equal(gallery.assets[0].openComments,120);
  assert.equal((await call(`${commentsPath}/${created[1].id}/status`,'PATCH',{status:'resolved',revision:0},f.reviewer)).status,403);
  // Invalid calendar dates pass Date.parse by rollover but must not become server errors.
  const invalidDate=Buffer.from(JSON.stringify({versionId:version.id,id:last,time:'2026-02-30T00:00:00Z'})).toString('base64url');
  assert.equal((await call(commentsPath+'?cursor='+invalidDate)).status,400);
- console.log('PASS HTTP pagination: 123 comments, 50/50/23 pages, timestamp ties, cursor replay/end, role/scope, 120 total pending and malformed cursor rejection.');
+ console.log('PASS HTTP pagination: only 120 open comments returned across 50/50/20 pages; three resolved rows remain counted and hidden; cursor ties/replay/end, role/scope and malformed cursor rejection.');
 }finally{if(server)await new Promise(r=>server.close(r));await f.close();}

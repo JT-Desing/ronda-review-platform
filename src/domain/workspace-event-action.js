@@ -12,6 +12,7 @@ const actions = {
   'project.comment_status': 'Estado del comentario actualizado',
 };
 
-export function workspaceEventAction(action) {
+export function workspaceEventAction(action, details) {
+  if (action === 'review.comment_status') return details?.status === 'resolved' ? 'Comentario resuelto' : 'Comentario reabierto';
   return actions[action] || action;
 }

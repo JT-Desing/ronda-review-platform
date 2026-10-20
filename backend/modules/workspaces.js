@@ -15,6 +15,8 @@ export async function handleWorkspaces({ req, res, path, account, pool, mailer, 
   if (!account) return reply(res, 401, { error: 'Inicia sesión.' });
   if(restrictedWorkspaceAdministration({path,method:req.method,account}))return reply(res,403,{error:'La administración del equipo está reservada al superadministrador.'});
   const repository = workspaceRepository(pool), service = workspaceService(repository);
+  const reviewActivity=path.match(new RegExp(`^/api/workspaces/(${uuid})/review-activity$`));
+  if(reviewActivity&&req.method==='GET')return reply(res,200,await repository.reviewActivity(reviewActivity[1],account.id));
   const candidates=path.match(new RegExp(`^/api/workspaces/(${uuid})/project-candidates$`));
   if(candidates&&req.method==='GET'){
     const space=candidates[1];

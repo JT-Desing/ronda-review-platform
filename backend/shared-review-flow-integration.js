@@ -30,6 +30,16 @@ try{
   assert.equal((await (await call(versionPath)).json()).asset.openComments,1,'room summary must include full active-version pending count');
   assert.equal((await call(versionPath+'/decisions','POST',{decision:'approved',revision:1,requestId:randomUUID()},f.reviewer)).status,409);
   assert.equal((await call(versionPath+`/comments/${comment.id}/status`,'PATCH',{status:'resolved',revision:0},f.editor)).status,200);
+  const pendingAfterResolve=await (await call(versionPath+'/comments')).json();
+  assert.deepEqual(pendingAfterResolve.comments,[],'resolved comments leave the active review list');
+  assert.equal(pendingAfterResolve.commentStats.resolved,1,'resolved totals remain available for review accounting');
+  const retained=(await f.pool.query('SELECT text,status FROM shared_version_comments WHERE id=$1',[comment.id])).rows[0];
+  assert.deepEqual(retained,{text:'Cambiar título',status:'resolved'},'resolving keeps the original comment in storage');
+  const event=(await f.pool.query("SELECT details FROM workspace_events WHERE workspace_id=$1 AND action='review.comment_status' ORDER BY created_at DESC LIMIT 1",[f.space])).rows[0];
+  assert.equal(event.details.commentText,'Cambiar título','the team history keeps a readable copy of the resolved comment');
+  const historyResponse=await call(`/api/workspaces/${f.space}/review-activity`,'GET',undefined,f.reviewer);assert.equal(historyResponse.status,200);
+  const history=await historyResponse.json();assert.equal(history.events[0].details.commentText,'Cambiar título','team members can inspect the retained copy in activity history');
+  assert.equal((await call(`/api/workspaces/${f.space}/review-activity`,'GET',undefined,f.outsider)).status,404,'review activity remains scoped to workspace members');
   assert.equal((await call(versionPath+'/decisions','POST',{decision:'approved',revision:1,requestId:randomUUID()},f.reviewer)).status,200);
   const read=await fetch(base+`/api/workspaces/${f.space}/media/${version.fileId}`,{headers:{Cookie:`ronda_session=${tokens[f.reviewer]}`,Range:'bytes=1-3'}});assert.equal(read.status,206);assert.deepEqual(Buffer.from(await read.arrayBuffer()),png.subarray(1,4));
   const invalidRange=await fetch(base+`/api/workspaces/${f.space}/media/${version.fileId}`,{headers:{Cookie:`ronda_session=${tokens[f.reviewer]}`,Range:'bytes=999-'}});assert.equal(invalidRange.status,416);assert.equal(invalidRange.headers.get('Content-Range'),`bytes */${png.length}`);
@@ -57,7 +67,7 @@ try{
   assert.equal((await call(path+'/assets/trash','GET',undefined,f.reviewer)).status,403);
   assert.equal((await call(path+'/assets/'+asset.id+'/restore','POST',{revision:deleted.revision})).status,200);
   assert.equal((await call(versionPath)).status,200);
-  assert.equal((await (await call(versionPath+'/comments')).json()).comments[0].id,comment.id);
+  assert.deepEqual((await (await call(versionPath+'/comments')).json()).comments,[],'restoring the asset does not put a resolved comment back into the active list');
   // A role update affects the existing authenticated session on the next request.
   await f.pool.query("UPDATE workspace_members SET role='reviewer' WHERE workspace_id=$1 AND user_id=$2",[f.space,f.editor]);
   assert.equal((await call(`${path}/assets`,'GET',undefined,f.editor)).status,200,'the member session remains active for reads after demotion');
@@ -72,6 +82,6 @@ try{
   assert.equal((await call(versionPath+'/comments','POST',{text:'Must not persist after expiration',requestId:randomUUID()},f.reviewer)).status,401);
   await f.pool.query("UPDATE sessions SET expires_at=now()+interval '1 day' WHERE token_hash=$1",[digest(tokens[f.reviewer])]);
   const afterExpiry=await call(versionPath+'/comments','GET',undefined,f.reviewer);assert.equal(afterExpiry.status,200);
-  const preserved=await afterExpiry.json();assert.equal(preserved.comments.length,1);assert.equal(preserved.comments[0].id,comment.id);
+  const preserved=await afterExpiry.json();assert.deepEqual(preserved.comments,[],'expired-session recovery preserves the stored resolution but does not return it to the active queue');
   console.log('PASS HTTP shared review: auth, upload, scoped comments, approval, Range and expired-session rejection without data loss.');
 }finally{if(server)await new Promise(r=>server.close(r));await f.close();}

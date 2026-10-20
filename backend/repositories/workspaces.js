@@ -40,6 +40,24 @@ export function workspaceRepository(pool) {
       } catch (error) { await client.query('ROLLBACK'); throw error; }
       finally { client.release(); }
     },
+    async reviewActivity(workspaceId, userId) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const space = (await client.query("SELECT id,name,kind FROM workspaces WHERE id=$1 FOR SHARE", [workspaceId])).rows[0];
+        if (!space || space.kind !== 'team') throw workspaceError(404, 'Espacio de equipo no disponible.');
+        const role = (await client.query('SELECT role FROM workspace_members WHERE workspace_id=$1 AND user_id=$2', [workspaceId, userId])).rows[0]?.role;
+        requireWorkspaceMember(role);
+        const events = (await client.query("SELECT e.id,e.action,e.details,e.created_at,u.name AS actor FROM workspace_events e LEFT JOIN users u ON u.id=e.actor_id WHERE e.workspace_id=$1 AND e.action='review.comment_status' ORDER BY e.created_at DESC,e.id LIMIT 100", [workspaceId])).rows;
+        const commentIds=events.map(event=>event.details?.commentId).filter(id=>typeof id==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
+        const comments=commentIds.length?(await client.query('SELECT id,text FROM shared_version_comments WHERE id=ANY($1::uuid[])',[commentIds])).rows:[];
+        const commentText=new Map(comments.map(comment=>[comment.id,comment.text]));
+        const history=events.map(event=>({...event,details:{...event.details,commentText:event.details?.commentText||commentText.get(event.details?.commentId)||null}}));
+        await client.query('COMMIT');
+        return {workspace:{id:space.id,name:space.name},events:history};
+      } catch (error) { await client.query('ROLLBACK'); throw error; }
+      finally { client.release(); }
+    },
     async transaction(workspaceId, actorId, operation, admin = true) {
       const client = await pool.connect();
       try {

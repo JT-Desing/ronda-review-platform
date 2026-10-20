@@ -17,7 +17,9 @@ export function sharedCommentService(repository){
       return repository.access(space,actor,async db=>{
         await version(db,space,c);
         const commentStats=(await db.query("SELECT count(*)::integer AS total,count(*) FILTER(WHERE status='open')::integer AS open,count(*) FILTER(WHERE status='resolved')::integer AS resolved,count(*) FILTER(WHERE status='open' AND priority='blocking')::integer AS blocking FROM shared_version_comments WHERE version_id=$1",[c.versionId])).rows[0];
-        const rows=(await db.query('SELECT c.*,u.name AS author,c.created_at::text AS cursor_time FROM shared_version_comments c JOIN users u ON u.id=c.author_id WHERE version_id=$1 AND ($2::timestamptz IS NULL OR (c.created_at,c.id)>($2::timestamptz,$3::uuid)) ORDER BY c.created_at,c.id LIMIT 51',[c.versionId,after?.time||null,after?.id||null])).rows;
+        // Resolved comments remain in storage and workspace_events for audit/history,
+        // but this endpoint is the active review queue and must not return them.
+        const rows=(await db.query("SELECT c.*,u.name AS author,c.created_at::text AS cursor_time FROM shared_version_comments c JOIN users u ON u.id=c.author_id WHERE c.version_id=$1 AND c.status='open' AND ($2::timestamptz IS NULL OR (c.created_at,c.id)>($2::timestamptz,$3::uuid)) ORDER BY c.created_at,c.id LIMIT 51",[c.versionId,after?.time||null,after?.id||null])).rows;
         const page=rows.slice(0,50),last=page.at(-1);
         const replies=page.length?(await db.query('SELECT r.*,u.name AS author FROM shared_comment_replies r JOIN users u ON u.id=r.author_id WHERE r.version_id=$1 AND r.comment_id=ANY($2::uuid[]) ORDER BY r.created_at,r.id',[c.versionId,page.map(r=>r.id)])).rows:[];
         const audio=page.length?(await db.query('SELECT id,comment_id,name,mime FROM shared_comment_audio WHERE comment_id=ANY($1::uuid[]) ORDER BY ordinal',[page.map(r=>r.id)])).rows:[];
@@ -61,7 +63,7 @@ export function sharedCommentService(repository){
         requireReviewAction(role,'resolve');editable(await version(db,space,c,true));const row=await target(db,c,id);
         if(!Number.isInteger(input.revision)||row.revision!==input.revision)throw workspaceError(409,'El comentario cambió. Actualiza.');
         const changed=(await db.query('UPDATE shared_version_comments SET status=$1,revision=revision+1 WHERE id=$2 RETURNING *',[input.status,id])).rows[0];
-        await recordEvent(db,space,actor,'review.comment_status',{...c,commentId:id,status:input.status});return {comment:dto(changed)};
+        await recordEvent(db,space,actor,'review.comment_status',{...c,commentId:id,status:input.status,commentText:row.text,priority:row.priority});return {comment:dto(changed)};
       },true);
     },
     async reply(space,actor,c,id,input){
