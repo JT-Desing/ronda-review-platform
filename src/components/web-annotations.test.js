@@ -14,8 +14,9 @@ const app=await readFile(new URL('../main.jsx',import.meta.url),'utf8');
 test('external web review wires the shared annotation layer to the saved comment marks',()=>{
   assert.match(stage,/annotationVisibleAt\(mark,currentTime,\['image','web'\]\.includes\(media\?\.type\)\)/);
   assert.match(stage,/<ExternalWeb[^>]+marks=\{visibleMarks\}[^>]+setMarks=/);
-  assert.match(component,/<AnnotationLayer activeTool=\{readonly\|\|!webMetrics\?'':activeTool\}[^>]+marks=\{viewportMarks\}[^>]+setMarks=\{saveViewportMarks\}/);
+  assert.match(component,/<AnnotationLayer activeTool=\{readonly\?'':activeTool\}[^>]+marks=\{viewportMarks\}[^>]+setMarks=\{saveViewportMarks\}/);
   assert.match(component,/setActiveTool\(tool\)/);
+  assert.doesNotMatch(component,/disabled=\{readonly\|\|!webMetrics\}/);
 });
 
 test('web annotation overlay tracks the actual responsive iframe viewport',()=>{
