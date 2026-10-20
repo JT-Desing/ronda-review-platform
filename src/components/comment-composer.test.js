@@ -30,3 +30,12 @@ test('composer bar maintains keyboard focus and 44px touch controls', () => {
   assert.match(css, /@media\(pointer:coarse\)[\s\S]*?height:44px;min-height:44px/);
   assert.doesNotMatch(css, /transition:\s*all/);
 });
+
+test('composer starts compact and reveals contextual help during composition',()=>{
+ const css=component('comment-composer.css');
+ assert.match(css,/textarea:placeholder-shown\{height:40px;max-height:40px;overflow-y:hidden\}/);
+ assert.match(css,/composer-meta\{display:none\}/);
+ assert.match(css,/:focus-within .composer-meta/);
+ assert.match(css,/resize:none/);
+ assert.match(component('MentionInput.jsx'),/placeholder:'Escribe un mensaje…',rows:1/);
+});

@@ -33,3 +33,17 @@
 @media(max-width:480px){.app-shell .comments-panel .composer-message-bar{gap:2px;padding:4px}.app-shell .comments-panel .composer-message-bar .audio-comment-input>label,.app-shell .comments-panel .composer-message-bar .audio-comment-input>button{flex-basis:36px;width:36px;height:40px}.app-shell .comments-panel .composer-message-bar .send{flex-basis:40px}.app-shell .comments-panel .composer-message-bar .composer-meta{font-size:9px}.app-shell .comments-panel .composer-message-bar .composer-meta>button{padding:0 4px}}
 @media(pointer:coarse){.app-shell .comments-panel .composer-message-bar .audio-comment-input>label,.app-shell .comments-panel .composer-message-bar .audio-comment-input>button,.app-shell .comments-panel .restored-composer .composer-message-bar .audio-comment-input>label,.app-shell .comments-panel .restored-composer .composer-message-bar .audio-comment-input>button{flex-basis:44px;width:44px;height:44px;min-height:44px}.app-shell .comments-panel .composer-message-bar .send,.app-shell .comments-panel .restored-composer .composer-message-bar .send{flex-basis:44px;width:44px;height:44px;min-height:44px}}
 @media(prefers-reduced-motion:reduce){.app-shell .comments-panel .composer-message-bar,.app-shell .comments-panel .composer-message-bar *{transition:none!important}}
+/* Compact resting state; contextual help appears only while composing. */
+.app-shell .comments-panel .composer-message-bar{padding:4px;gap:2px;border-radius:26px;align-items:center}
+.app-shell .comments-panel .composer-message-bar .composer-input{flex:1 1 0;width:0;padding:0 4px}
+.app-shell .comments-panel .composer-message-bar .mention-editor{min-width:0}
+.app-shell .comments-panel .composer-message-bar textarea,
+.app-shell .comments-panel .restored-composer .composer-message-bar textarea{height:40px;min-height:40px;max-height:120px;padding:10px 2px;resize:none;line-height:20px;field-sizing:content;overflow-y:auto}
+.app-shell .comments-panel .composer-message-bar textarea:placeholder-shown{height:40px;max-height:40px;overflow-y:hidden}
+.app-shell .comments-panel .composer-message-bar .composer-meta{display:none}
+.app-shell .comments-panel .composer-message-bar:focus-within .composer-meta,
+.app-shell .comments-panel .composer-message-bar:has(textarea:not(:placeholder-shown)) .composer-meta{display:flex;min-height:20px}
+.app-shell .comments-panel .composer-message-bar .composer-meta>button{font-size:0;min-height:28px;padding:0 5px}
+.app-shell .comments-panel .composer-message-bar .composer-meta>button svg{width:16px;height:16px}
+.app-shell .comments-panel .composer-message-bar .send,
+.app-shell .comments-panel .restored-composer .composer-message-bar .send{border-radius:50%;align-self:center}
