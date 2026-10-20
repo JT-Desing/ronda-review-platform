@@ -39,7 +39,7 @@ test('blocked external pages can be captured only with browser permission and sa
   assert.match(component,/new File\(\[blob\].*type:'image\/png'/);
   assert.match(delivery,/addWebCapture=async file=>\{if\(!file\)return;await mutate\(async\(\)=>\{const result=await uploadFile\(context,file/);
   assert.match(delivery,/addWebCapture\(event\.detail\?\.file\)/);
-  assert.match(component,/La página está en modo navegación/);
+  assert.match(component,/Vista en vivo para navegar/);
 });
 
 test('creating or selecting a web annotation opens an anchored comment composer',()=>{
@@ -54,11 +54,14 @@ test('creating or selecting a web annotation opens an anchored comment composer'
   assert.match(app,/annotationId:mark\.id,annotationContext/);
 });
 
-test('live web marks cannot be created until document scroll metrics are connected; legacy viewport marks are not misrepresented as anchored',()=>{
+test('without the document bridge the live site stays navigable and fixed annotations use a captured image',()=>{
   assert.match(component,/const hasDocumentBridge=Boolean\(webMetrics\)/);
   assert.match(component,/marks\.filter\(mark=>mark\.coordinateSpace==='document'\)/);
   assert.match(component,/if\(!hasDocumentBridge\)return/);
-  assert.match(component,/disabled=\{readonly\|\|!hasDocumentBridge\}/);
+  assert.match(component,/Capturar vista para anotar/);
+  assert.match(component,/Para comentarios fijos, abre la web original en otra pestaña y captura la vista/);
+  assert.match(component,/Ronda la abrirá como imagen para anotar/);
+  assert.doesNotMatch(component,/instala la extensión Ronda/);
   assert.match(component,/legacyMarks\.length>0/);
 });
 
