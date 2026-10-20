@@ -40,7 +40,7 @@ Abrir `http://localhost:5173`.
 
 ## Archivos de diseño
 
-Los ejemplos de empresa y planificación se reservan al superadministrador de plataforma. El servidor asigna `platformRole` usando la lista opcional `RONDA_SUPERADMIN_IDS` (IDs de cuenta separados por comas); sin configuración, ninguna cuenta recibe ese rol. Ser administrador de un espacio personal o equipo no concede acceso a estos ejemplos. No se acepta este permiso desde el registro ni desde los datos editables de un espacio.
+Los ejemplos de empresa y planificación se reservan al superadministrador de plataforma. El servidor asigna `platformRole` usando `RONDA_SUPERADMIN_IDS` con un único ID de cuenta (si contiene varios IDs distintos, no concede el rol a ninguno); sin configuración, ninguna cuenta recibe ese rol. Ser administrador de un espacio personal o equipo no concede acceso a estos ejemplos. No se acepta este permiso desde el registro ni desde los datos editables de un espacio.
 
 - `DESIGN.md`: dirección y principios.
 - `design-tokens.json`: tokens iniciales.

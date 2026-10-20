@@ -10,7 +10,7 @@ test('invitation email uses stored recipient, code and public origin',async()=>{
   assert.equal(message.to,result.invitation.email);
   assert.ok(message.text.includes(result.token));
   assert.ok(message.text.includes(origin));
-  assert.ok(message.text.includes('Unirme a otro espacio'));
+  assert.ok(message.text.includes('Proyectos → Unirme con un código de invitación'));
   const invitationUrl=new URL(message.text.match(/https:\/\/[^\s]+#invite\/[^\s]+/)[0]);
   assert.equal(invitationUrl.search,'');
   assert.equal(invitationUrl.hash,`#invite/${result.token}`);

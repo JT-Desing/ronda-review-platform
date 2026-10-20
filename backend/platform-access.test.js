@@ -12,7 +12,8 @@ test('workspace administrators and signed-out accounts cannot enter internal dem
 
 test('only server-configured account IDs receive the superadmin demo capability',()=>{
   const account={id:'trusted-id',email:'admin@example.invalid'};
-  assert.equal(canAccessCompanyDemo(withPlatformRole(account,'other-id, trusted-id ')),true);
+  assert.equal(canAccessCompanyDemo(withPlatformRole(account,' trusted-id ')),true);
+  assert.equal(canAccessCompanyDemo(withPlatformRole(account,'other-id, trusted-id ')),false);
   assert.equal(canAccessCompanyDemo(withPlatformRole(account,'admin@example.invalid')),false);
   assert.equal(canAccessCompanyDemo(withPlatformRole({...account,id:'another-id'},'trusted-id')),false);
 });

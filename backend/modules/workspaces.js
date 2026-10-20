@@ -1,4 +1,5 @@
 import { reply, body } from '../http.js';
+import {restrictedWorkspaceAdministration} from '../platform-view-policy.js';
 import { workspaceRepository } from '../repositories/workspaces.js';
 import { workspaceService } from '../workspace-service.js';
 import { sendInvitationMail } from '../invitation-mail.js';
@@ -10,6 +11,7 @@ async function objectBody(req) {
 }
 export async function handleWorkspaces({ req, res, path, account, pool, mailer, origin }) {
   if (!account) return reply(res, 401, { error: 'Inicia sesión.' });
+  if(restrictedWorkspaceAdministration({path,method:req.method,account}))return reply(res,403,{error:'La administración del equipo está reservada al superadministrador.'});
   const repository = workspaceRepository(pool), service = workspaceService(repository);
   if (path === '/api/workspaces' && req.method === 'GET') return reply(res, 200, { workspaces: await repository.list(account.id) });
   if (path === '/api/workspaces' && req.method === 'POST') return reply(res, 201, await service.createTeam(account.id,await objectBody(req)));

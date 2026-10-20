@@ -54,3 +54,9 @@
 @media(max-width:1000px){.shared-projects .shared-toolbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.shared-projects .shared-toolbar .primary-action{justify-self:start}.shared-projects .shared-layout{grid-template-columns:minmax(220px,260px) minmax(0,1fr)}}
 @media(max-width:780px){.shared-projects .shared-layout{grid-template-columns:1fr;gap:20px}.shared-projects .shared-toolbar{grid-template-columns:1fr}.shared-projects .shared-toolbar .primary-action{justify-self:stretch}.shared-projects .shared-conversation,.shared-project-welcome{border-left:0;border-top:1px solid var(--line);padding:24px 0 0}.shared-projects .shared-scope-help summary small{display:block;font-size:11px}.shared-projects .shared-project-welcome{min-height:240px}.shared-projects .dashboard-header{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){.shared-projects .shared-project-row,.shared-scope-help summary>.icon:last-child{transition:none}}
+.project-invitations{margin:12px 0;border:1px solid var(--line);border-radius:12px;padding:12px 16px;background:var(--surface-1)}
+.project-invitations summary{cursor:pointer;font-size:13px;min-height:32px;align-content:center}
+.project-invitations form{display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px;padding-top:12px}
+.project-invitations form>p{flex-basis:100%;font-size:12px;color:var(--muted);margin:0}
+.project-invitations label{display:flex;flex-direction:column;gap:6px;font-size:12px;flex:1 1 180px}
+.project-invitations input,.project-invitations select,.project-invitations button{min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);padding:8px 12px;font:inherit}

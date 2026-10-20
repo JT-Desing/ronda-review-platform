@@ -5,6 +5,9 @@ import {createApp} from '../app.js';
 
 test('workspace mutation endpoints reject non-object JSON with a recoverable 400', async t => {
   const account={id:'11111111-1111-4111-8111-111111111111',email:'qa@example.invalid',name:'QA'};
+  const previousOwner=process.env.RONDA_SUPERADMIN_IDS;
+  process.env.RONDA_SUPERADMIN_IDS=account.id;
+  t.after(()=>{if(previousOwner===undefined)delete process.env.RONDA_SUPERADMIN_IDS;else process.env.RONDA_SUPERADMIN_IDS=previousOwner;});
   let queries=0;
   const pool={async query(){queries++;return {rows:[account]};}};
   const origin='http://qa.invalid';

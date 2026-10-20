@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from
 import { createPortal } from 'react-dom';
 import { useAccountActions } from './AccountAccess.jsx';
 import Icon from './Icon.jsx';
+import {canAccessStudioView} from '../domain/platform-access.js';
 
 export function AccountProfileMenu({ initials, onNavigate }) {
   const { user, status, busy, retrySave, openImport, logout } = useAccountActions();
@@ -61,7 +62,7 @@ export function AccountProfileMenu({ initials, onNavigate }) {
       {onNavigate && <nav className="account-profile-links" aria-label="Accesos de cuenta">
         <small className="account-profile-section-label">TU ESPACIO</small>
         <button type="button" onClick={() => closeAnd(() => onNavigate('personal'))}><span className="account-profile-link-icon"><Icon name="folder" size={17}/></span><span><strong>Mis proyectos personales</strong><small>Archivos y revisiones privadas</small></span><Icon name="chevron" size={15}/></button>
-        <button type="button" onClick={() => closeAnd(() => onNavigate('settings'))}><span className="account-profile-link-icon"><Icon name="settings" size={17}/></span><span><strong>Configuración</strong><small>Preferencias de tu cuenta</small></span><Icon name="chevron" size={15}/></button>
+        {canAccessStudioView(user,'settings')&&<button type="button" onClick={() => closeAnd(() => onNavigate('settings'))}><span className="account-profile-link-icon"><Icon name="settings" size={17}/></span><span><strong>Configuración</strong><small>Preferencias de tu cuenta</small></span><Icon name="chevron" size={15}/></button>}
       </nav>}
       <div className="account-profile-actions">
         <small className="account-profile-section-label">DATOS Y SESIÓN</small>

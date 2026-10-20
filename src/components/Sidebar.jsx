@@ -5,9 +5,12 @@ import Icon from './Icon.jsx';
 import LensNavigation from './LensNavigation.jsx';
 import rondaLogo from '../ronda-logo-white-silver.svg';
 import './workspace-card.css';
+import {useAccountActions} from './AccountAccess.jsx';
+import {canAccessStudioView} from '../domain/platform-access.js';
 
 export default function Sidebar({ collapsed, setCollapsed, currentView, onNavigate, onDemo }) {
   const {state}=useRonda();
+  const {user}=useAccountActions();
   const projectCount=Object.keys(state.projects||{}).length;
   const pieceCount=(state.assets||[]).length;
   const accountName=state.members[state.currentUserId]?.name||'Mi cuenta';
@@ -49,13 +52,13 @@ export default function Sidebar({ collapsed, setCollapsed, currentView, onNaviga
       <button className={currentView==='projects'?'active':''} onClick={()=>onNavigate('projects')}><Icon name="grid"/><span>Proyectos</span></button>
       <button className={currentView==='activity'?'active':''} onClick={()=>onNavigate('activity')}><Icon name="clock"/><span>Actividad</span></button>
       <button className={currentView==='planning'?'active':''} onClick={()=>onNavigate('planning')}><Icon name="calendar"/><span>Planificación</span></button>
-      <button className={currentView==='team'?'active':''} onClick={()=>onNavigate('team')}><Icon name="users"/><span>Equipo</span></button>
+{canAccessStudioView(user,'team')&&<button className={currentView==='team'?'active':''} onClick={()=>onNavigate('team')}><Icon name="users"/><span>Equipo</span></button>}
     </LensNavigation>
     <div className="side-label">ESPACIO</div>
     <LensNavigation className="side-nav lower" label="Espacio" currentView={currentView} collapsed={collapsed}>
       <button className={currentView==='personal'||currentView==='review'?'active':''} onClick={()=>onNavigate('personal')}><Icon name="personal"/><span>{state.workspace.name}</span></button>
-      <button className={currentView==='settings'?'active':''} onClick={()=>onNavigate('settings')}><Icon name="settings"/><span>Configuración</span></button>
-      <button className={currentView==='branding'?'active':''} onClick={()=>onNavigate('branding')}><Icon name="image"/><span>Personalización</span></button>
+{canAccessStudioView(user,'settings')&&<button className={currentView==='settings'?'active':''} onClick={()=>onNavigate('settings')}><Icon name="settings"/><span>Configuración</span></button>}
+{canAccessStudioView(user,'branding')&&<button className={currentView==='branding'?'active':''} onClick={()=>onNavigate('branding')}><Icon name="image"/><span>Personalización</span></button>}
     </LensNavigation>
     <div className="account">
       <span className="avatar small sidebar-account-avatar">{state.members[state.currentUserId]?.initials}</span>
@@ -64,9 +67,9 @@ export default function Sidebar({ collapsed, setCollapsed, currentView, onNaviga
         <header className="account-popover-heading"><span className="account-popover-mark"><Icon name="personal" size={21}/></span><span><small className="account-popover-eyebrow">ESPACIO PERSONAL</small><strong title={accountName}>{accountName}</strong><small>Tu espacio de trabajo</small></span></header>
         <nav className="account-popover-links" aria-label="Accesos del espacio">
           <button className="account-popover-projects" type="button" aria-current={currentView==='personal'||currentView==='review'?'page':undefined} onClick={()=>closeAccountMenu(()=>onNavigate('personal'))}><Icon name="folder"/><span><strong>Mis proyectos</strong><small>{projectCount} {projectCount===1?'proyecto':'proyectos'}{' · '}{pieceCount} {pieceCount===1?'pieza':'piezas'}</small></span><Icon className="account-popover-link-tail" name="chevron" size={14}/></button>
-          <small className="account-popover-section-label">PREFERENCIAS</small>
-          <button type="button" onClick={()=>closeAccountMenu(()=>onNavigate('branding'))}><Icon name="image"/><span><strong>Personalización</strong><small>Marca y apariencia</small></span><Icon className="account-popover-link-tail" name="chevron" size={14}/></button>
-          <button type="button" onClick={()=>closeAccountMenu(()=>onNavigate('settings'))}><Icon name="settings"/><span><strong>Configuración</strong><small>Preferencias del espacio</small></span><Icon className="account-popover-link-tail" name="chevron" size={14}/></button>
+          {canAccessStudioView(user,'settings')&&<small className="account-popover-section-label">PREFERENCIAS</small>}
+{canAccessStudioView(user,'branding')&&<button type="button" onClick={()=>closeAccountMenu(()=>onNavigate('branding'))}><Icon name="image"/><span><strong>Personalización</strong><small>Marca y apariencia</small></span><Icon className="account-popover-link-tail" name="chevron" size={14}/></button>}
+{canAccessStudioView(user,'settings')&&<button type="button" onClick={()=>closeAccountMenu(()=>onNavigate('settings'))}><Icon name="settings"/><span><strong>Configuración</strong><small>Preferencias del espacio</small></span><Icon className="account-popover-link-tail" name="chevron" size={14}/></button>}
         </nav>
         <p className="account-workspace-private">Los proyectos de este espacio son privados.</p>
         {onDemo&&<div className="account-popover-demo"><small className="account-popover-section-label">EXPLORAR</small><button type="button" onClick={()=>closeAccountMenu(onDemo)}><span className="account-popover-demo-icon"><Icon name="grid"/></span><span><strong>Empresa demo</strong><small>Datos ficticios · aislados de tu cuenta</small></span><Icon name="arrow"/></button></div>}

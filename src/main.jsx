@@ -15,7 +15,7 @@ import './styles.css';
 import './components/comment-composer.css';
 import {ReviewAssetHeader} from './components/ReviewAssetHeader.jsx';
 import AccountAccess,{useAccountActions} from './components/AccountAccess.jsx';
-import {canAccessCompanyDemo} from './domain/platform-access.js';
+import {canAccessCompanyDemo,canAccessStudioView} from './domain/platform-access.js';
 import { AccountProfileMenu } from './components/AccountProfileMenu.jsx';
 import { accountStorage } from './state/accountStorage.js';
 import { RondaProvider, selectUnreadNotifications, selectVersionStatus, useRonda } from './state/RondaContext.jsx';
@@ -88,9 +88,9 @@ const seedComments = [
 ];
 
 
-function MobileNav({ currentView, onNavigate }) {
+function MobileNav({ currentView, onNavigate, user }) {
   const items=[['home','grid','Inicio'],['projects','folder','Proyectos'],['personal','personal','Personal'],['pauta','campaign','Pauta'],['planning','calendar','Planner'],['activity','clock','Actividad'],['team','users','Equipo'],['settings','settings','Ajustes']];
-  return <nav className="mobile-nav" aria-label="Navegación móvil">{items.map(([view,icon,label])=><button key={view} aria-label={label} title={label} className={currentView===view||(currentView==='review'&&view==='personal')||(currentView==='branding'&&view==='settings')?'active':''} onClick={()=>onNavigate(view)}><Icon name={icon}/><span>{label}</span></button>)}</nav>;
+  return <nav className="mobile-nav" aria-label="Navegación móvil">{items.filter(([view])=>canAccessStudioView(user,view)).map(([view,icon,label])=><button key={view} aria-label={label} title={label} className={currentView===view||(currentView==='review'&&view==='personal')||(currentView==='branding'&&view==='settings')?'active':''} onClick={()=>onNavigate(view)}><Icon name={icon}/><span>{label}</span></button>)}</nav>;
 }
 
 
@@ -294,6 +294,7 @@ function App({demo=false,onExitDemo}) {
     onNavigate:(hash,view)=>{setSharedLinkKey(hash);setRequestedReviewVersion(readReviewRoute(hash));setSharedDirty(false);setCurrentViewRaw(view);},
   }),[]);
   const setCurrentView=(next,{versionId}={})=>{
+    if(!canAccessStudioView(user,next)){setToast('Esta sección está reservada al superadministrador.');return;}
     const galleryWorkspace=next==='projects'?sharedProjectGalleryWorkspace(location.hash):null;
     const returningToTeamGallery=next===currentView&&Boolean(galleryWorkspace);
     if(next===currentView&&!(next==='review'&&versionId)&&!returningToTeamGallery)return;
@@ -374,6 +375,7 @@ function App({demo=false,onExitDemo}) {
   const followReviewer=person=>{setCurrentTime(person.time);setRemoteCursor(person);setToast(`Siguiendo a ${person.name} en ${formatTime(person.time).time}`)};
   if(companyDemo&&canUseCompanyDemo)return <RondaProvider initialState={companyDemo} ephemeral><App demo onExitDemo={()=>{endDemoSession();setCompanyDemo(false)}}/></RondaProvider>;
   if(retryRestoring)return <BrandLoader label="Recuperando la revisión…"/>;
+  if(!canAccessStudioView(user,currentView))return <div className="app-shell"><section className="dashboard-page"><h1>Acceso restringido</h1><p>Esta sección está en construcción y solo está disponible para el superadministrador.</p><button type="button" onClick={()=>setCurrentView('projects')}>Ir a Proyectos</button></section></div>;
   return <div className="app-shell">
     <DrawingTrail enabled={currentView==='review'&&!socialMode&&activeTool!=='type'&&Boolean(activeTool)} color={activeColor}/>
     <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} currentView={currentView} onNavigate={setCurrentView} onDemo={canUseCompanyDemo?()=>{if(!canUseCompanyDemo||demo||!canLeaveSharedReview({dirty:sharedDirty,busy:false},()=>window.confirm('Hay cambios sin publicar en la revisión compartida. ¿Descartarlos para abrir el demo?')))return;const fixture=createCompanyDemo();beginDemoSession(fixture);setCompanyDemo(fixture)}:undefined}/>
@@ -428,7 +430,7 @@ function App({demo=false,onExitDemo}) {
       {summaryOpen && <ReviewSummary versionId={reviewVersionId} onClose={()=>setSummaryOpen(false)}/>}
       {toast && <div className="toast" role="status">{toast}</div>}
     </main>
-    <MobileNav currentView={currentView} onNavigate={setCurrentView}/>
+    <MobileNav user={user} currentView={currentView} onNavigate={setCurrentView}/>
   </div>;
 }
 
