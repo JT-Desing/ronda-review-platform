@@ -40,7 +40,7 @@ export function OriginalMediaStage({ activeTool, setActiveTool, activeColor, set
   const recordPreviewReady=()=>{const start=previewLoad.current;if(start?.url===media?.url){recordPhaseDuration('review.preview-ready',performance.now()-start.started);previewLoad.current=null;}};
   const colors = ['#ff725e','#f2bd5c','#8ebd72','#67a9d4','#b89be8','#f1eee7'];
   const stamp = formatTime(currentTime);
-  const visibleMarks=marks.filter(mark=>mark.draft||annotationVisibleAt(mark,currentTime,media?.type==='image'));
+  const visibleMarks=marks.filter(mark=>mark.draft||annotationVisibleAt(mark,currentTime,['image','web'].includes(media?.type)));
   const duration = media ? (media.duration || 0) : 36.42;
   useEffect(()=>{setPlaybackError('');setPlaying(false);},[media?.url]);
   const playbackFailed=()=>{setPlaying(false);setPlaybackError('No se pudo iniciar la reproducción. Revisa la pieza e inténtalo de nuevo.');};
@@ -75,7 +75,7 @@ export function OriginalMediaStage({ activeTool, setActiveTool, activeColor, set
     if(key==='d'){e.preventDefault();setActiveTool(tool=>tool?'':'pen');return;}
     if(['1','2','3','4'].includes(key)){e.preventDefault();setActiveTool(['pen','arrow','square','type'][Number(key)-1]);}
   };window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);});
-  if(media?.type==='web')return <section className="media-section original-media-stage" data-media-type={media?.type}><ExternalWeb url={media.url} name={media.name}/><p>Comentarios generales del artefacto · sin sincronización con la animación de la página.</p></section>;
+  if(media?.type==='web')return <section className="media-section original-media-stage" data-media-type={media?.type}><ExternalWeb url={media.url} name={media.name} activeTool={readonly?'':activeTool} setActiveTool={setActiveTool} activeColor={activeColor} setActiveColor={setActiveColor} marks={visibleMarks} setMarks={next=>updateMarks(typeof next==='function'?next(visibleMarks):next)} selectedFigure={selectedFigure} onFigure={onFigure} figureComments={figureComments} readonly={readonly}/></section>;
   return <section className="media-section original-media-stage" data-media-type={media?.type}>
     {media?.type==='image'&&<div className="image-view-controls" aria-label="Vista de la imagen"><span>Imagen · revisión y anotaciones</span><div><button disabled={viewMode==='auto'||effectiveZoom<=fitZoom} onClick={zoomOut} aria-label="Alejar imagen">−</button><output aria-live="polite">{viewMode==='width'?'Ancho':`${Math.round(effectiveZoom*100)}%`}</output><button disabled={effectiveZoom>=24} onClick={zoomIn} aria-label="Acercar imagen">+</button><button onClick={()=>setViewMode('auto')}>Ajustar a pantalla</button><button onClick={()=>setViewMode('width')}>Ajustar al ancho</button></div></div>}
     <div className="media-stage" ref={stageRef}>
@@ -95,7 +95,7 @@ export function OriginalMediaStage({ activeTool, setActiveTool, activeColor, set
         {['image','video'].includes(media?.type)&&(readyUrl!==media.url||buffering)&&<span className="media-brand-loading"><BrandLoader size="compact" label={buffering?'Preparando reproducción…':'Cargando pieza…'}/></span>}
         {media&&failedUrl===media.url&&<span className="media-brand-loading" role="alert">No se pudo cargar la pieza. Vuelve a abrirla para reintentar.</span>}
         {media&&playbackError&&failedUrl!==media.url&&<span className="media-brand-loading" role="alert">{playbackError} Usa Reproducir para volver a intentarlo.</span>}
-        <AnnotationLayer activeTool={readonly?'':activeTool} activeColor={activeColor} marks={visibleMarks} setMarks={next=>updateMarks(current=>[...current.filter(mark=>!annotationVisibleAt(mark,currentTime,media?.type==='image')),...(typeof next==='function'?next(visibleMarks):next)])} selectedFigure={selectedFigure}/>
+        <AnnotationLayer activeTool={readonly?'':activeTool} activeColor={activeColor} marks={visibleMarks} setMarks={next=>updateMarks(current=>[...current.filter(mark=>!annotationVisibleAt(mark,currentTime,['image','web'].includes(media?.type))),...(typeof next==='function'?next(visibleMarks):next)])} selectedFigure={selectedFigure}/>
         {visibleMarks.map(mark=>{const index=marks.findIndex(item=>item.id===mark.id);return <button key={mark.id} className={`figure-pin ${selectedFigure===mark.id?'selected':''}`} style={{left:`${mark.points[0].x*100}%`,top:`${mark.points[0].y*100}%`}} aria-label={`Figura ${index+1}, ${figureComments.filter(c=>c.annotationId===mark.id).length} comentarios`} onClick={()=>onFigure(mark)}>{index+1}</button>})}
         {remoteCursor&&<div className="remote-cursor" style={{left:`${remoteCursor.x}%`,top:`${remoteCursor.y}%`,'--presence-color':remoteCursor.color}}><i/><span>{remoteCursor.name}</span></div>}
         <div className="frame-badge">{stamp.time} · F{stamp.frame}</div>

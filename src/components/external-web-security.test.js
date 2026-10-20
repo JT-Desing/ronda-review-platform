@@ -8,8 +8,9 @@ test('external live pages keep scripts sandboxed away from the Ronda origin',()=
  assert.match(iframe,/sandbox="allow-scripts"/);
  assert.doesNotMatch(iframe,/allow-same-origin/);
  assert.match(iframe,/referrerPolicy="no-referrer"/);
- assert.match(source,/rel="noopener noreferrer"/);
+ assert.match(source,/Abrir original ↗/);
  assert.match(source,/external-web-frame-notice" role="note"/);
- assert.match(source,/Algunos sitios bloquean su vista dentro de Ronda/);
- assert.match(source,/abre «Abrir original» en otra pestaña/);
+ assert.match(source,/external-web-scroll/);
+ assert.match(source,/external-web-sheet/);
+ assert.match(source,/Anota sobre una superficie fija/);
 });
