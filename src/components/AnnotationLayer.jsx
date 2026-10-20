@@ -1,6 +1,6 @@
 import React, {useRef,useState,useEffect} from 'react';
 import {toNormalizedPoint,finalizeAnnotation} from '../domain/annotations.js';
-export function AnnotationLayer({ activeTool, activeColor, marks, setMarks, selectedFigure }) {
+export function AnnotationLayer({ activeTool, activeColor, marks, setMarks, selectedFigure, onAnnotationCreated=()=>{} }) {
   const canvas = useRef(null);
   const draft = useRef(null);
   const activePointer = useRef(null);
@@ -43,8 +43,9 @@ export function AnnotationLayer({ activeTool, activeColor, marks, setMarks, sele
   useEffect(() => { const observer=new ResizeObserver(draw);if(canvas.current)observer.observe(canvas.current);return()=>observer.disconnect(); },[marks,selectedFigure,keyboardPoint,keyboardFocused,activeColor]);
   const point = e => toNormalizedPoint(e,canvas.current.getBoundingClientRect());
   const cancel=e=>{if(e&&activePointer.current!==e.pointerId)return;draft.current=null;activePointer.current=null;draw()};
-  const finish=e=>{if(!draft.current||activePointer.current!==e.pointerId)return;draft.current.points.push(point(e));const mark=finalizeAnnotation(draft.current.tool,draft.current.color,draft.current.points);draft.current=null;activePointer.current=null;if(mark)setMarks(current=>[...current,mark]);else draw()};
-  const closeText=commit=>{if(commit&&textEditor){const mark=finalizeAnnotation('type',textEditor.color,[textEditor.point],textValue);if(mark)setMarks(current=>[...current,mark]);}setTextEditor(null);setTextValue('')};
+  const addMark=mark=>{if(!mark)return;const saved={...mark,id:crypto.randomUUID()};setMarks(current=>[...current,saved]);onAnnotationCreated(saved)};
+  const finish=e=>{if(!draft.current||activePointer.current!==e.pointerId)return;draft.current.points.push(point(e));const mark=finalizeAnnotation(draft.current.tool,draft.current.color,draft.current.points);draft.current=null;activePointer.current=null;if(mark)addMark(mark);else draw()};
+  const closeText=commit=>{if(commit&&textEditor){const mark=finalizeAnnotation('type',textEditor.color,[textEditor.point],textValue);addMark(mark);}setTextEditor(null);setTextValue('')};
   return <><canvas ref={canvas} tabIndex={activeTool?0:-1} aria-label={activeTool?`Área de anotación con ${activeTool}. Usa flechas para mover el cursor, Shift más flecha para pasos amplios, Enter para iniciar y confirmar; Escape cancela.`:'Selecciona una herramienta de anotación para activar el área.'} className={`annotation-layer ${activeTool ? 'drawing' : ''}`}
     onFocus={()=>setKeyboardFocused(true)} onBlur={()=>setKeyboardFocused(false)}
     onKeyDown={e=>{
@@ -68,7 +69,7 @@ export function AnnotationLayer({ activeTool, activeColor, marks, setMarks, sele
           const next={x:Math.min(1,keyboardPoint.x+.01),y:keyboardPoint.y};keyboardPoints.current=[keyboardPoint,next];draft.current={tool:activeTool,color:activeColor,points:keyboardPoints.current};
         }
         const mark=finalizeAnnotation(activeTool,activeColor,keyboardPoints.current);
-        if(mark)setMarks(current=>[...current,mark]);
+        addMark(mark);
         keyboardPoints.current=[];draft.current=null;draw();
       }
     }}

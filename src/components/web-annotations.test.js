@@ -6,6 +6,9 @@ const component=await readFile(new URL('./ExternalWeb.jsx',import.meta.url),'utf
 const stage=await readFile(new URL('./OriginalMediaStage.jsx',import.meta.url),'utf8');
 const css=await readFile(new URL('./external-artifacts.css',import.meta.url),'utf8');
 const delivery=await readFile(new URL('./SharedProjectMedia.jsx',import.meta.url),'utf8');
+const layer=await readFile(new URL('./AnnotationLayer.jsx',import.meta.url),'utf8');
+const shared=await readFile(new URL('./SharedReviewRoom.jsx',import.meta.url),'utf8');
+const app=await readFile(new URL('../main.jsx',import.meta.url),'utf8');
 
 test('external web review wires the shared annotation layer to the saved comment marks',()=>{
   assert.match(stage,/annotationVisibleAt\(mark,currentTime,\['image','web'\]\.includes\(media\?\.type\)\)/);
@@ -35,4 +38,16 @@ test('blocked external pages can be captured only with browser permission and sa
   assert.match(delivery,/addWebCapture=async file=>\{if\(!file\)return;await mutate\(async\(\)=>\{const result=await uploadFile\(context,file/);
   assert.match(delivery,/addWebCapture\(event\.detail\?\.file\)/);
   assert.match(component,/Algunos sitios impiden la vista integrada/);
+});
+
+test('creating or selecting a web annotation opens an anchored comment composer',()=>{
+  assert.match(layer,/onAnnotationCreated\(saved\)/);
+  assert.match(component,/onAnnotationCreated=\{openComment\}/);
+  assert.match(component,/external-web-comment-popover/);
+  assert.match(component,/onQuickComment\(commentMark,commentDraft\.trim\(\)\)/);
+  assert.match(css,/\.external-web-comment-popover\{position:absolute;z-index:8/);
+  assert.match(shared,/async function quickWebComment\(mark,text\)/);
+  assert.match(shared,/annotation:sharedAnnotation\(mark\)/);
+  assert.match(app,/const addWebComment=async\(mark,text\)/);
+  assert.match(app,/annotationId:mark\.id,annotationContext/);
 });

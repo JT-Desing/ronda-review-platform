@@ -15,7 +15,7 @@ const formatTime = value => {
   const frames = Math.floor((seconds % 1) * 24);
   return { time: `00:${String(minutes).padStart(2,'0')}:${String(remainder).padStart(2,'0')}`, frame: Math.floor(seconds * 24), frames };
 };
-export function OriginalMediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, media, currentTime, setCurrentTime, remoteCursor, marks, setMarks, selectedFigure, onFigure, figureComments, onTimelineComment, reviewVersionId, members={}, readonly=false, versionApproved=false, draftOnlyUndo=false }) {
+export function OriginalMediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, media, currentTime, setCurrentTime, remoteCursor, marks, setMarks, selectedFigure, onFigure, onQuickComment, figureComments, onTimelineComment, reviewVersionId, members={}, readonly=false, versionApproved=false, draftOnlyUndo=false }) {
   const [zoom,setZoom]=useState(1),[imageRatio,setImageRatio]=useState(16/9);
   const [viewMode,setViewMode]=useState('auto');
   const viewportRef=useRef(null);
@@ -75,7 +75,7 @@ export function OriginalMediaStage({ activeTool, setActiveTool, activeColor, set
     if(key==='d'){e.preventDefault();setActiveTool(tool=>tool?'':'pen');return;}
     if(['1','2','3','4'].includes(key)){e.preventDefault();setActiveTool(['pen','arrow','square','type'][Number(key)-1]);}
   };window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);});
-  if(media?.type==='web')return <section className="media-section original-media-stage" data-media-type={media?.type}><ExternalWeb url={media.url} name={media.name} activeTool={readonly?'':activeTool} setActiveTool={setActiveTool} activeColor={activeColor} setActiveColor={setActiveColor} marks={visibleMarks} setMarks={next=>updateMarks(typeof next==='function'?next(visibleMarks):next)} selectedFigure={selectedFigure} onFigure={onFigure} figureComments={figureComments} readonly={readonly}/></section>;
+  if(media?.type==='web')return <section className="media-section original-media-stage" data-media-type={media?.type}><ExternalWeb url={media.url} name={media.name} activeTool={readonly?'':activeTool} setActiveTool={setActiveTool} activeColor={activeColor} setActiveColor={setActiveColor} marks={visibleMarks} setMarks={next=>updateMarks(typeof next==='function'?next(visibleMarks):next)} selectedFigure={selectedFigure} onFigure={onFigure} onQuickComment={onQuickComment} figureComments={figureComments} readonly={readonly}/></section>;
   return <section className="media-section original-media-stage" data-media-type={media?.type}>
     {media?.type==='image'&&<div className="image-view-controls" aria-label="Vista de la imagen"><span>Imagen · revisión y anotaciones</span><div><button disabled={viewMode==='auto'||effectiveZoom<=fitZoom} onClick={zoomOut} aria-label="Alejar imagen">−</button><output aria-live="polite">{viewMode==='width'?'Ancho':`${Math.round(effectiveZoom*100)}%`}</output><button disabled={effectiveZoom>=24} onClick={zoomIn} aria-label="Acercar imagen">+</button><button onClick={()=>setViewMode('auto')}>Ajustar a pantalla</button><button onClick={()=>setViewMode('width')}>Ajustar al ancho</button></div></div>}
     <div className="media-stage" ref={stageRef}>
