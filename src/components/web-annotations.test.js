@@ -34,12 +34,15 @@ test('fullscreen expands the whole web review and gives the iframe remaining vie
 });
 
 test('blocked external pages can be captured only with browser permission and saved as project image assets',()=>{
-  assert.match(component,/getDisplayMedia\(\{video:\{displaySurface:'browser'\},audio:false\}\)/);
+  assert.match(component,/getDisplayMedia\(\{video:\{displaySurface:'browser'\},audio:false,preferCurrentTab:true\}\)/);
   assert.match(component,/ronda:web-capture/);
   assert.match(component,/new File\(\[blob\].*type:'image\/png'/);
+  assert.match(component,/iframeCaptureRect\(frame\.width,frame\.height,window\.innerWidth,window\.innerHeight,bounds\)/);
+  assert.match(component,/drawImage\(frame\.video,crop\.x,crop\.y,crop\.width,crop\.height,0,0,crop\.width,crop\.height\)/);
   assert.match(delivery,/addWebCapture=async file=>\{if\(!file\)return;await mutate\(async\(\)=>\{const result=await uploadFile\(context,file/);
   assert.match(delivery,/addWebCapture\(event\.detail\?\.file\)/);
-  assert.match(component,/Vista en vivo para navegar/);
+  assert.match(component,/Ronda recorta el visor; las marcas quedan fijas en la captura guardada/);
+  assert.match(component,/Ronda guardará solo la vista web como pieza para anotar/);
 });
 
 test('creating or selecting a web annotation opens an anchored comment composer',()=>{
@@ -59,8 +62,8 @@ test('without the document bridge the live site stays navigable and fixed annota
   assert.match(component,/marks\.filter\(mark=>mark\.coordinateSpace==='document'\)/);
   assert.match(component,/if\(!hasDocumentBridge\)return/);
   assert.match(component,/Capturar vista para anotar/);
-  assert.match(component,/Para comentarios fijos, abre la web original en otra pestaña y captura la vista/);
-  assert.match(component,/Ronda la abrirá como imagen para anotar/);
+  assert.match(component,/Desplázate por la web hasta la zona que quieres comentar y captura esta pestaña/);
+  assert.match(component,/recortaremos únicamente el área de la web visible/);
   assert.doesNotMatch(component,/instala la extensión Ronda/);
   assert.match(component,/legacyMarks\.length>0/);
 });
