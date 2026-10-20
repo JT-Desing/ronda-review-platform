@@ -27,9 +27,8 @@ export function sharedCommentService(repository){
     async addComment(space,actor,c,input){
       const audio=commentAudio(input.attachments),text=commentInput({...input,text:input.text?.trim()||(audio.length?'Nota de voz':'')}),key=requestId(input.requestId),priority=input.priority??'normal';
       if(!['low','normal','high','blocking'].includes(priority))throw workspaceError(400,'Prioridad inválida.');
-      const annotation=validateAnnotation(input.annotation);
       return repository.access(space,actor,async(db,role)=>{
-        requireReviewAction(role,'comment');const v=await version(db,space,c,true),anchor=validateAnchor(input.anchor,v.kind);
+        requireReviewAction(role,'comment');const v=await version(db,space,c,true),anchor=validateAnchor(input.anchor,v.kind),annotation=validateAnnotation(input.annotation,v.kind);
         const prior=(await db.query('SELECT * FROM shared_version_comments WHERE version_id=$1 AND author_id=$2 AND request_id=$3',[c.versionId,actor,key])).rows[0];
         if(prior){const saved=(await db.query('SELECT name,mime,digest FROM shared_comment_audio WHERE comment_id=$1 ORDER BY ordinal',[prior.id])).rows;if(!isDeepStrictEqual(saved,audio.map(({name,mime,digest})=>({name,mime,digest}))))throw workspaceError(409,'Solicitud usada con otro audio.');if(prior.text!==text||prior.priority!==priority||!isDeepStrictEqual(prior.anchor,anchor)||!isDeepStrictEqual(prior.annotation,annotation))throw workspaceError(409,'Solicitud usada con otro contenido.');return {comment:dto(prior)};}
         editable(v);

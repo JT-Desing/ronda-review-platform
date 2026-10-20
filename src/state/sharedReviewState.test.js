@@ -22,6 +22,7 @@ test('expired authentication preserves review and draft while revoked access cle
 test('shared annotation preserves endpoints and excludes private mark metadata',()=>{
   assert.equal(typeof m.sharedAnnotation,'function');
   assert.deepEqual(m.sharedAnnotation({id:'private',tool:'arrow',color:'#ffffff',timeSeconds:10,points:[{x:0,y:0},{x:0.5,y:0.5},{x:1,y:1}]}),{tool:'arrow',color:'#ffffff',points:[{x:0,y:0},{x:1,y:1}]});
+  assert.equal(m.sharedAnnotation({tool:'arrow',color:'#ffffff',coordinateSpace:'document',points:[{x:0,y:0},{x:1,y:1}]}).coordinateSpace,'document');
 });
 test('refresh guard reads latest dirty/busy state and rejects stale pagination',()=>{
   assert.equal(typeof m.createReviewGuard,'function');

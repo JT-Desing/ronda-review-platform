@@ -13,7 +13,7 @@ const app=await readFile(new URL('../main.jsx',import.meta.url),'utf8');
 test('external web review wires the shared annotation layer to the saved comment marks',()=>{
   assert.match(stage,/annotationVisibleAt\(mark,currentTime,\['image','web'\]\.includes\(media\?\.type\)\)/);
   assert.match(stage,/<ExternalWeb[^>]+marks=\{visibleMarks\}[^>]+setMarks=/);
-  assert.match(component,/<AnnotationLayer activeTool=\{readonly\?'':activeTool\}[^>]+marks=\{marks\}[^>]+setMarks=\{setMarks\}/);
+  assert.match(component,/<AnnotationLayer activeTool=\{readonly\|\|!webMetrics\?'':activeTool\}[^>]+marks=\{viewportMarks\}[^>]+setMarks=\{saveViewportMarks\}/);
   assert.match(component,/setActiveTool\(tool\)/);
 });
 
@@ -37,12 +37,12 @@ test('blocked external pages can be captured only with browser permission and sa
   assert.match(component,/new File\(\[blob\].*type:'image\/png'/);
   assert.match(delivery,/addWebCapture=async file=>\{if\(!file\)return;await mutate\(async\(\)=>\{const result=await uploadFile\(context,file/);
   assert.match(delivery,/addWebCapture\(event\.detail\?\.file\)/);
-  assert.match(component,/Algunos sitios impiden la vista integrada/);
+  assert.match(component,/La página se muestra directamente/);
 });
 
 test('creating or selecting a web annotation opens an anchored comment composer',()=>{
   assert.match(layer,/onAnnotationCreated\(saved\)/);
-  assert.match(component,/onAnnotationCreated=\{openComment\}/);
+  assert.match(component,/onAnnotationCreated=\{mark=>openComment\(viewportMarkToDocument\(mark,webMetrics\)\)\}/);
   assert.match(component,/external-web-comment-popover/);
   assert.match(component,/onQuickComment\(commentMark,commentDraft\.trim\(\)\)/);
   assert.match(css,/\.external-web-comment-popover\{position:absolute;z-index:8/);
@@ -50,4 +50,13 @@ test('creating or selecting a web annotation opens an anchored comment composer'
   assert.match(shared,/annotation:sharedAnnotation\(mark\)/);
   assert.match(app,/const addWebComment=async\(mark,text\)/);
   assert.match(app,/annotationId:mark\.id,annotationContext/);
+});
+
+test('document bridge follows iframe scroll without relaxing the iframe sandbox',()=>{
+  assert.match(component,/sandbox="allow-scripts"/);
+  assert.doesNotMatch(component,/allow-same-origin/);
+  assert.match(component,/event\.source!==iframe\.current\?\.contentWindow\|\|event\.origin!==\x27null\x27/);
+  assert.match(component,/event\.data\?\.nonce!==bridgeNonce\.current/);
+  assert.match(component,/documentMarkToViewport\(mark,webMetrics\)/);
+  assert.match(component,/viewportMarkToDocument\(mark,webMetrics\)/);
 });

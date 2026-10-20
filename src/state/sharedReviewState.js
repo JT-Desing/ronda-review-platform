@@ -15,5 +15,5 @@ export const canLeaveSharedReview=({dirty,busy},confirm)=>!busy&&(!dirty||confir
 export function sharedAnnotation(mark){
   if(!mark)return null;
   const points=['arrow','square'].includes(mark.tool)?[mark.points[0],mark.points.at(-1)]:mark.points.slice(0,5000);
-  return {tool:mark.tool,color:mark.color,points:points.map(({x,y})=>({x,y})),...(mark.tool==='type'?{text:mark.text}: {})};
+  return {tool:mark.tool,color:mark.color,points:points.map(({x,y})=>({x,y})),...(mark.coordinateSpace==='document'?{coordinateSpace:'document',...(mark.documentSize?{documentSize:mark.documentSize}:{})}:{}),...(mark.tool==='type'?{text:mark.text}: {})};
 }

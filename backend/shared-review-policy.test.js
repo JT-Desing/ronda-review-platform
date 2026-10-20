@@ -16,6 +16,9 @@ test('annotation normalizes safe input without copying arbitrary properties', ()
   const input={tool:'arrow',color:'#FF725E',points:[{x:0,y:0},{x:1,y:1}],authorId:'forged'};
   assert.deepEqual(policy.validateAnnotation(input),{tool:'arrow',color:'#ff725e',points:[{x:0,y:0},{x:1,y:1}]});
   assert.equal(policy.validateAnnotation(null),null);
+  assert.deepEqual(policy.validateAnnotation({tool:'type',color:'#ffffff',points:[{x:.2,y:.3}],coordinateSpace:'document',documentSize:{width:1200,height:4000},text:'Review'},'web'),{tool:'type',color:'#ffffff',points:[{x:.2,y:.3}],coordinateSpace:'document',documentSize:{width:1200,height:4000},text:'Review'});
+  assert.throws(()=>policy.validateAnnotation({tool:'type',color:'#ffffff',points:[{x:.2,y:.3}],coordinateSpace:'document',text:'Review'},'image'),{status:400});
+  assert.throws(()=>policy.validateAnnotation({tool:'type',color:'#ffffff',points:[{x:.2,y:.3}],coordinateSpace:'unknown',text:'Review'},'web'),{status:400});
 });
 test('coordinates outside unit square and oversized paths rejected', () => {
   assert.equal(typeof policy.validateAnnotation, 'function');
