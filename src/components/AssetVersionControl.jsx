@@ -3,6 +3,7 @@ import React,{useState,useRef,useEffect} from 'react';
 import {useRonda} from '../state/RondaContext.jsx';
 import {versionsForAsset} from '../domain/asset-versions.js';
 import {fileStore,fileKind} from './DeliveryGrid.jsx';
+import Icon from './Icon.jsx';
 
 export default function AssetVersionControl({media,onSelect,onNotify}){
   const {state,act}=useRonda();const [busy,setBusy]=useState(false);
@@ -34,5 +35,5 @@ export default function AssetVersionControl({media,onSelect,onNotify}){
       onNotify(`V${number} creada; consulta el estado de guardado de tu cuenta.`);
     }catch(error){onNotify(error.message||'No se pudo guardar la nueva versión. El historial se conserva.');}finally{setBusy(false);}
   };
-  return <div className="version-select"><label>Versión <select aria-label="Versión de la pieza" disabled={busy} value={selected} onChange={e=>open(versions.find(v=>v.id===e.target.value))}>{versions.map(v=><option key={v.id} value={v.id}>V{v.number}{v.id===(asset.activeVersionId||`asset-${asset.id}-v1`)?' · Actual':''}</option>)}</select></label><label className="upload-button">{busy?<BrandLoader size="inline" label="Procesando…"/>:'Nueva versión'}<input className="visually-hidden" aria-label="Subir nueva versión de esta pieza" type="file" disabled={busy} onChange={upload}/></label></div>;
+  return <div className="version-select asset-version-controls"><label className="asset-version-picker"><Icon name="clock" size={16}/><span>Historial</span><select aria-label="Versión de la pieza" disabled={busy} value={selected} onChange={e=>open(versions.find(v=>v.id===e.target.value))}>{versions.map(v=><option key={v.id} value={v.id}>V{v.number}{v.id===(asset.activeVersionId||`asset-${asset.id}-v1`)?' · Actual':''}</option>)}</select></label><label className={`upload-button asset-new-version${busy?' is-busy':''}`}>{busy?<BrandLoader size="inline" label="Procesando…"/>:<><Icon name="plus" size={16}/>Nueva versión</>}<input className="visually-hidden" aria-label="Subir nueva versión de esta pieza" type="file" disabled={busy} onChange={upload}/></label></div>;
 }

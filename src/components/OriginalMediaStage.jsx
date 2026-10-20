@@ -18,10 +18,14 @@ const formatTime = value => {
 export function OriginalMediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, media, currentTime, setCurrentTime, remoteCursor, marks, setMarks, selectedFigure, onFigure, figureComments, onTimelineComment, reviewVersionId, members={}, readonly=false, versionApproved=false, draftOnlyUndo=false }) {
   const [zoom,setZoom]=useState(1),[imageRatio,setImageRatio]=useState(16/9);
   const [viewMode,setViewMode]=useState('auto');
-  const effectiveZoom=(viewMode==='width'||viewMode==='auto'&&imageRatio<.85)?Math.max(1,Math.min(24,(16/9)/imageRatio*.94)):zoom;
-  const changeZoom=value=>{setViewMode('manual');setZoom(value);};
   const viewportRef=useRef(null);
-  useEffect(()=>{const el=viewportRef.current;if(!el)return;const observer=new ResizeObserver(()=>{el.scrollLeft=Math.max(0,(el.scrollWidth-el.clientWidth)/2);});observer.observe(el);return()=>observer.disconnect();},[media?.url]);
+  const [viewportSize,setViewportSize]=useState({width:0,height:0});
+  const fitZoom=viewportSize.width&&viewportSize.height?Math.min(1,viewportSize.height*imageRatio/viewportSize.width):1;
+  const effectiveZoom=viewMode==='auto'?fitZoom:viewMode==='width'?Math.max(1,Math.min(24,(16/9)/imageRatio*.94)):zoom;
+  const changeZoom=value=>{setViewMode('manual');setZoom(value);};
+  const zoomIn=()=>changeZoom(Math.min(24,Math.max(fitZoom,effectiveZoom)*1.25));
+  const zoomOut=()=>{const next=effectiveZoom/1.25;if(next<=fitZoom)setViewMode('auto');else changeZoom(next);};
+  useEffect(()=>{const el=viewportRef.current;if(!el)return;const measure=()=>{const width=el.clientWidth,height=el.clientHeight;setViewportSize(previous=>previous.width===width&&previous.height===height?previous:{width,height});el.scrollLeft=Math.max(0,(el.scrollWidth-el.clientWidth)/2);};measure();const observer=new ResizeObserver(measure);observer.observe(el);return()=>observer.disconnect();},[media?.url]);
   useEffect(()=>{setZoom(1);setViewMode('auto');setRedoMarks([]);},[media?.url]);
   useEffect(()=>{const el=viewportRef.current;if(el){el.scrollLeft=(el.scrollWidth-el.clientWidth)/2;if(viewMode!=='manual')el.scrollTop=0;}},[effectiveZoom,viewMode]);
   const [playing, setPlaying] = useState(false);
@@ -73,11 +77,11 @@ export function OriginalMediaStage({ activeTool, setActiveTool, activeColor, set
   };window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);});
   if(media?.type==='web')return <section className="media-section original-media-stage" data-media-type={media?.type}><ExternalWeb url={media.url} name={media.name}/><p>Comentarios generales del artefacto · sin sincronización con la animación de la página.</p></section>;
   return <section className="media-section original-media-stage" data-media-type={media?.type}>
-    {media?.type==='image'&&<div className="image-view-controls" aria-label="Vista de la imagen"><span>Imagen · revisión y anotaciones</span><div><button disabled={effectiveZoom<=1} onClick={()=>changeZoom(Math.max(1,effectiveZoom/1.25))} aria-label="Alejar imagen">−</button><output aria-live="polite">{viewMode!=='manual'&&effectiveZoom>1?'Ancho':`${Math.round(effectiveZoom*100)}%`}</output><button disabled={effectiveZoom>=24} onClick={()=>changeZoom(Math.min(24,effectiveZoom*1.25))} aria-label="Acercar imagen">+</button><button onClick={()=>changeZoom(1)}>Ver completa</button><button onClick={()=>setViewMode('width')}>Ajustar al ancho</button></div></div>}
+    {media?.type==='image'&&<div className="image-view-controls" aria-label="Vista de la imagen"><span>Imagen · revisión y anotaciones</span><div><button disabled={viewMode==='auto'||effectiveZoom<=fitZoom} onClick={zoomOut} aria-label="Alejar imagen">−</button><output aria-live="polite">{viewMode==='width'?'Ancho':`${Math.round(effectiveZoom*100)}%`}</output><button disabled={effectiveZoom>=24} onClick={zoomIn} aria-label="Acercar imagen">+</button><button onClick={()=>setViewMode('auto')}>Ajustar a pantalla</button><button onClick={()=>setViewMode('width')}>Ajustar al ancho</button></div></div>}
     <div className="media-stage" ref={stageRef}>
       <button className="stage-exit-fullscreen" aria-label="Salir de pantalla completa" onClick={toggleFullscreen}><Icon name="maximize" size={18}/><span>Salir de pantalla completa</span></button>
-      <div className="media-viewport" ref={viewportRef}>
-      <div className="film-frame" style={media?.type==='image'?{width:`${effectiveZoom*100}%`}:undefined}>
+      <div className={`media-viewport ${media?.type==='image'?(viewMode==='auto'?'is-fit':'is-zoomed'):''}`} ref={viewportRef}>
+      <div className="film-frame" style={media?.type==='image'?{width:`${effectiveZoom*100}%`,minWidth:effectiveZoom<1?'0':'100%',aspectRatio:imageRatio}:undefined}>
         {media?.type === 'video' && <video ref={videoRef} className="uploaded-media" onError={()=>{setFailedUrl(media.url);setReadyUrl(media.url);setBuffering(false);}} src={media.url} muted={muted} onTimeUpdate={e=>setCurrentTime(e.currentTarget.currentTime)} onLoadedMetadata={e=>media.setDuration?.(e.currentTarget.duration)} onPlay={()=>{setPlaying(true);setPlaybackError('');}} onPause={()=>setPlaying(false)} onWaiting={()=>setBuffering(true)} onPlaying={()=>setBuffering(false)} onCanPlay={()=>{recordPreviewReady();setReadyUrl(media.url);setBuffering(false);}}/>}
         {media?.type === 'image' && <img className="uploaded-media" src={media.url} alt={media.name} onLoad={e=>{recordPreviewReady();setImageRatio(e.currentTarget.naturalWidth/e.currentTarget.naturalHeight||16/9);setFailedUrl('');setReadyUrl(media.url);}} onError={()=>{setFailedUrl(media.url);setReadyUrl(media.url);}}/>}
         {!media && <div className="scene-art" role="img" aria-label="Fotograma de una campaña de producto cosmético">

@@ -1,0 +1,69 @@
+/* Review toolbar: file identity first, one clear version action. */
+.asset-review-header-container {container:asset-toolbar / inline-size;flex:0 0 auto;min-width:0;width:100%}
+.app-shell .asset-review-header {
+  --asset-control-height:40px;
+  box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;
+  gap:20px;flex:0 0 auto;height:auto;min-height:80px;padding:16px 24px;
+  background:var(--surface-1);border-bottom:1px solid var(--line);
+}
+.app-shell .asset-review-header .asset-meta {flex:1 1 auto;min-width:0;gap:12px}
+.app-shell .asset-review-header .asset-file-mark {
+  display:grid;place-items:center;flex:0 0 40px;width:40px;height:44px;
+  border:1px solid var(--line);border-radius:8px;background:var(--canvas);color:var(--muted);
+}
+.app-shell .asset-review-header .asset-file-mark .icon {flex:none}
+.app-shell .asset-review-header .asset-identity {min-width:0;gap:5px}
+.app-shell .asset-review-header .asset-identity>strong {
+  display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:var(--text);font:600 14px/1.4 var(--font-ui);letter-spacing:-.01em;
+}
+.app-shell .asset-review-header .asset-file-details {
+  display:flex;align-items:center;gap:7px;margin:0;color:var(--muted);font:400 11px/1.4 var(--font-ui);
+}
+.app-shell .asset-review-header .asset-file-details .asset-format {
+  margin:0;color:var(--accent);font:600 10px/1.4 var(--font-ui);letter-spacing:.04em;
+}
+.app-shell .asset-review-header .asset-detail-separator {margin:0;color:var(--faint)}
+.app-shell .asset-review-header .asset-actions {display:flex;flex:0 0 auto;align-items:center;gap:14px;min-width:0}
+.app-shell .asset-review-header .asset-version-controls {display:flex;align-items:center;gap:8px;padding-left:14px;border-left:1px solid var(--line)}
+.app-shell .asset-review-header .asset-version-picker {
+  display:flex;align-items:center;gap:7px;box-sizing:border-box;height:var(--asset-control-height);
+  margin:0;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--canvas);color:var(--muted);
+}
+.app-shell .asset-review-header .asset-version-picker>span {font:400 11px/1.3 var(--font-ui)}
+.app-shell .asset-review-header .asset-version-picker select {
+  box-sizing:border-box;width:auto;max-width:170px;height:100%;min-height:0;margin:0;padding:0 4px;
+  border:0;border-radius:4px;background:transparent;color:var(--text);font:500 12px/1.4 var(--font-ui);cursor:pointer;
+}
+.app-shell .asset-review-header .upload-button {
+  box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  flex:none;height:var(--asset-control-height);min-height:var(--asset-control-height);margin:0;padding:0 12px;
+  border:1px solid transparent;border-radius:8px;color:var(--muted);background:transparent;
+  font:500 12px/1.3 var(--font-ui);white-space:nowrap;cursor:pointer;
+  transition:background-color 140ms ease,border-color 140ms ease,color 140ms ease;
+}
+.app-shell .asset-review-header .asset-upload-file:hover {background:var(--surface-2);border-color:var(--line);color:var(--text)}
+.app-shell .asset-review-header .asset-new-version {background:var(--accent);border-color:var(--accent);color:var(--studio-ink)}
+.app-shell .asset-review-header .asset-new-version:hover {background:var(--studio-lavender);border-color:var(--studio-lavender)}
+.app-shell .asset-review-header .asset-new-version.is-busy {cursor:progress;opacity:.7}
+.app-shell .asset-review-header :is(button,select):focus-visible,
+.app-shell .asset-review-header .asset-new-version:focus-within {outline:2px solid var(--accent);outline-offset:3px}
+.app-shell .asset-review-header .asset-version-picker:focus-within {border-color:var(--accent)}
+.app-shell .asset-review-header select:disabled {cursor:wait;opacity:.6}
+@container asset-toolbar (max-width:760px) {
+  .app-shell .asset-review-header {flex-wrap:wrap;gap:12px;padding:14px 18px}
+  .app-shell .asset-review-header .asset-meta {flex-basis:100%}
+  .app-shell .asset-review-header .asset-actions {width:100%;justify-content:space-between}
+}
+@container asset-toolbar (max-width:480px) {
+  .app-shell .asset-review-header {--asset-control-height:44px;padding:14px 12px}
+  .app-shell .asset-review-header .asset-identity>strong {font-size:13px}
+  .app-shell .asset-review-header .asset-actions {gap:6px;flex-wrap:wrap}
+  .app-shell .asset-review-header .asset-version-controls {gap:6px;padding-left:0;border-left:0}
+  .app-shell .asset-review-header .asset-version-picker {gap:4px;padding:0 7px}
+  .app-shell .asset-review-header .asset-version-picker>span {display:none}
+  .app-shell .asset-review-header .upload-button {gap:4px;padding:0 8px;font-size:11px}
+  .app-shell .asset-review-header .asset-upload-file {padding-left:0}
+}
+@media(pointer:coarse) {.app-shell .asset-review-header {--asset-control-height:44px}}
+@media(prefers-reduced-motion:reduce) {.app-shell .asset-review-header .upload-button {transition:none}}

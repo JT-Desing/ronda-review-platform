@@ -1,6 +1,7 @@
 import {BrandLoader} from './components/BrandLoader.jsx';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Icon from './components/Icon.jsx';
+import Sidebar from './components/Sidebar.jsx';
 import {ShortcutHelp} from './components/ShortcutHelp.jsx';
 import {OriginalMediaStage} from './components/OriginalMediaStage.jsx';
 import {AnnotationLayer} from './components/AnnotationLayer.jsx';
@@ -11,7 +12,10 @@ import {readReviewRoute,setReviewRoute,reviewRoute,resolveReviewRouteAsset} from
 import {activityItem} from './domain/activity-item.js';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
-import AccountAccess from './components/AccountAccess.jsx';
+import './components/comment-composer.css';
+import {ReviewAssetHeader} from './components/ReviewAssetHeader.jsx';
+import AccountAccess,{useAccountActions} from './components/AccountAccess.jsx';
+import {canAccessCompanyDemo} from './domain/platform-access.js';
 import { AccountProfileMenu } from './components/AccountProfileMenu.jsx';
 import { accountStorage } from './state/accountStorage.js';
 import { RondaProvider, selectUnreadNotifications, selectVersionStatus, useRonda } from './state/RondaContext.jsx';
@@ -29,12 +33,10 @@ import {resolveAssetVersion} from './domain/asset-versions.js';
 import { AudioCommentInput } from './components/AudioCommentInput.jsx';
 import { DocumentReview } from './components/DocumentReview.jsx';
 import { resolveFigureAnchor } from './domain/document-anchor.js';
-import { fileLabel } from './domain/file-label.js';
 import { StudioHome, ProjectLibrary } from './components/StudioWorkspace.jsx';
 import './studio-theme.css';
 import './folder-cards.css';
 import './social-preview.css';
-import LensNavigation from './components/LensNavigation.jsx';
 import './lens-navigation.css';
 import BrandSettings from './components/BrandSettings.jsx';
 import './brand-settings.css';
@@ -52,7 +54,6 @@ import './color-accents.css';
 import './section-backdrops.css';
 import './components/liquid-button.css';
 import abstractSculpture from './abstract-ribbon-inflated-v3.png';
-import rondaLogo from './ronda-logo-white-silver.svg';
 import sculptureProjects from './abstract-sculpture-projects.png';
 import sculpturePauta from './abstract-sculpture-pauta.png';
 import sculpturePlanning from './abstract-sculpture-planning.png';
@@ -60,7 +61,8 @@ import sculptureActivity from './abstract-sculpture-activity.png';
 import sculptureTeam from './abstract-sculpture-team.png';
 import sculptureBranding from './abstract-sculpture-branding.png';
 import sculptureSettings from './abstract-sculpture-settings.png';
-const sectionSculptures={home:abstractSculpture,projects:sculptureProjects,pauta:sculpturePauta,planning:sculpturePlanning,activity:sculptureActivity,team:sculptureTeam,branding:sculptureBranding,settings:sculptureSettings};
+const sectionSculptures={home:abstractSculpture,projects:sculptureProjects,personal:sculptureBranding,pauta:sculpturePauta,planning:sculpturePlanning,activity:sculptureActivity,team:sculptureTeam,branding:sculptureBranding,settings:sculptureSettings};
+const sectionCompanions={home:sculptureActivity,projects:sculptureSettings,personal:sculptureTeam,pauta:sculptureProjects,planning:sculpturePauta,activity:sculptureBranding,team:sculpturePlanning,branding:abstractSculpture,settings:sculptureProjects};
 import ShareReviewDialog from './components/ShareReviewDialog.jsx';
 import {RetryableFeature} from './components/FeatureLoadBoundary.jsx';
 import {consumeFeatureRetry} from './domain/feature-retry.js';
@@ -83,37 +85,9 @@ const seedComments = [
   { id: 3, author: 'Sofía C.', initials: 'SC', color: '#f2bd5c', time: '00:21:18', frame: 511, text: 'Subamos un poco el contraste del texto para que sea legible en móvil.', replies: 1, status: 'open' },
 ];
 
-function Sidebar({ collapsed, setCollapsed, currentView, onNavigate, onDemo }) {
-  const {state}=useRonda();
-  const [accountMenu,setAccountMenu]=useState(false);
-  return <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
-    <button className="brand" onClick={() => setCollapsed(!collapsed)} aria-label={collapsed?'Expandir navegación':'Contraer navegación'}>
-      <span className="brand-mark" aria-hidden="true">{state.workspace.branding?.logo?<img src={state.workspace.branding.logo} alt=""/>:<img src={rondaLogo} alt=""/>}</span><span className="brand-name">{state.workspace.branding?.name||'Ronda'}</span>
-    </button>
-    <LensNavigation className="side-nav" label="Principal" currentView={currentView} collapsed={collapsed}>
-      <button className={currentView==='home'?'active':''} onClick={()=>onNavigate('home')}><Icon name="home"/><span>Inicio</span></button>
-      <button className={currentView==='pauta'?'active':''} onClick={()=>onNavigate('pauta')}><Icon name="folder"/><span>Pauta</span></button>
-      <button className={currentView==='projects'?'active':''} onClick={()=>onNavigate('projects')}><Icon name="grid"/><span>Proyectos</span></button>
-      <button className={currentView==='activity'?'active':''} onClick={()=>onNavigate('activity')}><Icon name="clock"/><span>Actividad</span></button>
-      <button className={currentView==='planning'?'active':''} onClick={()=>onNavigate('planning')}><Icon name="calendar"/><span>Planificación</span></button>
-      <button className={currentView==='team'?'active':''} onClick={()=>onNavigate('team')}><Icon name="users"/><span>Equipo</span></button>
-    </LensNavigation>
-    <div className="side-label">ESPACIO</div>
-    <LensNavigation className="side-nav lower" label="Espacio" currentView={currentView} collapsed={collapsed}>
-      <button className={currentView==='personal'||currentView==='review'?'active':''} onClick={()=>onNavigate('personal')}><Icon name="folder"/><span>{state.workspace.name}</span></button>
-      <button className={currentView==='settings'?'active':''} onClick={()=>onNavigate('settings')}><Icon name="settings"/><span>Configuración</span></button>
-      <button className={currentView==='branding'?'active':''} onClick={()=>onNavigate('branding')}><Icon name="image"/><span>Personalización</span></button>
-    </LensNavigation>
-    <div className="account">
-      <span className="avatar small">{state.members[state.currentUserId]?.initials}</span>
-      <span className="account-copy"><strong>{state.members[state.currentUserId]?.name}</strong><small>Mi cuenta</small></span>
-      <div className="account-menu-wrap" onKeyDown={e=>{if(e.key==='Escape')setAccountMenu(false)}}><button className="account-menu-trigger" aria-label="Opciones de mi cuenta" aria-expanded={accountMenu} onClick={()=>setAccountMenu(!accountMenu)}><Icon name="more"/></button>{accountMenu&&<div className="account-popover" aria-label="Opciones de cuenta"><strong>Mi espacio de trabajo</strong><button onClick={()=>{setAccountMenu(false);onNavigate('personal')}}>Mis proyectos</button><button onClick={()=>{setAccountMenu(false);onNavigate('branding')}}>Personalización</button><button onClick={()=>{setAccountMenu(false);onNavigate('settings')}}>Configuración</button><button onClick={()=>{setAccountMenu(false);onDemo()}}>Empresa activa · Modo demo</button><small>Datos ficticios, separados de tu cuenta.</small></div>}</div>
-    </div>
-  </aside>;
-}
 
 function MobileNav({ currentView, onNavigate }) {
-  const items=[['home','grid','Inicio'],['projects','folder','Proyectos'],['personal','users','Personal'],['pauta','arrow','Pauta'],['planning','calendar','Planner'],['activity','clock','Actividad'],['team','users','Equipo'],['settings','settings','Ajustes']];
+  const items=[['home','grid','Inicio'],['projects','folder','Proyectos'],['personal','personal','Personal'],['pauta','campaign','Pauta'],['planning','calendar','Planner'],['activity','clock','Actividad'],['team','users','Equipo'],['settings','settings','Ajustes']];
   return <nav className="mobile-nav" aria-label="Navegación móvil">{items.map(([view,icon,label])=><button key={view} aria-label={label} title={label} className={currentView===view||(currentView==='review'&&view==='personal')||(currentView==='branding'&&view==='settings')?'active':''} onClick={()=>onNavigate(view)}><Icon name={icon}/><span>{label}</span></button>)}</nav>;
 }
 
@@ -166,11 +140,9 @@ function CommentsPanel({ onClose, currentTime, setCurrentTime, draft, setDraft, 
     <div className="comment-toolbar"><div className="comment-tabs" role="tablist" aria-label="Filtrar comentarios">{['Todos','Abiertos','Resueltos'].map(item=><button key={item} role="tab" aria-selected={filter===item} className={filter===item?'active':''} onClick={()=>setFilter(item)}>{item}<span>{item==='Todos'?comments.length:comments.filter(c=>c.status===(item==='Abiertos'?'open':'resolved')).length}</span></button>)}</div><label className="comment-search"><Icon name="search" size={14}/><input aria-label="Buscar comentarios" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar"/></label></div>
     <div className="comments-scroll">{visible.map(c=><div key={c.id} id={`thread-${c.id}`}><CommentCard item={c} members={state.members} selectedFigure={selectedFigure} annotationContext={annotationContext} selected={selected===c.id} onSelect={()=>{setSelected(c.id);onJumpFigure(c)}} onResolve={resolve} onReply={replyTo} onJump={item=>{setSelected(item.id);setCurrentTime?.(item.timeSeconds ?? (item.frame||0)/24);onJumpFigure(item)}}/></div>)}{emptyState&&<div className="comments-empty"><strong>{emptyState.title}</strong><span>{emptyState.detail}</span>{emptyState.action&&<button onClick={()=>{if(emptyState.kind==='search')setSearch('');else setFilter('Todos')}}>{emptyState.action}</button>}</div>}</div>
     <div className="composer">
-      <AudioCommentInput onAttach={addFiles} onError={setAttachmentError}/>
       {attachments.filter(file=>file.type?.startsWith('audio/')).map(file=><div className="audio-draft" key={file.id}><span>{file.name}</span><audio controls src={file.dataUrl} aria-label={`Revisar audio ${file.name}`}/><button aria-label={`Eliminar audio ${file.name}`} onClick={()=>setAttachments(current=>current.filter(item=>item.id!==file.id))}>Quitar audio</button></div>)}
       {selectedFigure&&<div className="figure-link-status"><span className="figure-linked-label"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/></svg>Figura vinculada</span><button aria-label="Desvincular la figura del nuevo comentario" onClick={()=>setSelectedFigure(null)}>Desvincular <span aria-hidden="true">×</span></button></div>}
-      <div className="composer-input">{recoveredDraft.current&&draft&&<small className="draft-recovered" role="status">Borrador recuperado</small>}{!!attachments.length&&<div className="reference-strip">{attachments.map(file=><span key={file.id}><img src={file.dataUrl} alt=""/><button aria-label={`Quitar ${file.name}`} onClick={()=>setAttachments(current=>current.filter(item=>item.id!==file.id))}>×</button></span>)}</div>}<MentionInput value={draft} onChange={e=>{recoveredDraft.current=false;setDraft(e.target.value)}} onPaste={e=>{if(e.clipboardData.files.length){e.preventDefault();addFiles(e.clipboardData.files)}}} onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')add()}} aria-label="Escribir comentario" placeholder={documentPage?`Comenta la página / vista ${documentPage}…`:`Comenta o pega una captura sobre ${stamp.time}…`}/><div className="composer-meta"><span>{documentPage?`Página / vista ${documentPage}`:`F${stamp.frame}`} · Ctrl/⌘ + Enter</span><input ref={attachmentInput} className="visually-hidden" type="file" accept="image/*" multiple onChange={e=>{addFiles(e.target.files);e.target.value=''}}/><button onClick={()=>attachmentInput.current?.click()} title="Agregar imagen o captura"><Icon name="image" size={15}/> Referencia</button></div>{attachmentError&&<small className="attachment-error">{attachmentError}</small>}</div>
-      <button className="send" aria-label="Publicar comentario" onClick={add} disabled={!draft.trim()&&!attachments.length}><Icon name="send"/></button>
+      <div className="composer-message-bar"><AudioCommentInput onAttach={addFiles} onError={setAttachmentError}/><div className="composer-input">{recoveredDraft.current&&draft&&<small className="draft-recovered" role="status">Borrador recuperado</small>}{!!attachments.length&&<div className="reference-strip">{attachments.map(file=><span key={file.id}><img src={file.dataUrl} alt=""/><button aria-label={`Quitar ${file.name}`} onClick={()=>setAttachments(current=>current.filter(item=>item.id!==file.id))}>×</button></span>)}</div>}<MentionInput value={draft} onChange={e=>{recoveredDraft.current=false;setDraft(e.target.value)}} onPaste={e=>{if(e.clipboardData.files.length){e.preventDefault();addFiles(e.clipboardData.files)}}} onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')add()}} aria-label="Escribir comentario" placeholder={documentPage?`Comenta la página / vista ${documentPage}…`:`Comenta o pega una captura sobre ${stamp.time}…`}/><div className="composer-meta"><span>{documentPage?`Página / vista ${documentPage}`:`F${stamp.frame}`} · Ctrl/⌘ + Enter</span><input ref={attachmentInput} className="visually-hidden" type="file" accept="image/*" multiple onChange={e=>{addFiles(e.target.files);e.target.value=''}}/><button onClick={()=>attachmentInput.current?.click()} title="Agregar imagen o captura"><Icon name="image" size={15}/><span>Referencia</span></button></div>{attachmentError&&<small className="attachment-error">{attachmentError}</small>}</div><button className="send" aria-label="Publicar comentario" onClick={add} disabled={!draft.trim()&&!attachments.length}><Icon name="send"/></button></div>
     </div>
   </aside>;
 }
@@ -260,6 +232,8 @@ function SettingsView({onNotify}) {
 }
 
 function App({demo=false,onExitDemo}) {
+  const {user}=useAccountActions();
+  const canUseCompanyDemo=canAccessCompanyDemo(user);
   const {state,act,persistenceError,retryPersistence}=useRonda();
   const [retryRequest]=useState(()=>{let storage=null;try{storage=window.sessionStorage}catch{}return consumeFeatureRetry(storage)});
   const [media, setMedia] = useState(null);
@@ -394,13 +368,13 @@ function App({demo=false,onExitDemo}) {
   useEffect(()=>{const handler=e=>{if(e.key==='Escape'){setShareOpen(false);setShortcutsOpen(false);setCommentsOpen(false);}if(e.key==='?'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))setShortcutsOpen(value=>!value);if(e.key.toLowerCase()==='c'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){e.preventDefault();document.querySelector('.composer textarea')?.focus();}};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler)},[]);
   const loadMedia = async event => { const file=event.target.files?.[0]; if(!file)return;event.target.value='';const type=fileKind(file);if(!['video','image'].includes(type)){setToast('Para documentos y otros formatos, usa Agregar archivos en la parrilla.');return;}try{setToast('Guardando archivo en el servidor…');const id=crypto.randomUUID();await fileStore(id,file);const asset={id,name:file.name,type,mime:file.type,size:file.size,extension:file.name.split('.').at(-1).toUpperCase(),projectId:media?.projectId||'project-amara'};act('asset/add',asset);if(media?.url)URL.revokeObjectURL(media.url);setCurrentTime(0);setMedia({...asset,identity:id,versionId:`asset-${id}-v1`,versionNumber:1,url:URL.createObjectURL(file),duration:type==='image'?1:0,setDuration:duration=>setMedia(current=>({...current,duration}))});const versionId=`asset-${id}-v1`;setRequestedReviewVersion(versionId);setReviewRoute(window,versionId);setToast('Archivo guardado en tu cuenta');}catch(error){setToast(error.message||'No se pudo guardar el archivo');} };
   const followReviewer=person=>{setCurrentTime(person.time);setRemoteCursor(person);setToast(`Siguiendo a ${person.name} en ${formatTime(person.time).time}`)};
-  if(companyDemo)return <RondaProvider initialState={companyDemo} ephemeral><App demo onExitDemo={()=>{endDemoSession();setCompanyDemo(false)}}/></RondaProvider>;
+  if(companyDemo&&canUseCompanyDemo)return <RondaProvider initialState={companyDemo} ephemeral><App demo onExitDemo={()=>{endDemoSession();setCompanyDemo(false)}}/></RondaProvider>;
   if(retryRestoring)return <BrandLoader label="Recuperando la revisión…"/>;
   return <div className="app-shell">
     <DrawingTrail enabled={currentView==='review'&&!socialMode&&activeTool!=='type'&&Boolean(activeTool)} color={activeColor}/>
-    <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} currentView={currentView} onNavigate={setCurrentView} onDemo={()=>{if(demo||!canLeaveSharedReview({dirty:sharedDirty,busy:false},()=>window.confirm('Hay cambios sin publicar en la revisión compartida. ¿Descartarlos para abrir el demo?')))return;const fixture=createCompanyDemo();beginDemoSession(fixture);setCompanyDemo(fixture)}}/>
+    <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} currentView={currentView} onNavigate={setCurrentView} onDemo={canUseCompanyDemo?()=>{if(!canUseCompanyDemo||demo||!canLeaveSharedReview({dirty:sharedDirty,busy:false},()=>window.confirm('Hay cambios sin publicar en la revisión compartida. ¿Descartarlos para abrir el demo?')))return;const fixture=createCompanyDemo();beginDemoSession(fixture);setCompanyDemo(fixture)}:undefined}/>
     <main data-view={currentView} className={`workspace ${currentView!=='review'?'dashboard-workspace':''}`}>
-      {sectionSculptures[currentView]&&<img className="abstract-sculpture-background" src={sectionSculptures[currentView]} alt="" aria-hidden="true" draggable={false}/>}
+      {sectionSculptures[currentView]&&<div className="abstract-sculpture-background" aria-hidden="true"><img className="section-sculpture section-sculpture-primary" src={sectionSculptures[currentView]} alt="" draggable={false}/><img className="section-sculpture section-sculpture-companion" src={sectionCompanions[currentView]} alt="" draggable={false}/></div>}
       {demo&&<div className="demo-company-banner" role="status"><span>DEMO · Empresa activa · Datos ficticios. Los cambios se descartan al salir.</span><button onClick={onExitDemo}>Volver a mi cuenta</button></div>}
       {currentView!=='review' && <header className="studio-topbar"><span>{currentView==='projects'?'Espacio compartido':currentView==='team'?'Espacio de trabajo':state.workspace.name} <span aria-hidden="true">/</span> <strong>{{home:'Inicio',projects:'Proyectos del equipo',personal:'Mis proyectos personales',pauta:'Pauta',activity:'Actividad',planning:'Planificación',team:'Equipo',settings:'Configuración',branding:'Personalización'}[currentView]}</strong></span><div><NotificationCenter onNavigate={setCurrentView}/><AccountProfileMenu initials={state.members[state.currentUserId]?.initials} onNavigate={setCurrentView}/></div></header>}
       {currentView==='home' && <StudioHome onNavigate={view=>setCurrentView(view==='projects'?'personal':view)} onOpen={openProject}/>}
@@ -408,7 +382,7 @@ function App({demo=false,onExitDemo}) {
       {currentView==='projects' && <ProjectActions key={sharedLinkKey} onOpen={openProject} onNotify={setToast} onDirtyChange={setSharedDirty}/>}
       {currentView==='personal' && <ProjectLibrary onOpen={openProject} onNotify={setToast}/>}
       {currentView==='activity' && <ActivityView onNavigate={setCurrentView} onOpenProject={openProject} onOpenComment={openPlanningComment}/>}
-      {currentView==='planning' && <RetryableFeature load={loadPlanning} retryView="planning" message="No se pudo cargar Planificación. Comprueba tu conexión e inténtalo de nuevo." loadingLabel="Cargando planificación…" onOpen={openPlanningComment}/>}
+      {currentView==='planning' && <RetryableFeature load={loadPlanning} retryView="planning" message="No se pudo cargar Planificación. Comprueba tu conexión e inténtalo de nuevo." loadingLabel="Cargando planificación…" allowDemo={canUseCompanyDemo} onOpen={openPlanningComment}/>}
       {currentView==='team' && <TeamActions onNotify={setToast}/>}
       {currentView==='settings' && <SettingsActions onNotify={setToast} onNavigate={setCurrentView}/>}
       {currentView==='branding' && <BrandSettings onNotify={setToast}/>}
@@ -431,7 +405,8 @@ function App({demo=false,onExitDemo}) {
       <div className="review-layout">
         <div className="review-main">
           <DeliveryGrid projectId={media?.projectId||'project-amara'} onRemove={id=>{if(media?.id===id){setCurrentView('personal');if(media.url)URL.revokeObjectURL(media.url);setMedia(null);setSelectedFigure(null);setFocusedComment(null);setCommentDraft('');}}} onNotify={setToast} onSelect={asset=>{if(media?.url)URL.revokeObjectURL(media.url);setMedia({...asset,setDuration:duration=>setMedia(current=>({...current,duration}))});setCurrentTime(0);setVersion(asset.versionNumber||1);setSelectedFigure(null);setFocusedComment(null);setCommentDraft('');const versionId=asset.versionId||`asset-${asset.id}-v${asset.versionNumber||1}`;setRequestedReviewVersion(versionId);setReviewRoute(window,versionId)}}/>
-          <div className="asset-bar"><div className="asset-meta"><span className="file-type">{fileLabel(media)}</span><div><strong>{media?.name || 'AMARA_SPOT_MASTER'}</strong><span>{media?.externalUrl?'Enlace externo · contenido en vivo':media?'Archivo local de revisión':'1920 × 1080 · H.264 · 48.2 MB'}</span></div></div><div className="asset-actions"><input ref={fileInput} className="visually-hidden" type="file" accept="video/*,image/*" onChange={loadMedia}/><button className="upload-button" onClick={()=>fileInput.current?.click()}><Icon name="plus" size={15}/> Cargar archivo</button><AssetVersionControl media={media} onNotify={setToast} onSelect={next=>{if(media?.url)URL.revokeObjectURL(media.url);setMedia({...next,duration:next.type==='image'?1:0,setDuration:duration=>setMedia(current=>({...current,duration}))});setVersion(next.versionNumber);setDocumentPage(1);setCurrentTime(0);setSelectedFigure(null);setFocusedComment(null);setSocialMode(false);setRequestedReviewVersion(next.versionId);setReviewRoute(window,next.versionId)}}/></div></div>
+          <input ref={fileInput} className="visually-hidden" type="file" accept="video/*,image/*" onChange={loadMedia}/>
+          <ReviewAssetHeader media={media} onUpload={()=>fileInput.current?.click()}><AssetVersionControl media={media} onNotify={setToast} onSelect={next=>{if(media?.url)URL.revokeObjectURL(media.url);setMedia({...next,duration:next.type==='image'?1:0,setDuration:duration=>setMedia(current=>({...current,duration}))});setVersion(next.versionNumber);setDocumentPage(1);setCurrentTime(0);setSelectedFigure(null);setFocusedComment(null);setSocialMode(false);setRequestedReviewVersion(next.versionId);setReviewRoute(window,next.versionId)}}/></ReviewAssetHeader>
           <div className="social-mode-switch" role="group" aria-label="Modo de visualización"><div className="review-mode-options"><button aria-pressed={!socialMode} onClick={()=>{socialRequest.current++;setSocialMode(false)}}><Icon name="pen" size={16}/><span>Revisión y anotaciones</span></button><button disabled={media?.type==='web'} aria-pressed={socialMode} onClick={()=>setSocialMode(true)}><Icon name="image" size={16}/><span>Preview social</span></button></div><span className="review-mode-hint">{socialMode?'Vista de publicación':'Revisa cada detalle'}</span></div>
           {socialMode?<RetryableFeature load={loadSocialPreview} retryView="review" retryMedia={media} retryMode="social" message="No se pudo cargar la vista previa social. Comprueba tu conexión e inténtalo de nuevo." loadingLabel="Cargando vista previa social…" projectId={media?.projectId||'project-amara'} onSelect={selectSocialAsset} onTime={setCurrentTime} onNotify={setToast} onReview={asset=>{selectSocialAsset(asset);setSocialMode(false)}}/>:['pdf','html','document','presentation'].includes(media?.type)?<DocumentReview media={media} page={documentPage} setPage={setDocumentPage} renderAnnotations={drawing=><><AnnotationLayer activeTool={drawing?activeTool:'' } activeColor={activeColor} marks={marks} setMarks={saveMarks} selectedFigure={selectedFigure}/>{marks.map((mark,index)=><button key={mark.id} className={`figure-pin ${selectedFigure===mark.id?'selected':''}`} style={{left:`${mark.points[0].x*100}%`,top:`${mark.points[0].y*100}%`}} aria-label={`Abrir figura ${index+1}`} onClick={()=>selectFigure(mark)}>{index+1}</button>)}{drawing&&<div className="annotation-tools">{['pen','arrow','square','type'].map((tool,index)=><button key={tool} aria-label={['Lápiz','Flecha','Rectángulo','Texto'][index]} aria-pressed={activeTool===tool} className={activeTool===tool?'active':''} onClick={()=>setActiveTool(tool)}><Icon name={tool}/></button>)}{['#ff725e','#f2bd5c','#8ebd72','#67a9d4'].map(color=><button key={color} aria-label={`Color ${color}`} aria-pressed={activeColor===color} onClick={()=>setActiveColor(color)} style={{color}}><span style={{background:color,width:16,height:16,borderRadius:'50%'}}/></button>)}<button aria-label="Deshacer figura" disabled={!marks.length} onClick={()=>saveMarks(marks.slice(0,-1))}><Icon name="undo"/></button></div>}</>} onComment={()=>{setCommentsOpen(true);setSelectedFigure(null);setTimeout(()=>document.querySelector('.comments-drawer textarea, .composer textarea')?.focus(),50)}}/>:<><MediaStage key={annotationContext} activeTool={activeTool} setActiveTool={setActiveTool} activeColor={activeColor} setActiveColor={setActiveColor} media={media} currentTime={currentTime} setCurrentTime={setCurrentTime} remoteCursor={remoteCursor} marks={marks} setMarks={saveMarks} selectedFigure={selectedFigure} onFigure={selectFigure} figureComments={Object.values(state.comments).filter(c=>c.versionId===reviewVersionId)} reviewVersionId={reviewVersionId} onTimelineComment={comment=>{setCurrentTime(comment.timeSeconds);setFocusedComment(comment.id);setCommentsOpen(true);jumpFigure(comment)}}/></>}
           <div className="review-summary">

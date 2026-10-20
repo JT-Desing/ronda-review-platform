@@ -1,4 +1,5 @@
 import { reply } from './http.js';
+import {withPlatformRole} from './platform-access.js';
 import { googleEnabled, googleStart, googleCallback } from './google.js';
 import { sessionRepository } from './repositories/sessions.js';
 import { handleAuth } from './modules/auth.js';
@@ -37,7 +38,7 @@ export function createApp({ pool, origin, mailer, sharedStorage, fileRoot }) {
       if(isSharedReviewPath(path))return await handleSharedReview(context);
       if (/^\/api\/workspaces\/[^/]+\/projects(?:\/|$)/.test(path)) return await handleSharedProjects(context);
       if (path === '/api/workspaces' || path?.startsWith('/api/workspaces/') || path === '/api/workspace-invitations/accept') return await handleWorkspaces(context);
-      if (req.method === 'GET' && path === '/api/auth/session') return reply(res, 200, { user: account });
+      if (req.method === 'GET' && path === '/api/auth/session') return reply(res, 200, { user: withPlatformRole(account) });
       if (path === '/api/data') return await handleAccountData(context);
       if (/^\/api\/files\/[0-9a-f-]{36}$/.test(path)) return await handleFiles(context);
       if (path?.startsWith('/api/auth/')) return await handleAuth(context);

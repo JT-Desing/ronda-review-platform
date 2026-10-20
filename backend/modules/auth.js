@@ -2,6 +2,7 @@ import { token, digest } from '../security.js';
 import { reply, body } from '../http.js';
 import { authService } from '../auth-service.js';
 import { userRepository } from '../repositories/users.js';
+import {withPlatformRole} from '../platform-access.js';
 import { requestPasswordReset, deliverPasswordReset, completePasswordReset } from '../password-reset.js';
 export async function handleAuth({ req, res, path, sessionToken, pool, cookie, mailer, origin }) {
   if (req.method === 'POST' && path === '/api/auth/password-reset/request') {
@@ -36,7 +37,7 @@ export async function handleAuth({ req, res, path, sessionToken, pool, cookie, m
       : await service.login({ email, password });
     const value = token();
     await pool.query("INSERT INTO sessions VALUES($1,$2,now()+interval '7 days')", [digest(value), user.id]);
-    return reply(res, 200, { user }, { 'Set-Cookie': cookie(value, 604800) });
+    return reply(res, 200, { user: withPlatformRole(user) }, { 'Set-Cookie': cookie(value, 604800) });
   }
   return reply(res, 404, { error: 'Ruta no disponible.' });
 }

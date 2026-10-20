@@ -4,9 +4,10 @@ import {dayKey,heatLevel,planningComments} from '../domain/planning.js';
 import '../planning.css';
 import {createPlanningDemo} from '../domain/planning-demo.js';
 
-export default function Planning({onOpen}) {
+export default function Planning({onOpen,allowDemo=false}) {
   const [demo,setDemo]=useState(false);
-  return <><div className="planning-demo-control"><button type="button" aria-pressed={demo} onClick={()=>setDemo(!demo)}>{demo?'Salir de modo demo':'Ver ejemplo de empresa activa'}</button><span role="status">{demo?'DEMO · Datos ficticios · Solo lectura · No se guardan en tu cuenta':'Datos reales de tu cuenta'}</span></div><PlanningContent key={String(demo)} demo={demo} onOpen={onOpen}/></>;
+  const activeDemo=allowDemo&&demo;
+  return <>{allowDemo&&<div className="planning-demo-control"><button type="button" aria-pressed={activeDemo} onClick={()=>setDemo(!demo)}>{activeDemo?'Salir de modo demo':'Ver ejemplo de empresa activa'}</button><span role="status">{activeDemo?'DEMO · Datos ficticios · Solo lectura · No se guardan en tu cuenta':'Datos reales de tu cuenta'}</span></div>}<PlanningContent key={String(activeDemo)} demo={activeDemo} onOpen={onOpen}/></>;
 }
 
 function PlanningContent({onOpen:openReal,demo}) {

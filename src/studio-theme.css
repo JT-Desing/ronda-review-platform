@@ -14,11 +14,11 @@ body{background:var(--canvas)}
 .app-shell{flex:1;min-height:0;height:auto;background:var(--canvas)}
 .app-shell .workspace{height:auto;min-height:0}
 .app-shell .sidebar{height:auto;min-height:0;background:#0e0c13;border-color:var(--line);padding:24px 16px 18px;overflow-y:auto}
-.app-shell .brand{gap:9px;padding:0 9px;flex-shrink:0}
-.app-shell .brand-mark{border:0;width:28px;height:28px;background:none}
-.brand-mark svg{width:28px;height:28px}
+.app-shell .brand{justify-content:center;align-items:center;gap:10px;width:100%;height:56px;min-height:56px;padding:0;flex-shrink:0}
+.app-shell .brand-mark{border:0;flex:0 0 36px;width:36px;height:36px;background:none}
+.brand-mark svg{width:100%;height:100%}
 .app-shell .brand-mark img{width:100%;height:100%;object-fit:contain;display:block}
-.app-shell .brand-name{letter-spacing:-.02em;text-transform:none;font-size:20px;font-weight:650}
+.app-shell .brand-name{letter-spacing:-.025em;text-transform:none;font-size:22px;line-height:1;font-weight:650}
 .app-shell .side-nav{gap:5px;margin-top:28px}
 .app-shell .side-nav button{min-height:44px;height:auto;padding:12px;color:var(--muted);font-size:13px;white-space:normal}
 .app-shell .side-nav button span{overflow:hidden;text-overflow:ellipsis}
@@ -108,3 +108,43 @@ body{background:var(--canvas)}
 .app-shell .comment-empty strong{font:600 16px/1.4 var(--font-ui)}
 .app-shell .pauta-detail,.app-shell .pauta-explorer,.app-shell .pauta-campaign-summary{background:var(--surface-1);border-color:var(--line)}
 @media(prefers-reduced-transparency:reduce){.studio-topbar,.mobile-nav{background:var(--surface-1);backdrop-filter:none}}
+
+/* Keep navigation legible at every size: no squeezed icon-only desktop sidebar on tablets. */
+.app-shell .sidebar .side-nav>button>.icon{width:20px;height:20px;flex:0 0 20px}
+@media(min-width:781px) and (max-width:1050px){
+  /* Keep the full navigation visible on compact laptops/tablets. The old
+     68px rail hid every label while leaving a large, confusing blank column. */
+  .app-shell .sidebar:not(.collapsed){display:flex;width:184px;flex:0 0 184px;padding:20px 12px 16px}
+  .app-shell .sidebar.collapsed{display:flex;width:72px;flex:0 0 72px;padding:20px 10px 16px}
+  .app-shell .sidebar .brand-name,.app-shell .sidebar .side-nav span,.app-shell .sidebar .side-label,.app-shell .sidebar .account-copy{display:revert}
+  .app-shell .sidebar .brand-name{font-size:20px}
+  .app-shell .sidebar .side-nav{margin-top:20px;gap:4px}
+  .app-shell .sidebar .side-nav button{justify-content:flex-start;min-height:42px;padding:10px 9px;font-size:12px}
+  .app-shell .sidebar .side-nav button>.icon{width:18px;height:18px;flex:0 0 18px}
+  .app-shell .sidebar .account{justify-content:flex-start;gap:8px;padding-left:4px;padding-right:4px}
+  .app-shell .sidebar .avatar.small{width:32px;height:32px;flex:0 0 32px;font-size:10px}
+  .app-shell .sidebar .account-copy strong{font-size:11px}
+  .app-shell .sidebar .account-copy small{font-size:9px}
+  .app-shell .sidebar.collapsed .brand-name,.app-shell .sidebar.collapsed .side-nav span,.app-shell .sidebar.collapsed .side-label,.app-shell .sidebar.collapsed .account-copy{display:none}
+}
+
+/* The collapsed rail is an intentional compact mode: keep every hit target aligned. */
+.app-shell .sidebar .brand{position:relative}
+.app-shell .sidebar .sidebar-collapse-indicator{position:absolute;right:0;top:50%;display:grid;place-items:center;width:22px;height:22px;margin:0;border-radius:7px;color:var(--faint);opacity:0;transform:translateY(-50%) rotate(180deg);transition:opacity 140ms ease-out,background-color 140ms ease-out,color 140ms ease-out}
+.app-shell .sidebar .brand:hover .sidebar-collapse-indicator,.app-shell .sidebar .brand:focus-visible .sidebar-collapse-indicator{opacity:1;background:var(--surface-3);color:var(--text)}
+.app-shell .sidebar.collapsed{box-sizing:border-box;width:72px;flex:0 0 72px;align-items:center;padding:20px 10px 14px;overflow-x:hidden}
+.app-shell .sidebar.collapsed .brand{flex:0 0 44px;width:44px;height:44px;min-height:44px;justify-content:center;padding:0}
+.app-shell .sidebar.collapsed .brand-mark{flex:0 0 32px;width:32px;height:32px}
+.app-shell .sidebar.collapsed .side-nav{flex:0 0 auto;align-items:center;width:44px;margin-top:18px;gap:4px}
+.app-shell .sidebar.collapsed .side-nav>button{box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex:0 0 44px;width:44px;min-width:44px;height:44px;min-height:44px;padding:0;gap:0;border-radius:12px}
+.app-shell .sidebar.collapsed .side-nav>button>.icon{display:block;flex:0 0 20px;width:20px;height:20px;opacity:1}
+.app-shell .sidebar.collapsed .side-nav>button>span,.app-shell .sidebar.collapsed .side-label,.app-shell .sidebar.collapsed .account-copy{display:none}
+.app-shell .sidebar.collapsed .side-nav.lower{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.app-shell .sidebar .account>.avatar{flex:0 0 32px;min-width:32px;width:32px;height:32px;aspect-ratio:1;border-radius:50%}
+.app-shell .sidebar.collapsed .sidebar-collapse-indicator{position:absolute;top:-5px;right:-5px;width:18px;height:18px;margin:0;opacity:1;transform:none;border:1px solid var(--line-strong);border-radius:50%;background:var(--surface-2);color:var(--muted)}
+.app-shell .sidebar.collapsed .account{box-sizing:border-box;flex:0 0 auto;align-items:center;justify-content:center;width:44px;min-height:62px;margin-top:auto;padding:12px 0 0;gap:0}
+.app-shell .sidebar.collapsed .account-menu-wrap{width:44px;flex:0 0 44px}
+.app-shell .sidebar.collapsed .account-menu-trigger{width:44px;height:44px;min-width:44px;min-height:44px;padding:4px;border-radius:12px}
+.app-shell .sidebar.collapsed .sidebar-account-avatar{display:none}
+.app-shell .sidebar .sidebar-account-menu-avatar{display:none}
+.app-shell .sidebar.collapsed .sidebar-account-menu-avatar{display:grid;place-items:center;width:32px;min-width:32px;height:32px;min-height:32px;flex:0 0 32px;aspect-ratio:1;border-radius:50%;font-size:10px;line-height:1}
