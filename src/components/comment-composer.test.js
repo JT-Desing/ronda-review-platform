@@ -39,3 +39,11 @@ test('composer starts compact and reveals contextual help during composition',()
  assert.match(css,/resize:none/);
  assert.match(component('MentionInput.jsx'),/placeholder:'Escribe un mensaje…',rows:1/);
 });
+
+test('focused composer keeps metadata out of normal flow and uses one focus treatment',()=>{
+ const css=component('comment-composer.css');
+ assert.match(css,/composer-meta\{display:flex;position:absolute/);
+ assert.match(css,/composer-message-bar:focus-within\{outline:0;border-color:var\(--line-strong\);box-shadow:none\}/);
+ assert.match(css,/box-shadow:inset 0 0 0 2px var\(--accent\)/);
+ assert.match(css,/composer-input:has\(.composer-meta>button\) textarea\{padding-right:32px\}/);
+});
