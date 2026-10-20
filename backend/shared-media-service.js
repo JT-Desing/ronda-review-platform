@@ -13,7 +13,7 @@ const quota=2147483648;
 export function uploadInput(input){
   const extension=typeof input?.name==='string'?input.name.split('.').at(-1)?.toLowerCase():'';
   const providedMime=input?.mime?.toLowerCase();
-  const kind=types[providedMime]||(fileExtensions.has(extension)&&fileMimes.has(providedMime)?'file':null);
+  const kind=types[providedMime]||(fileExtensions.has(extension)&&fileMimes.has(providedMime)?(['html','htm'].includes(extension)?'html':'file'):null);
   if(!input||typeof input.name!=='string'||!input.name.trim()||input.name.length>255||!kind||!Number.isInteger(input.size)||input.size<1)throw workspaceError(400,'Archivo inválido o tipo no compatible.');
   if(input.size>104857600)throw workspaceError(413,'Cada archivo debe pesar como máximo 100 MB.');
   if(!UUID_PATTERN.test(input.projectId)||input.assetId&&!UUID_PATTERN.test(input.assetId))throw workspaceError(400,'Proyecto o pieza inválidos.');

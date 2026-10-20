@@ -12,7 +12,7 @@ test('upload input distinguishes unsupported/invalid files from the 100 MB limit
 });
 
 test('shared projects accept PDF, HTML, React source and ZIP bundles as inert downloadable files',()=>{
-  for(const [name,mime,kind] of [['brief.pdf','application/pdf','pdf'],['page.html','text/html','file'],['Card.jsx','text/plain','file'],['app.tsx','text/plain','file'],['react-source.zip','application/zip','file'],['design.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document','file']]){
+  for(const [name,mime,kind] of [['brief.pdf','application/pdf','pdf'],['page.html','text/html','html'],['Card.jsx','text/plain','file'],['app.tsx','text/plain','file'],['react-source.zip','application/zip','file'],['design.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document','file']]){
     assert.equal(uploadInput({...base,name,mime}).kind,kind,`${name} is accepted`);
   }
   assert.throws(()=>uploadInput({...base,name:'app.exe',mime:'application/octet-stream'}),error=>error.status===400);

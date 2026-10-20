@@ -9,7 +9,9 @@ import {useRonda} from '../state/RondaContext.jsx';
 import {AccountProfileMenu} from './AccountProfileMenu.jsx';
 import {getRoom,versionPath,projectPath,reviewRequest,reviewSend,uploadFile,postComment,postDecision} from '../state/sharedReviewApi.js';
 import {pickVersion,sharedAnnotation,applyRoomError,createReviewGuard,canLeaveSharedReview} from '../state/sharedReviewState.js';
-import {OriginalMediaStage} from './OriginalMediaStage.jsx';
+import {OriginalMediaStage as UploadedMediaStage} from './OriginalMediaStage.jsx';
+import {DocumentReview} from './DocumentReview.jsx';
+import {AnnotationLayer} from './AnnotationLayer.jsx';
 import Icon from './Icon.jsx';
 import {ShareProjectButton} from './ShareProjectButton.jsx';
 import {AudioCommentInput} from './AudioCommentInput.jsx';
@@ -21,6 +23,12 @@ import {measurePhase} from '../state/performanceTelemetry.js';
 import './review-comments-restored.css';
 import {SocialReferenceIcon} from './SocialReferenceIcons.jsx';
 import './shared-review-room.css';
+function OriginalMediaStage(props){
+  if(props.media?.type!=='html')return <UploadedMediaStage {...props}/>;
+  const renderAnnotations=drawing=><><AnnotationLayer activeTool={drawing&&!props.readonly?props.activeTool:''} activeColor={props.activeColor} marks={props.marks} setMarks={props.setMarks} selectedFigure={props.selectedFigure}/>{props.marks.map((mark,index)=><button key={mark.id} className={`figure-pin ${props.selectedFigure===mark.id?'selected':''}`} style={{left:`${mark.points[0].x*100}%`,top:`${mark.points[0].y*100}%`}} aria-label={`Abrir anotación ${index+1}`} onClick={()=>props.onFigure(mark)}>{index+1}</button>)}</>;
+  const renderToolbar=drawing=>drawing&&!props.readonly&&<div className="annotation-tools" aria-label="Herramientas de anotación HTML">{['pen','arrow','square','type'].map((tool,index)=><button key={tool} type="button" aria-label={['Lápiz','Flecha','Rectángulo','Texto'][index]} aria-pressed={props.activeTool===tool} className={props.activeTool===tool?'active':''} onClick={()=>props.setActiveTool(tool)}><Icon name={tool}/></button>)}{['#ff725e','#f2bd5c','#8ebd72','#67a9d4','#b89be8','#f1eee7'].map(color=><button key={color} type="button" aria-label={`Color ${color}`} aria-pressed={props.activeColor===color} onClick={()=>props.setActiveColor(color)} style={{color}}><span style={{background:color,width:16,height:16,borderRadius:'50%'}}/></button>)}</div>;
+  return <DocumentReview media={props.media} page={1} setPage={()=>{}} renderAnnotations={renderAnnotations} renderToolbar={renderToolbar}/>;
+}
 export function SharedReviewRoom({workspaceId,projectId,assetId,onBack,onNotify,onDirtyChange,deliveryGrid,projectName,onRoomUpdate,onRefreshDelivery,workspaceRole,permissionRevision=0,onPermissionDenied,initialTool='',initialColor}){
   const {state}=useRonda();
   const [versions,setVersions]=useState([]),[versionId,setVersionId]=useState(''),[room,setRoom]=useState(null),[media,setMedia]=useState(null);
@@ -67,6 +75,7 @@ export function SharedReviewRoom({workspaceId,projectId,assetId,onBack,onNotify,
       const reusable=reusableReviewMedia(cachedMedia.current,data);
       if(reusable){commit(data,reusable);return;}
       if(data.version.externalUrl){commit(data,{url:data.version.externalUrl,kind:data.asset.kind,name:data.version.name,external:true});return;}
+      if(data.asset.kind==='html'){commit(data,{url:`/api/workspaces/${workspaceId}/media/${data.version.fileId}`,kind:'html',name:data.version.name});return;}
       if(data.asset.kind==='file'){commit(data,{url:`/api/workspaces/${workspaceId}/media/${data.version.fileId}?download=1`,kind:'file',name:data.version.name});return;}
       // Keep authenticated HTTP Range streaming: never wait for an entire video blob.
       if(data.asset.kind==='video'){commit(data,{url:`/api/workspaces/${workspaceId}/media/${data.version.fileId}`,kind:'video',name:data.version.name});return;}
