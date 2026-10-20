@@ -67,6 +67,7 @@ export function SharedReviewRoom({workspaceId,projectId,assetId,onBack,onNotify,
       const reusable=reusableReviewMedia(cachedMedia.current,data);
       if(reusable){commit(data,reusable);return;}
       if(data.version.externalUrl){commit(data,{url:data.version.externalUrl,kind:data.asset.kind,name:data.version.name,external:true});return;}
+      if(data.asset.kind==='file'){commit(data,{url:`/api/workspaces/${workspaceId}/media/${data.version.fileId}?download=1`,kind:'file',name:data.version.name});return;}
       // Keep authenticated HTTP Range streaming: never wait for an entire video blob.
       if(data.asset.kind==='video'){commit(data,{url:`/api/workspaces/${workspaceId}/media/${data.version.fileId}`,kind:'video',name:data.version.name});return;}
       const response=await measurePhase('review.preview-fetch',()=>fetch(`/api/workspaces/${workspaceId}/media/${data.version.fileId}`,{credentials:'same-origin',signal:controller.current.signal}));

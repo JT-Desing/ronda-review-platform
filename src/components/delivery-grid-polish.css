@@ -55,6 +55,7 @@
 .app-shell .delivery-grid.storyboard .storyboard-order button{height:var(--delivery-control);min-height:var(--delivery-control);width:var(--delivery-control);border:0!important;background:transparent!important}
 .app-shell .delivery-grid.storyboard .storyboard-order select{height:var(--delivery-control);border:0!important;background:transparent!important}
 .app-shell .delivery-grid.storyboard>small{display:block;margin-top:20px;color:var(--muted);font-size:12px;line-height:1.6}
+.app-shell .delivery-grid.storyboard>.delivery-upload-help{margin:-8px 0 16px;color:var(--muted);font-size:11px;line-height:1.55}
 @media(max-width:600px){.app-shell .delivery-grid.storyboard{padding:12px;--delivery-gap:12px}.app-shell .delivery-grid.storyboard>header>div:first-child{flex-basis:100%}.app-shell .delivery-grid.storyboard .upload-button{width:auto}.app-shell .delivery-grid.storyboard.organize ol{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}}
 .app-shell .delivery-grid.storyboard li{overflow:visible}
 .app-shell .delivery-grid.storyboard .storyboard-preview{border-radius:13px 13px 0 0}

@@ -5,19 +5,31 @@ import {requireReviewAction} from './shared-review-policy.js';
 import {parseRange} from './shared-range.js';
 import {assetDto,versionDto,recordEvent} from './shared-review-dto.js';
 import {inspectLink} from './external-link.js';
-const types={'image/png':'image','image/jpeg':'image','image/webp':'image','video/mp4':'video'};
+const types={'image/png':'image','image/jpeg':'image','image/webp':'image','video/mp4':'video','application/pdf':'pdf'};
+const fileTypes={html:'text/html',htm:'text/html',css:'text/css',js:'text/plain',jsx:'text/plain',ts:'text/plain',tsx:'text/plain',json:'application/json',xml:'application/xml',md:'text/plain',txt:'text/plain',csv:'text/csv',zip:'application/zip',doc:'application/msword',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',odt:'application/vnd.oasis.opendocument.text',ppt:'application/vnd.ms-powerpoint',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',odp:'application/vnd.oasis.opendocument.presentation',xls:'application/vnd.ms-excel',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',ods:'application/vnd.oasis.opendocument.spreadsheet'};
+const fileExtensions=new Set(Object.keys(fileTypes));
+const fileMimes=new Set(['application/octet-stream','application/zip','application/x-zip-compressed','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.oasis.opendocument.text','application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation','application/vnd.oasis.opendocument.presentation','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.oasis.opendocument.spreadsheet','text/html','application/xhtml+xml','text/css','text/javascript','application/javascript','application/json','application/xml','text/xml','text/plain','text/csv']);
 const quota=2147483648;
 export function uploadInput(input){
-  if(!input||typeof input.name!=='string'||!input.name.trim()||input.name.length>255||!Object.hasOwn(types,input.mime)||!Number.isInteger(input.size)||input.size<1)throw workspaceError(400,'Archivo inválido o tipo no compatible.');
+  const extension=typeof input?.name==='string'?input.name.split('.').at(-1)?.toLowerCase():'';
+  const providedMime=input?.mime?.toLowerCase();
+  const kind=types[providedMime]||(fileExtensions.has(extension)&&fileMimes.has(providedMime)?'file':null);
+  if(!input||typeof input.name!=='string'||!input.name.trim()||input.name.length>255||!kind||!Number.isInteger(input.size)||input.size<1)throw workspaceError(400,'Archivo inválido o tipo no compatible.');
   if(input.size>104857600)throw workspaceError(413,'Cada archivo debe pesar como máximo 100 MB.');
   if(!UUID_PATTERN.test(input.projectId)||input.assetId&&!UUID_PATTERN.test(input.assetId))throw workspaceError(400,'Proyecto o pieza inválidos.');
-  return {...input,name:input.name.trim(),requestId:requestId(input.requestId),kind:types[input.mime]};
+  return {...input,mime:kind==='file'&&providedMime==='application/octet-stream'?fileTypes[extension]:providedMime,name:input.name.trim(),requestId:requestId(input.requestId),kind};
 }
-function signature(bytes,mime){
+export function mediaSignature(bytes,mime){
   if(mime==='image/png')return bytes.subarray(0,8).equals(Buffer.from('89504e470d0a1a0a','hex'));
   if(mime==='image/jpeg')return bytes.length>=3&&bytes[0]===255&&bytes[1]===216&&bytes[2]===255;
   if(mime==='image/webp')return bytes.subarray(0,4).toString()==='RIFF'&&bytes.subarray(8,12).toString()==='WEBP';
-  return bytes.length>=12&&bytes.subarray(4,8).toString()==='ftyp';
+  if(mime==='application/pdf')return bytes.subarray(0,5).toString()==='%PDF-';
+  if(mime==='video/mp4')return bytes.length>=12&&bytes.subarray(4,8).toString()==='ftyp';
+  if(mime.startsWith('application/vnd.openxmlformats-officedocument.')||mime.startsWith('application/vnd.oasis.opendocument.')||mime==='application/zip'||mime==='application/x-zip-compressed')return bytes.subarray(0,2).toString()==='PK';
+  if(mime==='application/msword'||mime==='application/vnd.ms-powerpoint'||mime==='application/vnd.ms-excel')return bytes.subarray(0,8).equals(Buffer.from('d0cf11e0a1b11ae1','hex'));
+  if(mime==='application/octet-stream')return bytes.subarray(0,2).toString()==='PK'||bytes.subarray(0,5).toString()==='%PDF-';
+  if(bytes.includes(0))return false;
+  try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes.subarray(0,Math.min(bytes.length,4096)))!=='';}catch{return false;}
 }
 export function sharedMediaService(repository,storage,inspect=inspectLink){
   const file=async(db,space,id)=>{
@@ -149,7 +161,7 @@ export function sharedMediaService(repository,storage,inspect=inspectLink){
       try{
         const received=await storage.stage({workspaceId:space,uploadId:id,stream,maxBytes:Number(upload.size)});
         if(received.size!==Number(upload.size))throw workspaceError(400,'Carga incompleta.');
-        if(!signature(await storage.prefix(key),upload.mime))throw workspaceError(415,'Contenido no compatible con el tipo declarado.');
+        if(!mediaSignature(await storage.prefix(key),upload.mime))throw workspaceError(415,'Contenido no compatible con el tipo declarado.');
         await repository.access(space,actor,async(db,role)=>{
           requireReviewAction(role,'upload');const row=await file(db,space,id);
           if(row.state!=='staging'||row.expires_at<=new Date())throw workspaceError(409,'Carga caducada.');
@@ -165,7 +177,7 @@ export function sharedMediaService(repository,storage,inspect=inspectLink){
         // Saved media URLs obey the same trash boundary as the review room.
         await repository.asset(db,space,row.project_id,row.asset_id);
         let bounds;try{bounds=parseRange(range,Number(row.size));}catch(error){error.size=Number(row.size);throw error;}
-        return {stream:storage.open({key:row.object_key,...bounds}),size:Number(row.size),mime:row.mime,name:row.name,range:bounds};
+        return {stream:storage.open({key:row.object_key,...bounds}),size:Number(row.size),mime:row.mime,name:row.name,kind:row.kind,range:bounds};
       });
     },
   };

@@ -20,7 +20,7 @@ export async function handleSharedReview({req,res,path,account,pool,sharedStorag
     uuid(parts[4]);if(req.method!=='GET')return reply(res,405,{error:'Método no permitido.'});
     const download=new URL(req.url,'http://local').searchParams.get('download')==='1';
     let file;try{file=await media.readFile(space,account.id,parts[4],{download,range:req.headers.range});}catch(error){if(error.status===416){res.setHeader('Accept-Ranges','bytes');res.setHeader('Content-Range',`bytes */${error.size}`);}throw error;}
-    const range=file.range,headers={'Content-Type':file.mime,'Content-Length':range?range.end-range.start+1:file.size,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Accept-Ranges':'bytes','Content-Disposition':`${download?'attachment':'inline'}; filename*=UTF-8''${encodeURIComponent(file.name)}`};
+    const attachment=download||file.kind==='file',range=file.range,headers={'Content-Type':file.mime,'Content-Length':range?range.end-range.start+1:file.size,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Accept-Ranges':'bytes','Content-Disposition':`${attachment?'attachment':'inline'}; filename*=UTF-8''${encodeURIComponent(file.name)}`};
     if(range)headers['Content-Range']=`bytes ${range.start}-${range.end}/${file.size}`;
     res.writeHead(range?206:200,headers);await pipeline(file.stream,res);return;
   }
