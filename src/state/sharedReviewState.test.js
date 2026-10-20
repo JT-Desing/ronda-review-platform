@@ -23,6 +23,7 @@ test('shared annotation preserves endpoints and excludes private mark metadata',
   assert.equal(typeof m.sharedAnnotation,'function');
   assert.deepEqual(m.sharedAnnotation({id:'private',tool:'arrow',color:'#ffffff',timeSeconds:10,points:[{x:0,y:0},{x:0.5,y:0.5},{x:1,y:1}]}),{tool:'arrow',color:'#ffffff',points:[{x:0,y:0},{x:1,y:1}]});
   assert.equal(m.sharedAnnotation({tool:'arrow',color:'#ffffff',coordinateSpace:'document',points:[{x:0,y:0},{x:1,y:1}]}).coordinateSpace,'document');
+  assert.deepEqual(m.sharedAnnotation({tool:'selection',color:'#f2bd5c',coordinateSpace:'document',documentSize:{width:1200,height:4000},textQuote:'Hello',selectionRects:[{x:.1,y:.2,width:.2,height:.01}],points:[{x:.2,y:.3}]}),{tool:'selection',color:'#f2bd5c',points:[{x:.2,y:.3}],coordinateSpace:'document',documentSize:{width:1200,height:4000},textQuote:'Hello',selectionRects:[{x:.1,y:.2,width:.2,height:.01}]});
 });
 test('refresh guard reads latest dirty/busy state and rejects stale pagination',()=>{
   assert.equal(typeof m.createReviewGuard,'function');

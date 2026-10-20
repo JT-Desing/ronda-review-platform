@@ -17,6 +17,11 @@ test('annotation normalizes safe input without copying arbitrary properties', ()
   assert.deepEqual(policy.validateAnnotation(input),{tool:'arrow',color:'#ff725e',points:[{x:0,y:0},{x:1,y:1}]});
   assert.equal(policy.validateAnnotation(null),null);
   assert.deepEqual(policy.validateAnnotation({tool:'type',color:'#ffffff',points:[{x:.2,y:.3}],coordinateSpace:'document',documentSize:{width:1200,height:4000},text:'Review'},'web'),{tool:'type',color:'#ffffff',points:[{x:.2,y:.3}],coordinateSpace:'document',documentSize:{width:1200,height:4000},text:'Review'});
+  const selected={tool:'selection',color:'#f2bd5c',points:[{x:.2,y:.3}],coordinateSpace:'document',documentSize:{width:1200,height:4000},textQuote:'Selected copy',selectionRects:[{x:.1,y:.2,width:.15,height:.01}]};
+  assert.deepEqual(policy.validateAnnotation(selected,'web'),{...selected,color:'#f2bd5c'});
+  assert.throws(()=>policy.validateAnnotation(selected,'image'),{status:400});
+  assert.throws(()=>policy.validateAnnotation({...selected,selectionRects:Array(81).fill(selected.selectionRects[0])},'web'),{status:400});
+  assert.throws(()=>policy.validateAnnotation({...selected,selectionRects:[{x:.95,y:.2,width:.1,height:.01}]},'web'),{status:400});
   assert.throws(()=>policy.validateAnnotation({tool:'type',color:'#ffffff',points:[{x:.2,y:.3}],coordinateSpace:'document',text:'Review'},'image'),{status:400});
   assert.throws(()=>policy.validateAnnotation({tool:'type',color:'#ffffff',points:[{x:.2,y:.3}],coordinateSpace:'unknown',text:'Review'},'web'),{status:400});
 });

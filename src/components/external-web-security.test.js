@@ -11,7 +11,7 @@ test('external live pages keep scripts sandboxed away from the Ronda origin',()=
  assert.match(source,/Abrir original ↗/);
  assert.match(source,/external-web-frame-notice" role="note"/);
  assert.match(source,/external-web-viewport/);
- assert.match(source,/pointerEvents:activeTool\?'none':'auto'/);
+ assert.match(source,/pointerEvents:activeTool&&!textSelectionMode\?'none':'auto'/);
  assert.match(source,/getDisplayMedia\(/);
  assert.match(source,/ronda:web-capture/);
  assert.match(source,/Capturar pestaña/);

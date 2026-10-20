@@ -1,14 +1,14 @@
 import React,{useState,useEffect,useRef} from 'react';
 import {AnnotationLayer} from './AnnotationLayer.jsx';
 import Icon from './Icon.jsx';
-import {documentMarkToViewport,normalizeWebReviewMetrics,viewportMarkToDocument} from '../domain/web-review-bridge.js';
+import {documentMarkToViewport,normalizeWebReviewMetrics,selectionToDocumentMark,viewportMarkToDocument} from '../domain/web-review-bridge.js';
 import './external-artifacts.css';
 import './external-web-pin.css';
 
 export function ExternalWeb({url,name,activeTool='',setActiveTool=()=>{},activeColor='#b89be8',setActiveColor=()=>{},marks=[],setMarks=()=>{},selectedFigure,onFigure=()=>{},onQuickComment,figureComments=[],readonly=false}){
-  const [loaded,setLoaded]=useState(false),[fullscreen,setFullscreen]=useState(false),[capturing,setCapturing]=useState(false),[captureError,setCaptureError]=useState(''),[commentMark,setCommentMark]=useState(null),[commentDraft,setCommentDraft]=useState(''),[commentBusy,setCommentBusy]=useState(false),[webMetrics,setWebMetrics]=useState(null);
+  const [loaded,setLoaded]=useState(false),[fullscreen,setFullscreen]=useState(false),[capturing,setCapturing]=useState(false),[captureError,setCaptureError]=useState(''),[commentMark,setCommentMark]=useState(null),[commentDraft,setCommentDraft]=useState(''),[commentBusy,setCommentBusy]=useState(false),[webMetrics,setWebMetrics]=useState(null),[textSelectionMode,setTextSelectionMode]=useState(false),[extensionConnected,setExtensionConnected]=useState(false);
   const holder=useRef(null),iframe=useRef(null),bridgeNonce=useRef(crypto.randomUUID());
-  useEffect(()=>{setLoaded(false);setActiveTool('');setCommentMark(null);setCommentDraft('');setWebMetrics(null);bridgeNonce.current=crypto.randomUUID();},[url]);
+  useEffect(()=>{setLoaded(false);setActiveTool('');setCommentMark(null);setCommentDraft('');setWebMetrics(null);setTextSelectionMode(false);setExtensionConnected(false);bridgeNonce.current=crypto.randomUUID();},[url]);
   useEffect(()=>{const update=()=>setFullscreen(document.fullscreenElement===holder.current);document.addEventListener('fullscreenchange',update);return()=>document.removeEventListener('fullscreenchange',update);},[]);
   let safe;try{const parsed=new URL(url);safe=parsed.protocol==='https:'&&!parsed.username&&!parsed.password&&parsed.origin!==window.location.origin?parsed.href:null;}catch{}
   if(!safe)return <p role="alert">Enlace externo no válido.</p>;
@@ -17,18 +17,31 @@ export function ExternalWeb({url,name,activeTool='',setActiveTool=()=>{},activeC
   const commentMarkViewport=commentMark?documentMarkToViewport(commentMark,webMetrics):null;
   useEffect(()=>{
     const receive=event=>{
-      if(event.source!==iframe.current?.contentWindow||event.origin!=='null'||event.data?.type!=='ronda:web-review:viewport'||event.data?.nonce!==bridgeNonce.current)return;
-      const metrics=normalizeWebReviewMetrics(event.data);if(metrics)setWebMetrics(metrics);
+      if(event.source!==iframe.current?.contentWindow||event.origin!=='null')return;
+      if(event.data?.type==='ronda:web-review:extension-ready'){
+        setExtensionConnected(true);
+        iframe.current?.contentWindow?.postMessage({type:'ronda:web-review:init',nonce:bridgeNonce.current},'*');
+        return;
+      }
+      if(event.data?.nonce!==bridgeNonce.current)return;
+      if(event.data?.type==='ronda:web-review:viewport'){
+        const metrics=normalizeWebReviewMetrics(event.data);if(metrics)setWebMetrics(metrics);
+      }
+      if(event.data?.type==='ronda:web-review:selection'&&textSelectionMode&&!readonly){
+        const metrics=normalizeWebReviewMetrics(event.data.metrics)||webMetrics;
+        const mark=selectionToDocumentMark(event.data,metrics,activeColor);
+        if(mark){setTextSelectionMode(false);setMarks([...viewportMarks,documentMarkToViewport(mark,metrics)]);openComment(mark,`“${mark.textQuote}”\n\n`);}
+      }
     };
     window.addEventListener('message',receive);return()=>window.removeEventListener('message',receive);
-  },[url]);
+  },[url,textSelectionMode,readonly,webMetrics,activeColor,marks,onFigure,setMarks]);
   const startBridge=()=>iframe.current?.contentWindow?.postMessage({type:'ronda:web-review:init',nonce:bridgeNonce.current},'*');
   const saveViewportMarks=next=>{
     const visible=typeof next==='function'?next(viewportMarks):next;
     const originalById=new Map(marks.map(mark=>[mark.id,mark]));
     setMarks(visible.map(mark=>originalById.has(mark.id)?originalById.get(mark.id):viewportMarkToDocument(mark,webMetrics)));
   };
-  const openComment=mark=>{setCommentMark(mark);setCommentDraft('');onFigure(mark,{openComments:false})};
+  const openComment=(mark,initialDraft='')=>{setCommentMark(mark);setCommentDraft(initialDraft);onFigure(mark,{openComments:false})};
   const publishQuickComment=async event=>{event.preventDefault();if(!commentMark||!commentDraft.trim()||!onQuickComment||commentBusy)return;setCommentBusy(true);try{const published=await onQuickComment(commentMark,commentDraft.trim());if(published!==false){setCommentMark(null);setCommentDraft('')}}finally{setCommentBusy(false)}};
   const toggleFullscreen=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await holder.current?.requestFullscreen?.();}catch{}}
   const capturePage=async()=>{
@@ -57,10 +70,11 @@ export function ExternalWeb({url,name,activeTool='',setActiveTool=()=>{},activeC
   };
   return <div className="external-web" ref={holder}>
     <header><span>Artefacto web · contenido en vivo</span><button type="button" onClick={toggleFullscreen}><Icon name="maximize" size={15}/>{fullscreen?'Salir de pantalla completa':'Ampliar visor'}</button><a href={safe} target="_blank" rel="noopener noreferrer">Abrir original ↗</a></header>
-    <div className="external-web-frame-notice" role="note">{activeTool?'Dibuja sobre la vista actual. Para desplazarte por la página, elige Navegar.':webMetrics?'Vista en vivo conectada · las anotaciones se guardan en coordenadas del documento.':'La página se muestra directamente y puedes comentar ahora. Sin la integración del sitio, las marcas quedan ancladas a esta vista y no seguirán el scroll interno.'}</div>
-    {loaded?<div className="external-web-viewport">
-      <iframe ref={iframe} title={name||'Artefacto web en revisión'} src={safe} onLoad={startBridge} sandbox="allow-scripts" referrerPolicy="no-referrer" allow="fullscreen" style={{pointerEvents:activeTool?'none':'auto'}}/>
+    <div className="external-web-frame-notice" role="note">{textSelectionMode?'Selecciona el texto directamente en la web; Ronda fijará el resaltado y el comentario a esa posición.':activeTool?'Dibuja sobre la vista actual. Para desplazarte por la página, elige Navegar.':webMetrics?'Vista en vivo conectada · las anotaciones se guardan en coordenadas del documento.':'La página se muestra directamente. Instala la extensión para anclar las anotaciones al documento y seguir su desplazamiento.'}</div>
+    {loaded?<div className={`external-web-viewport ${textSelectionMode?'text-selection-mode':''}`}>
+      <iframe ref={iframe} title={name||'Artefacto web en revisión'} src={safe} onLoad={startBridge} sandbox="allow-scripts" referrerPolicy="no-referrer" allow="fullscreen" style={{pointerEvents:activeTool&&!textSelectionMode?'none':'auto'}}/>
       <AnnotationLayer activeTool={readonly?'':activeTool} activeColor={activeColor} marks={viewportMarks} setMarks={saveViewportMarks} selectedFigure={selectedFigure} onAnnotationCreated={mark=>openComment(viewportMarkToDocument(mark,webMetrics))}/>
+      {viewportMarks.flatMap(mark=>(mark.selectionRects||[]).map((rect,index)=><span key={`${mark.id||'selection'}-${index}`} className="figure-selection-highlight" aria-hidden="true" style={{left:`${rect.x*100}%`,top:`${rect.y*100}%`,width:`${rect.width*100}%`,height:`${rect.height*100}%`}}/>))}
       {viewportMarks.filter(mark=>mark.points?.[0]).map((mark,index)=><button type="button" key={mark.id||index} className={`figure-pin ${selectedFigure===mark.id?'selected':''}`} style={{left:`${mark.points[0].x*100}%`,top:`${mark.points[0].y*100}%`}} aria-label={`Anotación ${index+1}, ${figureComments.filter(comment=>comment.annotationId===mark.id).length} comentarios`} onClick={()=>openComment(mark)}>{index+1}</button>)}
       {commentMarkViewport&&<form className="external-web-comment-popover" role="dialog" aria-label="Comentario en la anotación" style={{'--anchor-x':`${commentMarkViewport.points[0].x*100}%`,'--anchor-y':`${commentMarkViewport.points[0].y*100}%`}} onSubmit={publishQuickComment} onKeyDown={event=>{if(event.key==='Escape'){event.preventDefault();setCommentMark(null);setCommentDraft('')}if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();event.currentTarget.requestSubmit()}}}>
         <header><span className="external-web-comment-avatar">Tú</span><strong>Deja un comentario</strong><button type="button" aria-label="Cerrar comentario" onClick={()=>{setCommentMark(null);setCommentDraft('')}}>×</button></header>
@@ -69,8 +83,8 @@ export function ExternalWeb({url,name,activeTool='',setActiveTool=()=>{},activeC
         <footer><span>Ctrl/⌘ + Enter para publicar · Esc para cerrar</span><button type="submit" disabled={readonly||commentBusy||!commentDraft.trim()||!onQuickComment}>{commentBusy?'Publicando…':'Publicar'}</button></footer>
       </form>}
     </div>:<div className="external-web-consent"><p>Abre la página en el visor. Si su política de seguridad bloquea la integración, puedes capturar la pestaña real y guardarla como imagen revisable en este proyecto.</p><div className="external-web-actions"><button onClick={()=>setLoaded(true)}>Cargar página para revisar</button><button type="button" className="secondary" disabled={readonly||capturing} onClick={capturePage}>{capturing?'Preparando captura…':'Capturar pestaña para comentar'}</button></div>{captureError&&<small role="alert">{captureError}</small>}</div>}
-    {loaded&&<div className="external-web-annotation-toolbar" aria-label="Herramientas de anotación web"><button type="button" aria-pressed={!activeTool} className={!activeTool?'active':''} onClick={()=>setActiveTool('')}>Navegar</button>{['pen','arrow','square','type'].map((tool,index)=><button type="button" key={tool} disabled={readonly} title={['Lápiz','Flecha','Rectángulo','Texto'][index]} aria-label={['Lápiz','Flecha','Rectángulo','Texto'][index]} aria-pressed={activeTool===tool} className={activeTool===tool?'active':''} onClick={()=>setActiveTool(tool)}><Icon name={tool} size={17}/></button>)}{colors.map((color,index)=><button type="button" key={color} disabled={readonly} className={`external-web-swatch ${activeColor===color?'active':''}`} style={{'--swatch':color}} aria-label={`Color ${index+1}`} aria-pressed={activeColor===color} onClick={()=>setActiveColor(color)}/>)}<button type="button" className="external-web-capture" disabled={readonly||capturing} onClick={capturePage}>{capturing?'Capturando…':'Capturar pestaña'}</button></div>}
+    {loaded&&<div className="external-web-annotation-toolbar" aria-label="Herramientas de anotación web"><button type="button" aria-pressed={!activeTool&&!textSelectionMode} className={!activeTool&&!textSelectionMode?'active':''} onClick={()=>{setTextSelectionMode(false);setActiveTool('')}}>Navegar</button><button type="button" className={`external-web-select-text ${textSelectionMode?'active':''}`} disabled={readonly||!extensionConnected} title={extensionConnected?'Seleccionar texto de la web':'Instala y conecta la extensión para seleccionar texto'} aria-pressed={textSelectionMode} onClick={()=>{setActiveTool('');setTextSelectionMode(value=>!value)}}><Icon name="type" size={17}/>Seleccionar texto</button>{['pen','arrow','square','type'].map((tool,index)=><button type="button" key={tool} disabled={readonly} title={['Lápiz','Flecha','Rectángulo','Texto'][index]} aria-label={['Lápiz','Flecha','Rectángulo','Texto'][index]} aria-pressed={activeTool===tool} className={activeTool===tool?'active':''} onClick={()=>{setTextSelectionMode(false);setActiveTool(tool)}}><Icon name={tool} size={17}/></button>)}{colors.map((color,index)=><button type="button" key={color} disabled={readonly} className={`external-web-swatch ${activeColor===color?'active':''}`} style={{'--swatch':color}} aria-label={`Color ${index+1}`} aria-pressed={activeColor===color} onClick={()=>setActiveColor(color)}/>)}<button type="button" className="external-web-capture" disabled={readonly||capturing} onClick={capturePage}>{capturing?'Capturando…':'Capturar pestaña'}</button></div>}
     {loaded&&captureError&&<p className="external-web-capture-error" role="alert">{captureError}</p>}
-    {loaded&&<small className={`external-web-bridge-status ${webMetrics?'connected':''}`} role="status">{webMetrics?'Documento conectado · las anotaciones siguen el desplazamiento de la página.':'Comentarios habilitados · anclaje al área visible. Instala la integración para que sigan el scroll.'} <a href="https://github.com/JT-Desing/ronda-review-platform/blob/feature/shared-review/docs/Ronda-web-review-bridge.md" target="_blank" rel="noopener noreferrer">Guía de integración ↗</a></small>}
+    {loaded&&<small className={`external-web-bridge-status ${webMetrics?'connected':''}`} role="status">{extensionConnected?'Extensión conectada · puedes seleccionar texto y fijar comentarios al documento.':webMetrics?'Puente del sitio conectado · los trazos siguen el scroll; instala la extensión para anclar texto seleccionado.':'Para anclar comentarios al sitio, instala la extensión Ronda y autoriza únicamente este dominio.'} {extensionConnected?<span>Selecciona «Seleccionar texto» para crear una anotación.</span>:<><a href="/ronda-review-extension.zip" download>Descargar extensión para Chrome ↗</a> · <a href="/ronda-review-extension/README.md" target="_blank" rel="noopener noreferrer">Cómo instalarla</a></>}</small>}
   </div>;
 }

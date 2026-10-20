@@ -21,7 +21,7 @@ test('external web review wires the shared annotation layer to the saved comment
 
 test('web annotation overlay tracks the actual responsive iframe viewport',()=>{
   assert.match(component,/external-web-viewport/);
-  assert.match(component,/pointerEvents:activeTool\?'none':'auto'/);
+  assert.match(component,/pointerEvents:activeTool&&!textSelectionMode\?'none':'auto'/);
   assert.match(css,/\.external-web-viewport iframe\{position:absolute;inset:0;display:block;width:100%;height:100%/);
   assert.match(css,/\.external-web-viewport \.annotation-layer\{position:absolute;inset:0;width:100%;height:100%/);
   assert.doesNotMatch(css,/\.external-web-sheet|\.external-web-scroll/);
@@ -61,6 +61,15 @@ test('document bridge follows iframe scroll without relaxing the iframe sandbox'
   assert.match(component,/event\.data\?\.nonce!==bridgeNonce\.current/);
   assert.match(component,/documentMarkToViewport\(mark,webMetrics\)/);
   assert.match(component,/viewportMarkToDocument\(mark,webMetrics\)/);
+});
+
+test('text selection mode hands pointer input to the reviewed page and saves the selection anchor',()=>{
+  assert.match(component,/text-selection-mode/);
+  assert.match(component,/Seleccionar texto/);
+  assert.match(component,/selectionToDocumentMark\(event\.data,metrics,activeColor\)/);
+  assert.match(component,/setMarks\(\[\.\.\.viewportMarks,documentMarkToViewport\(mark,metrics\)\]\)/);
+  assert.match(component,/selectionRects/);
+  assert.match(css,/figure-selection-highlight/);
 });
 
 test('web annotation pin number is centered in a square fixed-size hit area',()=>{
