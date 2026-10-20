@@ -14,14 +14,14 @@ const app=await readFile(new URL('../main.jsx',import.meta.url),'utf8');
 test('external web review wires the shared annotation layer to the saved comment marks',()=>{
   assert.match(stage,/annotationVisibleAt\(mark,currentTime,\['image','web'\]\.includes\(media\?\.type\)\)/);
   assert.match(stage,/<ExternalWeb[^>]+marks=\{visibleMarks\}[^>]+setMarks=/);
-  assert.match(component,/<AnnotationLayer activeTool=\{readonly\?'':activeTool\}[^>]+marks=\{viewportMarks\}[^>]+setMarks=\{saveViewportMarks\}/);
+  assert.match(component,/<AnnotationLayer activeTool=\{readonly\|\|!hasDocumentBridge\?'':activeTool\}[^>]+marks=\{viewportMarks\}[^>]+setMarks=\{saveViewportMarks\}/);
   assert.match(component,/setActiveTool\(tool\)/);
   assert.doesNotMatch(component,/disabled=\{readonly\|\|!webMetrics\}/);
 });
 
 test('web annotation overlay tracks the actual responsive iframe viewport',()=>{
   assert.match(component,/external-web-viewport/);
-  assert.match(component,/pointerEvents:activeTool&&!textSelectionMode\?'none':'auto'/);
+  assert.match(component,/pointerEvents:activeTool&&hasDocumentBridge&&!textSelectionMode\?'none':'auto'/);
   assert.match(css,/\.external-web-viewport iframe\{position:absolute;inset:0;display:block;width:100%;height:100%/);
   assert.match(css,/\.external-web-viewport \.annotation-layer\{position:absolute;inset:0;width:100%;height:100%/);
   assert.doesNotMatch(css,/\.external-web-sheet|\.external-web-scroll/);
@@ -39,12 +39,12 @@ test('blocked external pages can be captured only with browser permission and sa
   assert.match(component,/new File\(\[blob\].*type:'image\/png'/);
   assert.match(delivery,/addWebCapture=async file=>\{if\(!file\)return;await mutate\(async\(\)=>\{const result=await uploadFile\(context,file/);
   assert.match(delivery,/addWebCapture\(event\.detail\?\.file\)/);
-  assert.match(component,/La página se muestra directamente/);
+  assert.match(component,/La página está en modo navegación/);
 });
 
 test('creating or selecting a web annotation opens an anchored comment composer',()=>{
   assert.match(layer,/onAnnotationCreated\(saved\)/);
-  assert.match(component,/onAnnotationCreated=\{mark=>openComment\(viewportMarkToDocument\(mark,webMetrics\)\)\}/);
+  assert.match(component,/onAnnotationCreated=\{mark=>\{if\(hasDocumentBridge\)openComment\(viewportMarkToDocument\(mark,webMetrics\)\)\}\}/);
   assert.match(component,/external-web-comment-popover/);
   assert.match(component,/onQuickComment\(commentMark,commentDraft\.trim\(\)\)/);
   assert.match(css,/\.external-web-comment-popover\{position:absolute;z-index:8/);
@@ -52,6 +52,14 @@ test('creating or selecting a web annotation opens an anchored comment composer'
   assert.match(shared,/annotation:sharedAnnotation\(mark\)/);
   assert.match(app,/const addWebComment=async\(mark,text\)/);
   assert.match(app,/annotationId:mark\.id,annotationContext/);
+});
+
+test('live web marks cannot be created until document scroll metrics are connected; legacy viewport marks are not misrepresented as anchored',()=>{
+  assert.match(component,/const hasDocumentBridge=Boolean\(webMetrics\)/);
+  assert.match(component,/marks\.filter\(mark=>mark\.coordinateSpace==='document'\)/);
+  assert.match(component,/if\(!hasDocumentBridge\)return/);
+  assert.match(component,/disabled=\{readonly\|\|!hasDocumentBridge\}/);
+  assert.match(component,/legacyMarks\.length>0/);
 });
 
 test('document bridge follows iframe scroll without relaxing the iframe sandbox',()=>{
