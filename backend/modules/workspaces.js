@@ -1,5 +1,7 @@
 import { reply, body } from '../http.js';
 import {restrictedWorkspaceAdministration} from '../platform-view-policy.js';
+import {requireWorkspaceMember} from '../workspace-policy.js';
+import {requireProjectEditor} from '../project-policy.js';
 import { workspaceRepository } from '../repositories/workspaces.js';
 import { workspaceService } from '../workspace-service.js';
 import { sendInvitationMail } from '../invitation-mail.js';
@@ -13,6 +15,14 @@ export async function handleWorkspaces({ req, res, path, account, pool, mailer, 
   if (!account) return reply(res, 401, { error: 'Inicia sesión.' });
   if(restrictedWorkspaceAdministration({path,method:req.method,account}))return reply(res,403,{error:'La administración del equipo está reservada al superadministrador.'});
   const repository = workspaceRepository(pool), service = workspaceService(repository);
+  const candidates=path.match(new RegExp(`^/api/workspaces/(${uuid})/project-candidates$`));
+  if(candidates&&req.method==='GET'){
+    const space=candidates[1];
+    const role=(await pool.query("SELECT m.role FROM workspace_members m JOIN workspaces w ON w.id=m.workspace_id WHERE m.workspace_id=$1 AND m.user_id=$2 AND w.kind='team'",[space,account.id])).rows[0]?.role;
+    requireWorkspaceMember(role);requireProjectEditor(role);
+    const members=(await pool.query('SELECT u.id,u.name,m.role FROM workspace_members m JOIN users u ON u.id=m.user_id WHERE m.workspace_id=$1 ORDER BY u.name,u.id',[space])).rows;
+    return reply(res,200,{members});
+  }
   if (path === '/api/workspaces' && req.method === 'GET') return reply(res, 200, { workspaces: await repository.list(account.id) });
   if (path === '/api/workspaces' && req.method === 'POST') return reply(res, 201, await service.createTeam(account.id,await objectBody(req)));
   if (path === '/api/workspace-invitations/accept' && req.method === 'POST') return reply(res, 200, await service.accept(account, (await objectBody(req)).token));

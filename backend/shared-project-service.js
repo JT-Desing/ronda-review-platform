@@ -1,11 +1,12 @@
 import { projectInput, commentInput, requestId, requireProjectEditor } from './project-policy.js';
 import { workspaceError } from './workspace-policy.js';
+import {validateProjectMembers,replaceProjectMembers} from './project-membership.js';
 const event = (db, space, actor, action, details) => db.query('INSERT INTO workspace_events(workspace_id,actor_id,action,details) VALUES($1,$2,$3,$4)', [space, actor, action, details]);
 export function sharedProjectService(repository) {
   return {
     list(space, actor) {
       return repository.access(space, actor, async (db, role, workspace) => {
-        const projects = (await db.query("SELECT p.id,p.name,p.client,p.revision,p.updated_at,(SELECT count(*)::integer FROM shared_assets a WHERE a.project_id=p.id AND a.deleted_at IS NULL) AS asset_count,(SELECT count(*)::integer FROM shared_version_comments c WHERE c.project_id=p.id AND c.status='open' AND EXISTS(SELECT 1 FROM shared_assets a WHERE a.id=c.asset_id AND a.deleted_at IS NULL AND a.active_version_id=c.version_id)) AS open_review_comments,(SELECT count(*)::integer FROM shared_project_comments c WHERE c.project_id=p.id AND c.status='open') AS open_comments FROM shared_projects p WHERE p.workspace_id=$1 AND p.deleted_at IS NULL ORDER BY p.created_at DESC,p.id LIMIT 100", [space])).rows;
+        const projects = (await db.query("SELECT p.id,p.name,p.client,p.revision,p.updated_at,(SELECT count(*)::integer FROM shared_assets a WHERE a.project_id=p.id AND a.deleted_at IS NULL) AS asset_count,(SELECT count(*)::integer FROM shared_version_comments c WHERE c.project_id=p.id AND c.status='open' AND EXISTS(SELECT 1 FROM shared_assets a WHERE a.id=c.asset_id AND a.deleted_at IS NULL AND a.active_version_id=c.version_id)) AS open_review_comments,(SELECT count(*)::integer FROM shared_project_comments c WHERE c.project_id=p.id AND c.status='open') AS open_comments FROM shared_projects p WHERE p.workspace_id=$1 AND p.deleted_at IS NULL AND (NOT p.restricted OR $3::boolean OR p.created_by=$2 OR EXISTS(SELECT 1 FROM shared_project_members pm WHERE pm.workspace_id=$1 AND pm.project_id=p.id AND pm.user_id=$2)) ORDER BY p.created_at DESC,p.id LIMIT 100", [space,actor,role==='admin'])).rows;
         const deletedProjects=role==='admin'?(await db.query('SELECT id,name,revision,deleted_at FROM shared_projects WHERE workspace_id=$1 AND deleted_at IS NOT NULL ORDER BY deleted_at DESC LIMIT 100',[space])).rows:[];
         return { workspace: { ...workspace, role }, projects, deletedProjects };
       });
@@ -14,14 +15,17 @@ export function sharedProjectService(repository) {
       const fields = projectInput(input), key = requestId(input.requestId);
       return repository.access(space, actor, async (db, role) => {
         requireProjectEditor(role);
-        const existing = (await db.query('SELECT id,name,client FROM shared_projects WHERE workspace_id=$1 AND created_by=$2 AND request_id=$3', [space, actor, key])).rows[0];
+        const members=await validateProjectMembers(db,space,input.members);
+        const existing = (await db.query('SELECT id,name,client,restricted FROM shared_projects WHERE workspace_id=$1 AND created_by=$2 AND request_id=$3', [space, actor, key])).rows[0];
         if (existing) {
-          if (existing.name !== fields.name || existing.client !== fields.client) throw workspaceError(409, 'Esta solicitud ya creó otro proyecto.');
+          if (existing.name !== fields.name || existing.client !== fields.client || existing.restricted!==(members!==null)) throw workspaceError(409, 'Esta solicitud ya creó otro proyecto.');
+          if(members!==null){const stored=(await db.query('SELECT user_id AS "userId",role FROM shared_project_members WHERE workspace_id=$1 AND project_id=$2 ORDER BY user_id',[space,existing.id])).rows;if(JSON.stringify(stored)!==JSON.stringify(members))throw workspaceError(409,'Esta solicitud ya creó un proyecto con otros participantes.');}
           return { project: await repository.project(db, space, existing.id) };
         }
         const count = (await db.query('SELECT count(*)::integer AS count FROM shared_projects WHERE workspace_id=$1', [space])).rows[0].count;
         if (count >= 100) throw workspaceError(409, 'Límite operativo inicial: 100 proyectos por espacio.');
         const created = (await db.query('INSERT INTO shared_projects(workspace_id,name,client,created_by,request_id) VALUES($1,$2,$3,$4,$5) RETURNING id', [space, fields.name, fields.client, actor, key])).rows[0];
+        await replaceProjectMembers(db,space,created.id,members);
         await event(db, space, actor, 'project.created', { projectId: created.id, name: fields.name });
         return { project: await repository.project(db, space, created.id) };
       }, true);
@@ -30,8 +34,22 @@ export function sharedProjectService(repository) {
       return repository.access(space, actor, async (db, role, workspace) => {
         const project = await repository.project(db, space, id);
         const comments = (await db.query('SELECT c.id,c.text,c.status,c.revision,c.created_at,c.resolved_at,u.name AS author FROM shared_project_comments c LEFT JOIN users u ON u.id=c.author_id WHERE c.project_id=$1 ORDER BY c.created_at DESC,c.id DESC LIMIT 100', [id])).rows.reverse();
-        return { project, comments, workspace: { ...workspace, role } };
+        const membership=(await db.query('SELECT user_id AS "userId",role FROM shared_project_members WHERE workspace_id=$1 AND project_id=$2',[space,id])).rows;
+        return { project, comments, membership, canManageMembers:role==='admin'||project.created_by===actor&&role==='editor', workspace: { ...workspace, role } };
       });
+    },
+    updateMembers(space,actor,id,input){
+      if(!Number.isInteger(input.revision)||input.revision<0)throw workspaceError(400,'Revisión inválida.');
+      return repository.access(space,actor,async(db,role)=>{
+        const project=await repository.project(db,space,id);
+        if(role!=='admin'&&!(project.created_by===actor&&role==='editor'))throw workspaceError(403,'Solo el creador o un administrador del equipo puede gestionar participantes.');
+        const members=await validateProjectMembers(db,space,input.members);
+        if(project.revision!==input.revision)throw workspaceError(409,'El proyecto cambió. Actualiza antes de guardar.');
+        await replaceProjectMembers(db,space,id,members);
+        await db.query('UPDATE shared_projects SET revision=revision+1,updated_at=now() WHERE workspace_id=$1 AND id=$2',[space,id]);
+        await event(db,space,actor,'project.members_updated',{projectId:id,restricted:members!==null,count:members?.length||0});
+        return {ok:true};
+      },true);
     },
     update(space, actor, id, input) {
       const fields = projectInput(input);

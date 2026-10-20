@@ -11,7 +11,9 @@ export const isSharedReviewPath=path=>/^\/api\/workspaces\/[^/]+\/(?:media|uploa
 export async function handleSharedReview({req,res,path,account,pool,sharedStorage}){
   if(!account)return reply(res,401,{error:'Inicia sesión.'});
   const parts=path.split('/').filter(Boolean),space=parts[2];
-  const repository=sharedReviewRepository(pool),media=sharedMediaService(repository,sharedStorage||localStorage());
+  let scopedProjectId=parts[3]==='projects'&&UUID_PATTERN.test(parts[4]||'')?parts[4]:undefined;
+  if(UUID_PATTERN.test(space||'')&&['media','uploads'].includes(parts[3])&&UUID_PATTERN.test(parts[4]||''))scopedProjectId=(await pool.query('SELECT project_id FROM shared_media_files WHERE workspace_id=$1 AND id=$2',[space,parts[4]])).rows[0]?.project_id;
+  const repository=sharedReviewRepository(pool,{projectId:scopedProjectId}),media=sharedMediaService(repository,sharedStorage||localStorage());
   const input=async(max=262144)=>{const data=await body(req,max);if(!data||typeof data!=='object'||Array.isArray(data))throw workspaceError(400,'Se requiere un objeto JSON.');return data;};
   const uuid=value=>{if(!UUID_PATTERN.test(value||''))throw workspaceError(404,'Recurso no disponible.');return value;};uuid(space);
   if(parts[3]==='media'&&parts.length===5){
