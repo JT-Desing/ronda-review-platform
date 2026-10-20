@@ -99,3 +99,10 @@ test('shared projects resume a failed read after session recovery without discar
  assert.match(source,/addEventListener\('ronda-session-restored',resume\)/);
  assert.match(source,/if\(!hasPending&&!busy\)setRefresh/);
 });
+test('shared project comment editing and replies stay compact inside the comments column',()=>{
+ const css=readFileSync(new URL('./shared-review-layout-fix.css',import.meta.url),'utf8');
+ assert.match(css,/\.shared-projects \.shared-original-comments \.comment-card>form:not\(\.inline-reply\)\{display:grid;grid-template-columns:minmax\(0,1fr\)/);
+ assert.match(css,/\.shared-original-comments \.comment-card>form:not\(\.inline-reply\) textarea\{[^}]*box-sizing:border-box;width:100%;min-width:0/);
+ assert.match(css,/\.shared-original-comments \.comment-card>form\.inline-reply\{display:flex;flex-wrap:nowrap/);
+ assert.match(css,/\.shared-original-comments \.comment-card>form\.inline-reply input\{[^}]*min-width:0/);
+});
