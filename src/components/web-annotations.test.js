@@ -5,6 +5,7 @@ import {readFile} from 'node:fs/promises';
 const component=await readFile(new URL('./ExternalWeb.jsx',import.meta.url),'utf8');
 const stage=await readFile(new URL('./OriginalMediaStage.jsx',import.meta.url),'utf8');
 const css=await readFile(new URL('./external-artifacts.css',import.meta.url),'utf8');
+const pinCss=await readFile(new URL('./external-web-pin.css',import.meta.url),'utf8');
 const delivery=await readFile(new URL('./SharedProjectMedia.jsx',import.meta.url),'utf8');
 const layer=await readFile(new URL('./AnnotationLayer.jsx',import.meta.url),'utf8');
 const shared=await readFile(new URL('./SharedReviewRoom.jsx',import.meta.url),'utf8');
@@ -59,4 +60,8 @@ test('document bridge follows iframe scroll without relaxing the iframe sandbox'
   assert.match(component,/event\.data\?\.nonce!==bridgeNonce\.current/);
   assert.match(component,/documentMarkToViewport\(mark,webMetrics\)/);
   assert.match(component,/viewportMarkToDocument\(mark,webMetrics\)/);
+});
+
+test('web annotation pin number is centered in a square fixed-size hit area',()=>{
+  assert.match(pinCss,/\.external-web \.external-web-viewport \.figure-pin\s*\{[^}]*display:\s*grid;[^}]*place-items:\s*center;[^}]*box-sizing:\s*border-box;[^}]*width:\s*36px;[^}]*height:\s*36px;[^}]*padding:\s*0;[^}]*line-height:\s*1;/);
 });

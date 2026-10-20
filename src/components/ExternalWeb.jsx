@@ -3,6 +3,7 @@ import {AnnotationLayer} from './AnnotationLayer.jsx';
 import Icon from './Icon.jsx';
 import {documentMarkToViewport,normalizeWebReviewMetrics,viewportMarkToDocument} from '../domain/web-review-bridge.js';
 import './external-artifacts.css';
+import './external-web-pin.css';
 
 export function ExternalWeb({url,name,activeTool='',setActiveTool=()=>{},activeColor='#b89be8',setActiveColor=()=>{},marks=[],setMarks=()=>{},selectedFigure,onFigure=()=>{},onQuickComment,figureComments=[],readonly=false}){
   const [loaded,setLoaded]=useState(false),[fullscreen,setFullscreen]=useState(false),[capturing,setCapturing]=useState(false),[captureError,setCaptureError]=useState(''),[commentMark,setCommentMark]=useState(null),[commentDraft,setCommentDraft]=useState(''),[commentBusy,setCommentBusy]=useState(false),[webMetrics,setWebMetrics]=useState(null);
