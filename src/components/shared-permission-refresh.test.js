@@ -13,7 +13,7 @@ test('permission denial refreshes workspace authorization without remounting the
  assert.match(projects,/onRoleUpdate=\{setRole\}/);
  assert.match(media,/if\(e\.status===403\)onPermissionDenied\?\.\(\)/);
  assert.match(media,/setSelected\(current=>active\.assets\.some\(asset=>asset\.id===current\)\?current:active\.assets\[0\]\?\.id\|\|''\)/);
- assert.match(media,/permissionRevision=\{permissionRevision\} onPermissionDenied=\{onPermissionDenied\}/);
+ assert.match(media,/permissionRevision=\{permissionRevision\}[^>]*onPermissionDenied=\{onPermissionDenied\}/);
  assert.match(media,/workspaceRole=\{role\}/);
  assert.match(media,/if\(room\.role\)onRoleUpdate\?\.\(room\.role\)/);
  assert.match(room,/\['admin','editor'\]\.includes\(workspaceRole\)&&\['admin','editor'\]\.includes\(room\?\.role\)/);

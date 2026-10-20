@@ -21,13 +21,13 @@ import {measurePhase} from '../state/performanceTelemetry.js';
 import './review-comments-restored.css';
 import {SocialReferenceIcon} from './SocialReferenceIcons.jsx';
 import './shared-review-room.css';
-export function SharedReviewRoom({workspaceId,projectId,assetId,onBack,onNotify,onDirtyChange,deliveryGrid,projectName,onRoomUpdate,onRefreshDelivery,workspaceRole,permissionRevision=0,onPermissionDenied}){
+export function SharedReviewRoom({workspaceId,projectId,assetId,onBack,onNotify,onDirtyChange,deliveryGrid,projectName,onRoomUpdate,onRefreshDelivery,workspaceRole,permissionRevision=0,onPermissionDenied,initialTool='',initialColor}){
   const {state}=useRonda();
   const [versions,setVersions]=useState([]),[versionId,setVersionId]=useState(''),[room,setRoom]=useState(null),[media,setMedia]=useState(null);
   const [requestedVersion,setRequestedVersion]=useState('');
   const [reviewersOpen,setReviewersOpen]=useState(false);
   const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[progress,setProgress]=useState(0),[error,setError]=useState(''),[refresh,setRefresh]=useState(0);
-  const [draft,setDraft]=useState({text:'',priority:'normal',requestId:crypto.randomUUID()}),[draftMark,setDraftMark]=useState(null),[reply,setReply]=useState({}),[tool,setTool]=useState(''),[color,setColor]=useState('#b89be8'),[currentTime,setTime]=useState(0),[selected,setSelected]=useState(null),[preview,setPreview]=useState(false),[reviewers,setReviewers]=useState([]);
+  const [draft,setDraft]=useState({text:'',priority:'normal',requestId:crypto.randomUUID()}),[draftMark,setDraftMark]=useState(null),[reply,setReply]=useState({}),[tool,setTool]=useState(initialTool),[color,setColor]=useState(initialColor||'#b89be8'),[currentTime,setTime]=useState(0),[selected,setSelected]=useState(null),[preview,setPreview]=useState(false),[reviewers,setReviewers]=useState([]);
   const controller=useRef(null),generation=useRef(0),fileInput=useRef(null),commentInput=useRef(null),context={workspaceId,projectId,assetId,versionId};
   const guard=useRef(createReviewGuard());
   const sessionExpired=useRef(false);
@@ -48,7 +48,7 @@ export function SharedReviewRoom({workspaceId,projectId,assetId,onBack,onNotify,
   const dirty=Boolean(attachments.length||audioPending||recording||draft.text.trim()||draftMark||Object.values(reply).some(r=>r.text.trim())||editDraft||reviewersDirty||busy||loading);
   guard.current.update({dirty,busy:busy||loading});
   useEffect(()=>{onDirtyChange?.(dirty);const warn=e=>{e.preventDefault();e.returnValue='';};if(dirty)window.addEventListener('beforeunload',warn);return()=>{window.removeEventListener('beforeunload',warn);onDirtyChange?.(false);};},[dirty,onDirtyChange]);
-  useEffect(()=>{setTime(0);setSelected(null);setTool('');},[versionId]);
+  useEffect(()=>{setTime(0);setSelected(null);setTool(initialTool||'');if(initialColor)setColor(initialColor);},[versionId,initialTool,initialColor]);
   useEffect(()=>{
     let active=true,url;const token=++generation.current;guard.current.begin();controller.current=new AbortController();setLoading(true);setError('');
     if(!retainReviewView(cachedMedia.current?.versionId,requestedVersion)){setMedia(null);setRoom(null);}

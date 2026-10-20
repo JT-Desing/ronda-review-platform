@@ -39,10 +39,21 @@ test('blocked external pages can be captured only with browser permission and sa
   assert.match(component,/new File\(\[blob\].*type:'image\/png'/);
   assert.match(component,/iframeCaptureRect\(frame\.width,frame\.height,window\.innerWidth,window\.innerHeight,bounds\)/);
   assert.match(component,/drawImage\(frame\.video,crop\.x,crop\.y,crop\.width,crop\.height,0,0,crop\.width,crop\.height\)/);
-  assert.match(delivery,/addWebCapture=async file=>\{if\(!file\)return;await mutate\(async\(\)=>\{const result=await uploadFile\(context,file/);
-  assert.match(delivery,/addWebCapture\(event\.detail\?\.file\)/);
+  assert.match(delivery,/addWebCapture=async\(file,intent=\{\}\)=>\{if\(!file\)return;await mutate\(async\(\)=>\{const result=await uploadFile\(context,file/);
+  assert.match(delivery,/addWebCapture\(event\.detail\?\.file,event\.detail\)/);
   assert.match(component,/Ronda recorta el visor; las marcas quedan fijas en la captura guardada/);
   assert.match(component,/Ronda guardará solo la vista web como pieza para anotar/);
+});
+
+test('web annotation tools remain available without the optional bridge and carry the chosen tool into the fixed capture',()=>{
+  assert.match(component,/\['Lápiz','Flecha','Rectángulo','Texto'\]/);
+  assert.match(component,/detail:\{file,tool:hasDocumentBridge\?'':activeTool,color:activeColor\}/);
+  assert.match(delivery,/addWebCapture=async\(file,intent=\{\}\)/);
+  assert.match(delivery,/initialTool=\{captureIntent\?\.assetId===selected\?captureIntent\.tool:''\}/);
+  assert.match(delivery,/initialColor=\{captureIntent\?\.assetId===selected\?captureIntent\.color:undefined\}/);
+  assert.match(shared,/useState\(initialTool\)/);
+  assert.match(shared,/setTool\(initialTool\|\|''\)/);
+  assert.match(component,/Elige una herramienta y captura la zona visible para anotarla sin que se mueva/);
 });
 
 test('creating or selecting a web annotation opens an anchored comment composer',()=>{
