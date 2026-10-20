@@ -17,7 +17,7 @@ test('uploaded HTML has a sandboxed review surface while code remains inert and 
   const documentReview=await read('./DocumentReview.jsx');
   const preview=await read('./SharedAssetPreview.jsx');
   const server=await read('../../backend/modules/shared-review.js');
-  assert.match(grid,/no se ejecutan dentro de Ronda/);
+  assert.match(grid,/HTML se revisa aislado y el código React\/ZIP queda como fuente descargable/);
   assert.match(room,/data\.asset\.kind==='html'.*kind:'html'/);
   assert.match(room,/kind==='file'.*kind:'file'/);
   assert.match(stage,/media\?\.type==='file'.*Descargar archivo local/);
@@ -27,4 +27,11 @@ test('uploaded HTML has a sandboxed review surface while code remains inert and 
   assert.match(server,/\['file','html'\]\.includes\(file\.kind\)/);
   assert.match(server,/Content-Security-Policy.*sandbox/);
   assert.match(server,/attachment\?'attachment':'inline'/);
+});
+
+test('uploading a new team asset preserves the selected unsaved review instead of silently rejecting the file',async()=>{
+  const media=await read('./SharedProjectMedia.jsx');
+  assert.match(media,/allowDirty=false,preserveSelection=false,preserveDirtyState=false/);
+  assert.match(media,/allowDirty:keepReview,preserveSelection:keepReview,preserveDirtyState:keepReview/);
+  assert.match(media,/if\(!keepReview\)setSelected\(result\.asset\.id\)/);
 });

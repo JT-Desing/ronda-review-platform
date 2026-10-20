@@ -22,15 +22,15 @@ export function SharedProjectMedia({workspaceId,projectId,role,onRoleUpdate,perm
     catch(e){if(token===generation.current){setError(e.message);if(e.status===403)onPermissionDenied?.();}}
     finally{assetRefresh.current=false;if(token===generation.current)setRefreshingAssets(false);}
   }
-  async function mutate(action,success){
+  async function mutate(action,success,{allowDirty=false,preserveSelection=false,preserveDirtyState=false}={}){
     if(operation.current||assetRefresh.current)return false;
-    if(reviewDirty.current){setError('Publica o descarta el borrador antes de modificar la entrega.');return false;}
-    const token=generation.current;operation.current=true;setBusy(true);setError('');setProgress(0);onDirtyChange?.(true);
-    try{await action();if(token!==generation.current)return false;const [active,deleted]=await loadAssets();if(token!==generation.current)return false;setAssets(active.assets);setTrash(deleted.assets);setSelected(current=>active.assets.some(a=>a.id===current)?current:active.assets[0]?.id||'');onNotify?.(success);return true;}
+    if(reviewDirty.current&&!allowDirty){setError('Publica o descarta el borrador antes de modificar la entrega.');return false;}
+    const token=generation.current;operation.current=true;setBusy(true);setError('');setProgress(0);if(!preserveDirtyState)onDirtyChange?.(true);
+    try{await action();if(token!==generation.current)return false;const [active,deleted]=await loadAssets();if(token!==generation.current)return false;setAssets(active.assets);setTrash(deleted.assets);if(!preserveSelection)setSelected(current=>active.assets.some(a=>a.id===current)?current:active.assets[0]?.id||'');onNotify?.(success);return true;}
     catch(e){if(token===generation.current){setError(e.message);if(e.status===403)onPermissionDenied?.();}return false;}
-    finally{if(token===generation.current){operation.current=false;setBusy(false);onDirtyChange?.(false);}}
+    finally{if(token===generation.current){operation.current=false;setBusy(false);if(!preserveDirtyState)onDirtyChange?.(false);}}
   }
-  const add=async file=>{if(!file)return;await mutate(async()=>{const attempt=failedUpload.current?.file===file?failedUpload.current:{file,requestId:crypto.randomUUID()};failedUpload.current=attempt;abort.current=new AbortController();const result=await uploadFile(context,file,attempt.requestId,setProgress,abort.current.signal);if(!abort.current.signal.aborted){setSelected(result.asset.id);failedUpload.current=null;}},'Pieza compartida guardada');};
+  const add=async file=>{if(!file)return;const keepReview=reviewDirty.current;await mutate(async()=>{const attempt=failedUpload.current?.file===file?failedUpload.current:{file,requestId:crypto.randomUUID()};failedUpload.current=attempt;abort.current=new AbortController();const result=await uploadFile(context,file,attempt.requestId,setProgress,abort.current.signal);if(!abort.current.signal.aborted){if(!keepReview)setSelected(result.asset.id);failedUpload.current=null;}},'Pieza compartida guardada',{allowDirty:keepReview,preserveSelection:keepReview,preserveDirtyState:keepReview});};
   const addWebCapture=async(file,intent={})=>{if(!file)return;await mutate(async()=>{const result=await uploadFile(context,file,crypto.randomUUID(),setProgress);setCaptureIntent({assetId:result.asset.id,tool:intent.tool||'',color:intent.color||'#b89be8'});setSelected(result.asset.id);},'Captura web guardada como pieza del proyecto');};
   useEffect(()=>{const capture=event=>addWebCapture(event.detail?.file,event.detail);window.addEventListener('ronda:web-capture',capture);return()=>window.removeEventListener('ronda:web-capture',capture);},[workspaceId,projectId]);
   const deliveryGrid=<><SharedDeliveryGrid assets={assets} trash={trash} workspaceId={workspaceId} projectName={projectName} role={role} selected={selected} busy={busy} refreshing={refreshingAssets} error={error} progress={progress}
