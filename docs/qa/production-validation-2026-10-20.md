@@ -47,3 +47,13 @@ Las 249 pruebas frontend pasan. La suite backend termina con código 0. No se ej
 4. Auditar dependencias e imágenes con inventario y fuentes de avisos actuales; no declarar cero vulnerabilidades sin ello.
 5. Verificar recuperación de backup en destino aislado y acordar alojamiento independiente del PC para disponibilidad continua.
 6. Cerrar las entregas documentales y evidencia de los recorridos; no presentar una grabación como sustituto de una prueba.
+
+## Retest después del arranque
+
+Una consulta de solo lectura, limitada al ID del proyecto sintético, confirmó que persisten un proyecto, una pieza activa, dos versiones y un comentario. Esto acredita persistencia de las filas tras reiniciar Docker, pero no sustituye la reapertura visual ni verifica por sí solo la integridad de los archivos.
+
+El frontend público y el origen local de producción coinciden en las seis referencias y huellas de entrada. Identificador: `368649678610cab6ba5fedd44fa6327ecda7e356604a5e44ae9dd43c8a010947`. Frontend, API y PostgreSQL reportaron healthy; `nginx -t` pasó. Existe un respaldo periódico marcado COMPLETE del 19 de octubre a las 23:39 UTC. El primer intento de respaldo de este arranque encontró PostgreSQL aún no disponible; el proceso anuncia reintento en cinco minutos. No se hizo restauración ni se declara verificado el nuevo respaldo hasta comprobar su finalización.
+
+El control de navegador está bloqueado en el host: el adaptador no puede escribir sus recursos de ejecución y falla antes de obtener la pestaña. Reiniciar su sesión no lo resolvió. No se alteraron permisos del navegador ni se recurrió a automatización no autorizada. Las pruebas UI restantes quedan bloqueadas por esta herramienta, no aprobadas.
+
+Repositorio actualizado en `feature/shared-review`, commit `440d228`, con fuentes y herramientas de validación, sin capturas privadas, configuraciones secretas ni backups. Los cambios de rol de plataforma están versionados, no desplegados en API. No se programó el apagado porque el origen productivo reside en este PC; se solicitó al usuario elegir entre disponibilidad y apagado al terminar.
