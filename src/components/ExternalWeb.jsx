@@ -7,9 +7,15 @@ import './external-artifacts.css';
 import './external-web-pin.css';
 
 export function ExternalWeb({url,name,activeTool='',setActiveTool=()=>{},activeColor='#b89be8',setActiveColor=()=>{},marks=[],setMarks=()=>{},selectedFigure,onFigure=()=>{},onQuickComment,figureComments=[],readonly=false}){
-  const [loaded,setLoaded]=useState(false),[fullscreen,setFullscreen]=useState(false),[capturing,setCapturing]=useState(false),[captureError,setCaptureError]=useState(''),[commentMark,setCommentMark]=useState(null),[commentDraft,setCommentDraft]=useState(''),[commentBusy,setCommentBusy]=useState(false),[webMetrics,setWebMetrics]=useState(null),[textSelectionMode,setTextSelectionMode]=useState(false),[extensionConnected,setExtensionConnected]=useState(false);
+  const [loaded,setLoaded]=useState(false),[fullscreen,setFullscreen]=useState(false),[capturing,setCapturing]=useState(false),[captureError,setCaptureError]=useState(''),[commentMark,setCommentMark]=useState(null),[commentDraft,setCommentDraft]=useState(''),[commentBusy,setCommentBusy]=useState(false),[webMetrics,setWebMetrics]=useState(null),[textSelectionMode,setTextSelectionMode]=useState(false),[extensionConnected,setExtensionConnected]=useState(false),[extensionInstalled,setExtensionInstalled]=useState(false);
   const holder=useRef(null),iframe=useRef(null),bridgeNonce=useRef(crypto.randomUUID());
   useEffect(()=>{setLoaded(false);setActiveTool('');setCommentMark(null);setCommentDraft('');setWebMetrics(null);setTextSelectionMode(false);setExtensionConnected(false);bridgeNonce.current=crypto.randomUUID();},[url]);
+  useEffect(()=>{
+    const receive=event=>{if(event.source===window&&event.origin===window.location.origin&&event.data?.type==='ronda:web-review:extension-installed')setExtensionInstalled(true)};
+    window.addEventListener('message',receive);
+    window.postMessage({type:'ronda:web-review:check-extension'},window.location.origin);
+    return()=>window.removeEventListener('message',receive);
+  },[]);
   useEffect(()=>{const update=()=>setFullscreen(document.fullscreenElement===holder.current);document.addEventListener('fullscreenchange',update);return()=>document.removeEventListener('fullscreenchange',update);},[]);
   let safe;try{const parsed=new URL(url);safe=parsed.protocol==='https:'&&!parsed.username&&!parsed.password&&parsed.origin!==window.location.origin?parsed.href:null;}catch{}
   if(!safe)return <p role="alert">Enlace externo no válido.</p>;
@@ -50,6 +56,11 @@ export function ExternalWeb({url,name,activeTool='',setActiveTool=()=>{},activeC
   const openComment=(mark,initialDraft='')=>{setCommentMark(mark);setCommentDraft(initialDraft);onFigure(mark,{openComments:false})};
   const publishQuickComment=async event=>{event.preventDefault();if(!commentMark||!commentDraft.trim()||!onQuickComment||commentBusy)return;setCommentBusy(true);try{const published=await onQuickComment(commentMark,commentDraft.trim());if(published!==false){setCommentMark(null);setCommentDraft('')}}finally{setCommentBusy(false)}};
   const toggleFullscreen=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await holder.current?.requestFullscreen?.();}catch{}}
+  const connectExtension=()=>{
+    window.postMessage({type:'ronda:web-review:open-connection'},window.location.origin);
+    setCaptureError('Se abrió el panel de Ronda. Confirma el acceso solo para este dominio; si el panel no aparece, abre el icono de la extensión.');
+  };
+  const extensionStoreUrl=import.meta.env.VITE_RONDA_EXTENSION_STORE_URL||'';
   const capturePage=async()=>{
     if(!navigator.mediaDevices?.getDisplayMedia){setCaptureError('Este navegador no permite capturar una pestaña. Puedes usar una captura de pantalla y subirla al proyecto.');return;}
     if(!window.confirm('Desplaza la página hasta la zona que quieres revisar. En el selector, comparte esta pestaña de Ronda: recortaremos únicamente el área de la web visible y la guardaremos como una imagen del proyecto. Las anotaciones quedarán fijadas a esa captura. Para otra zona, repite después de desplazarte. ¿Continuar?'))return;
@@ -79,7 +90,11 @@ export function ExternalWeb({url,name,activeTool='',setActiveTool=()=>{},activeC
   };
   return <div className="external-web" ref={holder}>
     <header><span>Artefacto web · contenido en vivo</span><button type="button" onClick={toggleFullscreen}><Icon name="maximize" size={15}/>{fullscreen?'Salir de pantalla completa':'Ampliar visor'}</button><a href={safe} target="_blank" rel="noopener noreferrer">Abrir original ↗</a></header>
-    <div className="external-web-frame-notice" role="note">{textSelectionMode?'Selecciona el texto directamente en la web; Ronda fijará el resaltado y el comentario a esa posición.':hasDocumentBridge&&activeTool?'Dibuja sobre la vista actual. Para desplazarte por la página, elige Navegar.':hasDocumentBridge?'Vista en vivo conectada · las anotaciones se guardan en coordenadas del documento.':activeTool?`Herramienta preparada: ${['pen','arrow','square','type'].includes(activeTool)?['Lápiz','Flecha','Rectángulo','Texto'][['pen','arrow','square','type'].indexOf(activeTool)]:'anotación'}. Captura la zona para abrirla en el anotador fijo.`:'Desplázate por la web hasta la zona que quieres comentar y captura esta pestaña. Ronda recorta el visor; las marcas quedan fijas en la captura guardada. Captura otras zonas después de desplazarte.'}</div>
+    <div className="external-web-frame-notice" role="note">{textSelectionMode?'Selecciona el texto directamente en la web; Ronda fijará el resaltado y el comentario a esa posición.':hasDocumentBridge&&activeTool?'Dibuja sobre la vista actual. Para desplazarte por la página, elige Navegar.':hasDocumentBridge?'Vista en vivo conectada · las anotaciones se guardan en coordenadas del documento.':activeTool?`Herramienta preparada: ${['pen','arrow','square','type'].includes(activeTool)?['Lápiz','Flecha','Rectángulo','Texto'][['pen','arrow','square','type'].indexOf(activeTool)]:'anotación'}. Conecta el dominio para fijar las marcas a la página viva; también puedes capturar esta vista.`:'Conecta la extensión una sola vez para fijar comentarios y anotaciones a la página viva mientras te desplazas. No es necesaria para entrar a Ronda; sin ella puedes usar la alternativa de captura fija.'}</div>
+    {loaded&&!hasDocumentBridge&&<div className="external-web-extension-setup" role="region" aria-label="Conectar anotaciones en vivo">
+      <span>{extensionInstalled?'La extensión está instalada. Autoriza únicamente el dominio de esta web para activar las anotaciones en vivo.':'Para anotar directamente sobre esta página y mantener las marcas ancladas, instala la extensión de Ronda. Es opcional para el resto de Ronda.'}</span>
+      {extensionInstalled?<button type="button" onClick={connectExtension}>Conectar este sitio</button>:extensionStoreUrl?<><a className="external-web-extension-install" href={extensionStoreUrl} target="_blank" rel="noopener noreferrer">Instalar extensión</a><button type="button" className="external-web-extension-refresh" onClick={()=>window.location.reload()}>Ya la instalé · continuar</button></>:<span className="external-web-extension-pending">Extensión en preparación para Chrome Web Store</span>}
+    </div>}
     {legacyMarks.length>0&&<p className="external-web-capture-error" role="status">{legacyMarks.length} anotación{legacyMarks.length===1?' antigua no tiene':'es antiguas no tienen'} guardado el desplazamiento original. Se conserva{legacyMarks.length===1?'':'n'} en los comentarios, pero no se dibuja{legacyMarks.length===1?'':'n'} sobre esta página para evitar que aparezca{legacyMarks.length===1?'':'n'} en un lugar incorrecto.</p>}
     {loaded?<div className={`external-web-viewport ${textSelectionMode?'text-selection-mode':''}`}>
       <iframe ref={iframe} title={name||'Artefacto web en revisión'} src={safe} onLoad={startBridge} sandbox="allow-scripts" referrerPolicy="no-referrer" allow="fullscreen" style={{pointerEvents:activeTool&&hasDocumentBridge&&!textSelectionMode?'none':'auto'}}/>

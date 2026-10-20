@@ -41,7 +41,7 @@ test('blocked external pages can be captured only with browser permission and sa
   assert.match(component,/drawImage\(frame\.video,crop\.x,crop\.y,crop\.width,crop\.height,0,0,crop\.width,crop\.height\)/);
   assert.match(delivery,/addWebCapture=async\(file,intent=\{\}\)=>\{if\(!file\)return;await mutate\(async\(\)=>\{const result=await uploadFile\(context,file/);
   assert.match(delivery,/addWebCapture\(event\.detail\?\.file,event\.detail\)/);
-  assert.match(component,/Ronda recorta el visor; las marcas quedan fijas en la captura guardada/);
+  assert.match(component,/captura fija/);
   assert.match(component,/Ronda guardará solo la vista web como pieza para anotar/);
 });
 
@@ -68,14 +68,16 @@ test('creating or selecting a web annotation opens an anchored comment composer'
   assert.match(app,/annotationId:mark\.id,annotationContext/);
 });
 
-test('without the document bridge the live site stays navigable and fixed annotations use a captured image',()=>{
+test('without the document bridge the live site offers the optional extension and retains capture fallback',()=>{
   assert.match(component,/const hasDocumentBridge=Boolean\(webMetrics\)/);
   assert.match(component,/marks\.filter\(mark=>mark\.coordinateSpace==='document'\)/);
   assert.match(component,/if\(!hasDocumentBridge\)return/);
   assert.match(component,/Capturar vista para anotar/);
-  assert.match(component,/Desplázate por la web hasta la zona que quieres comentar y captura esta pestaña/);
+  assert.match(component,/Conecta la extensión una sola vez para fijar comentarios y anotaciones a la página viva/);
+  assert.match(component,/Conectar este sitio/);
+  assert.match(component,/VITE_RONDA_EXTENSION_STORE_URL/);
   assert.match(component,/recortaremos únicamente el área de la web visible/);
-  assert.doesNotMatch(component,/instala la extensión Ronda/);
+  assert.match(component,/Es opcional para el resto de Ronda/);
   assert.match(component,/legacyMarks\.length>0/);
 });
 
