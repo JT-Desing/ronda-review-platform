@@ -19,6 +19,6 @@ export function presentProject(state, project) {
   return { ...project, assets, pending: comments.length, status, palette, version };
 }
 export function projectOverview(state) {
-  const projects = Object.values(state.projects).map(project => presentProject(state, project));
-  return { projects, pending: projects.reduce((sum, project) => sum + project.pending, 0), approved: projects.filter(project => project.status === 'approved').length, assets: (state.assets || []).length };
+  const projects = Object.values(state.projects).filter(project=>!project.deletedAt).map(project => presentProject(state, project));
+  return { projects, pending: projects.reduce((sum, project) => sum + project.pending, 0), approved: projects.filter(project => project.status === 'approved').length, assets: projects.reduce((sum,project)=>sum+project.assets.length,0) };
 }

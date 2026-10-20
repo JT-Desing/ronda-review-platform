@@ -19,6 +19,7 @@ export function readReviewRoute(hash){
 export function resolveReviewRouteAsset(state,versionId){
  if(!state?.versions?.[versionId])return null;
  const version=state.versions[versionId];
+ if(state.projects?.[version.projectId]?.deletedAt)return null;
  const asset=(state.assets||[]).find(item=>item.id===version.assetId||item.activeVersionId===versionId||item.versionId===versionId||`asset-${item.id}-v1`===versionId);
  if(!asset||version.projectId&&version.projectId!==asset.projectId)return null;
  return resolveAssetVersion(state,asset,versionId);

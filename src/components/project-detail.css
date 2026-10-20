@@ -14,3 +14,15 @@
 .project-detail-recovery summary{min-height:44px;align-content:center;cursor:pointer;font-size:13px;color:var(--muted)}
 .project-detail-panel button:focus-visible,.project-detail-recovery summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 @media(max-width:600px){.studio-library .project-detail-panel{padding:20px;margin-top:20px}.project-detail-actions>button,.project-detail-actions>.link-import,.project-detail-actions .link-import>button{width:100%}.project-detail-actions>.link-import{flex-basis:100%}}
+dialog.project-delete-dialog{margin:auto;color:var(--text)}
+dialog.project-delete-dialog::backdrop{background:#060705b8}
+dialog.project-delete-dialog h2{font-size:20px;overflow-wrap:anywhere}
+dialog.project-delete-dialog p{font-size:13px;line-height:1.6;color:var(--muted)}
+dialog.project-delete-dialog input{width:100%;min-height:44px;margin-top:8px;padding:10px 12px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--text)}
+dialog.project-delete-dialog button,.project-trash button{min-height:44px;padding:8px 14px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--text);cursor:pointer}
+dialog.project-delete-dialog button:disabled{opacity:.4;cursor:default}
+.studio-library>.project-trash,.studio-home .project-trash{margin:20px 0;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface-1)}
+.project-trash summary{cursor:pointer;min-height:40px;align-content:center;font-size:13px;color:var(--muted)}
+.project-trash>div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.studio-project .project-delete-trigger{width:40px;height:40px;min-height:40px}
+@media(pointer:coarse){.studio-project .project-delete-trigger{width:44px;height:44px;min-height:44px}}
