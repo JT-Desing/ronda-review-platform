@@ -13,8 +13,11 @@ export function AnnotationLayer({ activeTool, activeColor, marks, setMarks, sele
     const el = canvas.current;
     if (!el) return;
     const ctx = el.getContext('2d');
-    const ratio = window.devicePixelRatio || 1;
     const box = el.getBoundingClientRect();
+    const pixelRatio=window.devicePixelRatio||1;
+    // A full-page review canvas can be tens of thousands of CSS pixels tall.
+    // Bound its backing bitmap so an uploaded document cannot exhaust GPU memory.
+    const ratio=Math.min(pixelRatio,Math.sqrt(12_000_000/Math.max(1,box.width*box.height)));
     const width=Math.round(box.width*ratio); const height=Math.round(box.height*ratio);
     if (el.width !== width || el.height !== height) { el.width=width;el.height=height; }
     ctx.setTransform(ratio,0,0,ratio,0,0);

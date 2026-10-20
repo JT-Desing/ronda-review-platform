@@ -23,11 +23,49 @@ import {measurePhase} from '../state/performanceTelemetry.js';
 import './review-comments-restored.css';
 import {SocialReferenceIcon} from './SocialReferenceIcons.jsx';
 import './shared-review-room.css';
+function HtmlReviewStage(props){
+  const [redoMarks,setRedoMarks]=useState([]);
+  const [htmlHeight,setHtmlHeight]=useState(3000);
+  const surface={width:1000,height:htmlHeight};
+  const toCanvas=mark=>{
+    if(mark.coordinateSpace==='document'){
+      const width=mark.documentSize?.width||surface.width,height=mark.documentSize?.height||3000;
+      return {...mark,points:mark.points.map(point=>({x:point.x*width/surface.width,y:point.y*height/surface.height}))};
+    }
+    // Older HTML annotations used a 1000 × 3000 reference surface.
+    return {...mark,points:mark.points.map(point=>({x:point.x,y:point.y*3000/surface.height}))};
+  };
+  const canvasMarks=props.marks.map(toCanvas);
+  const setCanvasMarks=next=>props.setMarks(current=>{
+    const previous=current.map(toCanvas),known=new Map(previous.map(mark=>[mark.id,mark]));
+    const result=typeof next==='function'?next(previous):next;
+    return result.map(mark=>{
+      if(known.has(mark.id))return known.get(mark.id);
+      return {...mark,coordinateSpace:'document',documentSize:{width:surface.width,height:surface.height},points:mark.points.map(point=>({x:point.x,y:point.y}))};
+    });
+  });
+  const undo=()=>{
+    const index=props.marks.findLastIndex(mark=>mark.draft);if(index<0)return;
+    setRedoMarks(current=>[props.marks[index],...current]);
+    props.setMarks(props.marks.filter((_,i)=>i!==index));
+  };
+  const redo=()=>{
+    if(!redoMarks.length)return;
+    setRedoMarks(current=>current.slice(1));
+    const restored={...redoMarks[0],id:crypto.randomUUID(),draft:undefined};
+    props.setMarks([...props.marks.filter(mark=>!mark.draft),restored]);
+  };
+  const renderAnnotations=drawing=><><AnnotationLayer activeTool={drawing&&!props.readonly?props.activeTool:''} activeColor={props.activeColor} marks={canvasMarks} setMarks={setCanvasMarks} selectedFigure={props.selectedFigure} onAnnotationCreated={()=>setRedoMarks([])}/>{canvasMarks.map((mark,index)=><button key={mark.id} className={`figure-pin ${props.selectedFigure===mark.id?'selected':''}`} style={{left:`${mark.points[0].x*100}%`,top:`${mark.points[0].y*100}%`}} aria-label={`Abrir anotación ${index+1}`} onClick={()=>props.onFigure(mark)}>{index+1}</button>)}</>;
+  const renderToolbar=drawing=>drawing&&!props.readonly&&<div className="annotation-tools html-annotation-tools" aria-label="Herramientas de anotación HTML">
+    {['pen','arrow','square','type'].map((tool,index)=><button key={tool} type="button" title={`${['Lápiz','Flecha','Rectángulo','Texto'][index]} · ${index+1}`} aria-label={['Lápiz','Flecha','Rectángulo','Texto'][index]} aria-pressed={props.activeTool===tool} className={props.activeTool===tool?'active':''} onClick={()=>props.setActiveTool(tool)}><Icon name={tool}/><kbd>{index+1}</kbd></button>)}
+    <span className="tool-divider"/><div className="color-options">{['#ff725e','#f2bd5c','#8ebd72','#67a9d4','#b89be8','#f1eee7'].map((color,index)=><button key={color} type="button" aria-label={`Color ${['coral','ámbar','verde','azul','violeta','blanco'][index]}`} aria-pressed={props.activeColor===color} className={props.activeColor===color?'selected':''} onClick={()=>props.setActiveColor(color)} style={{'--swatch':color,backgroundColor:color}}/>)}</div>
+    <span className="tool-divider"/><button type="button" onClick={undo} disabled={!props.marks.some(mark=>mark.draft)} title="Deshacer última anotación" aria-label="Deshacer última anotación"><Icon name="undo"/></button><button type="button" onClick={redo} disabled={!redoMarks.length} title="Rehacer anotación" aria-label="Rehacer anotación"><Icon name="redo"/></button>
+  </div>;
+  return <DocumentReview media={props.media} page={1} setPage={()=>{}} onHtmlHeightChange={setHtmlHeight} renderAnnotations={renderAnnotations} renderToolbar={renderToolbar}/>;
+}
 function OriginalMediaStage(props){
   if(props.media?.type!=='html')return <UploadedMediaStage {...props}/>;
-  const renderAnnotations=drawing=><><AnnotationLayer activeTool={drawing&&!props.readonly?props.activeTool:''} activeColor={props.activeColor} marks={props.marks} setMarks={props.setMarks} selectedFigure={props.selectedFigure}/>{props.marks.map((mark,index)=><button key={mark.id} className={`figure-pin ${props.selectedFigure===mark.id?'selected':''}`} style={{left:`${mark.points[0].x*100}%`,top:`${mark.points[0].y*100}%`}} aria-label={`Abrir anotación ${index+1}`} onClick={()=>props.onFigure(mark)}>{index+1}</button>)}</>;
-  const renderToolbar=drawing=>drawing&&!props.readonly&&<div className="annotation-tools" aria-label="Herramientas de anotación HTML">{['pen','arrow','square','type'].map((tool,index)=><button key={tool} type="button" aria-label={['Lápiz','Flecha','Rectángulo','Texto'][index]} aria-pressed={props.activeTool===tool} className={props.activeTool===tool?'active':''} onClick={()=>props.setActiveTool(tool)}><Icon name={tool}/></button>)}{['#ff725e','#f2bd5c','#8ebd72','#67a9d4','#b89be8','#f1eee7'].map(color=><button key={color} type="button" aria-label={`Color ${color}`} aria-pressed={props.activeColor===color} onClick={()=>props.setActiveColor(color)} style={{color}}><span style={{background:color,width:16,height:16,borderRadius:'50%'}}/></button>)}</div>;
-  return <DocumentReview media={props.media} page={1} setPage={()=>{}} renderAnnotations={renderAnnotations} renderToolbar={renderToolbar}/>;
+  return <HtmlReviewStage {...props}/>;
 }
 export function SharedReviewRoom({workspaceId,projectId,assetId,onBack,onNotify,onDirtyChange,deliveryGrid,projectName,onRoomUpdate,onRefreshDelivery,workspaceRole,permissionRevision=0,onPermissionDenied,initialTool='',initialColor}){
   const {state}=useRonda();

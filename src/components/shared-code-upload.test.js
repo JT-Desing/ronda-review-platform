@@ -21,7 +21,15 @@ test('uploaded HTML has a sandboxed review surface while code remains inert and 
   assert.match(room,/data\.asset\.kind==='html'.*kind:'html'/);
   assert.match(room,/kind==='file'.*kind:'file'/);
   assert.match(stage,/media\?\.type==='file'.*Descargar archivo local/);
-  assert.match(documentReview,/sandbox="" srcDoc=\{html\}/);
+  assert.match(documentReview,/sandbox="allow-same-origin" srcDoc=\{html\}/);
+  assert.match(documentReview,/default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:; form-action 'none'; base-uri 'none'/);
+  assert.match(documentReview,/contentDocument/);
+  assert.match(documentReview,/height:htmlHeight/);
+  assert.match(documentReview,/onHtmlHeightChange\?\.\(measured\)/);
+  assert.match(room,/html-annotation-tools/);
+  assert.match(room,/\['pen','arrow','square','type'\]/);
+  for(const tool of ['undo','redo'])assert.match(room,new RegExp(`name="${tool}"`));
+  assert.match(room,/coordinateSpace:'document'/);
   assert.match(grid,/asset\.kind==='html'\?'HTML'/);
   assert.match(preview,/HTML anotable/);
   assert.match(server,/\['file','html'\]\.includes\(file\.kind\)/);
