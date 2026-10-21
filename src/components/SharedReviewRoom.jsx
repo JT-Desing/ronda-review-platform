@@ -12,6 +12,7 @@ import {pickVersion,sharedAnnotation,applyRoomError,createReviewGuard,canLeaveSh
 import {OriginalMediaStage as UploadedMediaStage} from './OriginalMediaStage.jsx';
 import {DocumentReview} from './DocumentReview.jsx';
 import {AnnotationLayer} from './AnnotationLayer.jsx';
+import {AnnotationCommentPopover} from './AnnotationCommentPopover.jsx';
 import Icon from './Icon.jsx';
 import {ShareProjectButton} from './ShareProjectButton.jsx';
 import {AudioCommentInput} from './AudioCommentInput.jsx';
@@ -55,7 +56,8 @@ function HtmlReviewStage(props){
     const restored={...redoMarks[0],id:crypto.randomUUID(),draft:undefined};
     props.setMarks([...props.marks.filter(mark=>!mark.draft),restored]);
   };
-  const renderAnnotations=drawing=><><AnnotationLayer activeTool={drawing&&!props.readonly?props.activeTool:''} activeColor={props.activeColor} marks={canvasMarks} setMarks={setCanvasMarks} selectedFigure={props.selectedFigure} onAnnotationCreated={()=>setRedoMarks([])}/>{canvasMarks.map((mark,index)=><button key={mark.id} className={`figure-pin ${props.selectedFigure===mark.id?'selected':''}`} style={{left:`${mark.points[0].x*100}%`,top:`${mark.points[0].y*100}%`}} aria-label={`Abrir anotación ${index+1}`} onClick={()=>props.onFigure(mark)}>{index+1}</button>)}</>;
+  const draftAnnotation=canvasMarks.find(mark=>mark.draft);
+  const renderAnnotations=drawing=><><AnnotationLayer activeTool={drawing&&!props.readonly?props.activeTool:''} activeColor={props.activeColor} marks={canvasMarks} setMarks={setCanvasMarks} selectedFigure={props.selectedFigure} onAnnotationCreated={()=>setRedoMarks([])}/>{canvasMarks.map((mark,index)=><button key={mark.id} className={`figure-pin ${props.selectedFigure===mark.id?'selected':''}`} style={{left:`${mark.points[0].x*100}%`,top:`${mark.points[0].y*100}%`}} aria-label={`Abrir anotación ${index+1}`} onClick={()=>props.onFigure(mark)}>{index+1}</button>)}{draftAnnotation&&<AnnotationCommentPopover mark={draftAnnotation} disabled={props.readonly} onPublish={props.onQuickComment} onClose={()=>props.setMarks(current=>current.filter(mark=>!mark.draft))}/>}</>;
   const renderToolbar=drawing=>drawing&&!props.readonly&&<div className="annotation-tools html-annotation-tools" aria-label="Herramientas de anotación HTML">
     {['pen','arrow','square','type'].map((tool,index)=><button key={tool} type="button" title={`${['Lápiz','Flecha','Rectángulo','Texto'][index]} · ${index+1}`} aria-label={['Lápiz','Flecha','Rectángulo','Texto'][index]} aria-pressed={props.activeTool===tool} className={props.activeTool===tool?'active':''} onClick={()=>props.setActiveTool(tool)}><Icon name={tool}/><kbd>{index+1}</kbd></button>)}
     <span className="tool-divider"/><div className="color-options">{['#ff725e','#f2bd5c','#8ebd72','#67a9d4','#b89be8','#f1eee7'].map((color,index)=><button key={color} type="button" aria-label={`Color ${['coral','ámbar','verde','azul','violeta','blanco'][index]}`} aria-pressed={props.activeColor===color} className={props.activeColor===color?'selected':''} onClick={()=>props.setActiveColor(color)} style={{'--swatch':color,backgroundColor:color}}/>)}</div>
@@ -137,8 +139,8 @@ export function SharedReviewRoom({workspaceId,projectId,assetId,onBack,onNotify,
   }
   function pick(id){if(id!==versionId&&discard()){clearDraft();setRequestedVersion(id);}}
   const marks=[...(room?.comments||[]).filter(c=>c.status==='open'&&c.annotation).map(c=>({...c.annotation,id:c.id,timeSeconds:c.anchor.timeSeconds})),...(draftMark?[{...draftMark,id:'draft',draft:true}]:[])];
-  function updateMarks(next){if(readonly||busy||loading)return;const result=typeof next==='function'?next(marks):next;const known=new Set((room?.comments||[]).map(comment=>comment.id));const mark=[...result].reverse().find(item=>item.id!=='draft'&&!known.has(item.id));if(!mark){setDraftMark(null);return;}setDraftMark({...sharedAnnotation(mark),timeSeconds:currentTime});setDraft(d=>({...d,requestId:crypto.randomUUID()}));commentInput.current?.focus();}
-  async function quickWebComment(mark,text){const parsed=parseCommentCommand(text);if(readonly||busy||loading||!parsed.text)return false;const result=await run(()=>postComment(context,{text:parsed.text,priority:parsed.priority,requestId:crypto.randomUUID(),anchor:{timeSeconds:null},annotation:sharedAnnotation(mark)}),'Comentario publicado',()=>{setDraftMark(null);setSelected(null);});return Boolean(result?.comment)}
+  function updateMarks(next){if(readonly||busy||loading)return;const result=typeof next==='function'?next(marks):next;const known=new Set((room?.comments||[]).map(comment=>comment.id));const mark=[...result].reverse().find(item=>item.id!=='draft'&&!known.has(item.id));if(!mark){setDraftMark(null);setSelected(null);return;}setDraftMark({...sharedAnnotation(mark),timeSeconds:currentTime});setSelected('draft');setDraft(d=>({...d,requestId:crypto.randomUUID()}));}
+  async function quickWebComment(mark,text){const parsed=parseCommentCommand(text);if(readonly||busy||loading||!parsed.text)return false;const result=await run(()=>postComment(context,{text:parsed.text,priority:parsed.priority,requestId:crypto.randomUUID(),anchor:{timeSeconds:media?.kind==='video'?(mark.timeSeconds??currentTime):null},annotation:sharedAnnotation(mark)}),'Comentario publicado',()=>{setDraftMark(null);setSelected(null);});return Boolean(result?.comment)}
   const counts=sharedCommentCounts(room);
   const visibleComments=filterSharedComments(room?.comments||[],'Todos',search).filter(c=>priorityFilter==='all'||c.priority===priorityFilter);
   const emptyMessage=sharedCommentsEmptyMessage({comments:room?.comments||[],visible:visibleComments,filter:'Todos',search,nextCursor:room?.nextCursor});

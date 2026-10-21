@@ -6,6 +6,7 @@ import {TimelineMarkers} from './TimelineMarkers.jsx';
 import {ExternalWeb} from './ExternalWeb.jsx';
 import './original-media-stage.css';
 import {BrandLoader} from './BrandLoader.jsx';
+import {AnnotationCommentPopover} from './AnnotationCommentPopover.jsx';
 import {ignoreReviewShortcut} from '../domain/review-focus.js';
 import {recordPhaseDuration} from '../state/performanceTelemetry.js';
 const formatTime = value => {
@@ -97,6 +98,7 @@ export function OriginalMediaStage({ activeTool, setActiveTool, activeColor, set
         {media&&playbackError&&failedUrl!==media.url&&<span className="media-brand-loading" role="alert">{playbackError} Usa Reproducir para volver a intentarlo.</span>}
         <AnnotationLayer activeTool={readonly?'':activeTool} activeColor={activeColor} marks={visibleMarks} setMarks={next=>updateMarks(current=>[...current.filter(mark=>!annotationVisibleAt(mark,currentTime,['image','web'].includes(media?.type))),...(typeof next==='function'?next(visibleMarks):next)])} selectedFigure={selectedFigure}/>
         {visibleMarks.map(mark=>{const index=marks.findIndex(item=>item.id===mark.id);return <button key={mark.id} className={`figure-pin ${selectedFigure===mark.id?'selected':''}`} style={{left:`${mark.points[0].x*100}%`,top:`${mark.points[0].y*100}%`}} aria-label={`Figura ${index+1}, ${figureComments.filter(c=>c.annotationId===mark.id).length} comentarios`} onClick={()=>onFigure(mark)}>{index+1}</button>})}
+        {visibleMarks.find(mark=>mark.draft)&&<AnnotationCommentPopover mark={visibleMarks.find(mark=>mark.draft)} disabled={readonly} onPublish={onQuickComment} onClose={()=>setMarks(current=>current.filter(mark=>!mark.draft))}/>}
         {remoteCursor&&<div className="remote-cursor" style={{left:`${remoteCursor.x}%`,top:`${remoteCursor.y}%`,'--presence-color':remoteCursor.color}}><i/><span>{remoteCursor.name}</span></div>}
         <div className="frame-badge">{stamp.time} · F{stamp.frame}</div>
       </div>

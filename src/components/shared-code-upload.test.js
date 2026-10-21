@@ -39,6 +39,18 @@ test('uploaded HTML has a sandboxed review surface while code remains inert and 
   assert.match(server,/attachment\?'attachment':'inline'/);
 });
 
+test('new annotations open an anchored comment composer for HTML, images and video',async()=>{
+  const room=await read('./SharedReviewRoom.jsx');
+  const stage=await read('./OriginalMediaStage.jsx');
+  const popover=await read('./AnnotationCommentPopover.jsx');
+  assert.match(room,/AnnotationCommentPopover mark=\{draftAnnotation\}/);
+  assert.match(room,/anchor:\{timeSeconds:media\?\.kind==='video'\?\(mark\.timeSeconds\?\?currentTime\):null\}/);
+  assert.match(stage,/AnnotationCommentPopover mark=\{visibleMarks\.find\(mark=>mark\.draft\)\}/);
+  assert.match(stage,/onPublish=\{onQuickComment\}/);
+  assert.match(popover,/Comentar esta anotación/);
+  assert.match(popover,/Añade contexto sobre este punto/);
+});
+
 test('uploading a new team asset preserves the selected unsaved review instead of silently rejecting the file',async()=>{
   const media=await read('./SharedProjectMedia.jsx');
   assert.match(media,/allowDirty=false,preserveSelection=false,preserveDirtyState=false/);
