@@ -3,5 +3,7 @@ export const APP_URL = 'https://ronda.repolite.link';
 // La app todavía no abre el registro desde la URL; llega al acceso y ahí se elige "Crear cuenta".
 export const SIGNUP_URL = APP_URL;
 export const LOGIN_URL = APP_URL;
-// Pendiente: confirmar el correo comercial antes de publicar.
-export const SALES_EMAIL = 'hola@repolite.link';
+// Alias de Zoho para planes, pagos y soporte de Ronda.
+export const SALES_EMAIL = 'ronda@repolite.link';
+export const REPOLITE_URL = 'https://repolite.link';
+export const REPOLITE_CONTACT_URL = 'https://repolite.link/#contact';

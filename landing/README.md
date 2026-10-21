@@ -17,8 +17,8 @@ pnpm build     # genera dist/
 
 - `src/data/plans.js`: planes, precios en COP y USD, descuento anual y la
   referencia de precio por persona de la calculadora.
-- `src/data/site.js`: URL de la app y correo comercial. El correo es
-  provisional y hay que confirmarlo antes de publicar.
+- `src/data/site.js`: URL de la app, correo comercial (`ronda@repolite.link`,
+  alias de Zoho) y enlaces a Repolite.
 - `src/pages/index.astro`: textos de cada sección.
 - `src/components/ReviewRoom.astro`: la sala de revisión del inicio.
 
@@ -40,6 +40,6 @@ subdominio (por ejemplo `app.`) en el túnel y actualizar `APP_URL` en
 ## Pendiente antes de publicar
 
 - Confirmar nombre y dominio (el README principal dice que "Ronda" es provisional).
-- Confirmar el correo comercial.
+- Crear el alias `ronda@repolite.link` en Zoho.
 - Páginas de términos y privacidad.
 - Imagen para compartir en redes (`og:image`).
