@@ -183,11 +183,20 @@ const description = 'Comenta en el fotograma exacto, dibuja sobre la pieza y apr
   .chip.done{background:var(--success);border-color:var(--success);color:var(--primary-text)}
   .step h3{margin-top:22px;font-size:20px;letter-spacing:-.02em}
   .step p{margin-top:8px;font-size:15px;color:var(--muted);max-width:32ch}
+  /* En móvil la línea va en un riel a la izquierda, con un punto por paso; el texto nunca queda encima. */
   @media (max-width:860px){
-    .steps{grid-template-columns:1fr;gap:32px;padding-left:4px}
-    .steps::before{left:15px;right:auto;top:8px;bottom:8px;width:2px;height:auto;background:linear-gradient(180deg,var(--line-strong),var(--lavender) 70%,var(--success))}
-    .step{padding-left:0}
+    .steps{grid-template-columns:1fr;gap:0}
+    .steps::before{display:none}
+    .step{display:grid;grid-template-columns:24px minmax(0,1fr);column-gap:14px;padding-bottom:36px}
+    .step:last-child{padding-bottom:0}
+    .step>*{grid-column:2}
+    .step::before{content:'';z-index:1;grid-column:1;grid-row:1;align-self:center;justify-self:center;width:10px;height:10px;border-radius:50%;background:var(--lavender);box-shadow:0 0 0 4px var(--canvas)}
+    .step:first-child::before{background:var(--line-strong)}
+    .step:last-child::before{background:var(--success)}
+    .step:not(:last-child)::after{content:'';position:absolute;left:11px;top:16px;bottom:-16px;width:2px;background:linear-gradient(180deg,var(--line-strong),var(--lavender))}
+    .chip{justify-self:start;box-shadow:none}
     .step h3{margin-top:14px}
+    .step p{max-width:60ch}
   }
 
   .formats-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(32px,6vw,96px)}
