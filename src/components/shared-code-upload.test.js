@@ -22,6 +22,8 @@ test('uploaded HTML has a sandboxed review surface while code remains inert and 
   assert.match(room,/kind==='file'.*kind:'file'/);
   assert.match(stage,/media\?\.type==='file'.*Descargar archivo local/);
   assert.match(documentReview,/sandbox="allow-same-origin" srcDoc=\{html\}/);
+  assert.match(documentReview,/document-sheet html-sheet[\s\S]*\{renderAnnotations\?\.\(drawing\)\}\{renderToolbar\?\.\(drawing\)\}/);
+  assert.doesNotMatch(documentReview.match(/<header>(.*?)<\/header>/s)?.[1]||'',/renderToolbar/);
   assert.match(documentReview,/default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:; form-action 'none'; base-uri 'none'/);
   assert.match(documentReview,/contentDocument/);
   assert.match(documentReview,/height:htmlHeight/);
