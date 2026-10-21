@@ -2,3 +2,9 @@ node_modules
 .env
 .env.*
 *.log
+# UI QA helpers create accounts with a fixed password through the live API;
+# they run from the QA runner, never inside the production image.
+ui-fixture.js
+social-ui-fixture.js
+shared-review-qa-runner.js
+shared-review-ui-qa.js
