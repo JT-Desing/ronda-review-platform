@@ -2,15 +2,15 @@
 import { Image, getImage } from 'astro:assets';
 import poster from '../assets/abstract-sculpture-planning.png';
 import { icons } from '../data/app-icons.js';
-import { TOUR_VIDEO, TOUR_CAPTIONS, chapters, clock } from '../data/tour.js';
-const posterSrc = (await getImage({ src: poster, width: 1600, format: "webp" })).src;
+import { TOUR_VIDEO, TOUR_POSTER, TOUR_CAPTIONS, chapters, clock } from '../data/tour.js';
+const posterSrc = TOUR_POSTER ?? (await getImage({ src: poster, width: 1600, format: "webp" })).src;
 const ready = Boolean(TOUR_VIDEO);
 ---
 <section class="section tour" id="recorrido" aria-labelledby="recorrido-titulo">
   <div class="wrap">
     <div class="section-head">
       <h2 id="recorrido-titulo">Ronda de principio a fin</h2>
-      <p>Un proyecto real en minuto y medio, desde que entra la primera pieza hasta que el cliente aprueba la versión final.</p>
+      <p>Todas las funciones en poco más de tres minutos, grabadas sobre la app real: desde que entra la primera pieza hasta que el cliente aprueba la versión final.</p>
     </div>
 
     <div class="tour-grid" data-tour data-ready={ready ? '' : undefined}>

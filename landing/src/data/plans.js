@@ -33,7 +33,7 @@ export const plans = [
     members: 5,
     storage: '200 GB',
     price: { COP: 119000, USD: 29 },
-    features: ['Hasta 5 personas', '200 GB de espacio', 'Roles e invitaciones por correo', 'Proyectos compartidos', 'Pauta y preview social', 'Presencia en vivo'],
+    features: ['Hasta 5 personas', '200 GB de espacio', 'Roles e invitaciones por correo', 'Proyectos compartidos', 'Pauta y preview social', 'Resumen de pendientes'],
     cta: 'Elegir Estudio',
     featured: true,
   },
@@ -44,7 +44,7 @@ export const plans = [
     members: 15,
     storage: '500 GB',
     price: { COP: 279000, USD: 69 },
-    features: ['Hasta 15 personas', '500 GB de espacio', 'Varios espacios', 'Marca propia en el espacio', 'Soporte prioritario'],
+    features: ['Hasta 15 personas', '500 GB de espacio', 'Varios espacios', 'Acceso por proyecto', 'Soporte prioritario'],
     cta: 'Elegir Agencia',
   },
 ];

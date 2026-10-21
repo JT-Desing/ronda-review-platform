@@ -10,7 +10,7 @@ test('los capítulos van en orden y arrancan en cero', () => {
 
 test('ubica el capítulo de un instante', () => {
   assert.equal(chapterAt(0), 0);
-  assert.equal(chapterAt(25), 2);
+  assert.equal(chapterAt(40), 2);
   assert.equal(chapterAt(999), chapters.length - 1);
 });
 

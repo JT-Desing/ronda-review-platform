@@ -1,19 +1,24 @@
-// Video del recorrido completo. Mientras sea null, la sección muestra la portada y los capítulos sin reproducir.
-// Para activarlo: copiar el archivo a public/video/ y poner aquí su ruta, por ejemplo '/video/recorrido-ronda.mp4'.
-export const TOUR_VIDEO = null;
+// Video del recorrido completo, grabado sobre la app real con datos de ejemplo.
+// Si TOUR_VIDEO es null, la sección muestra la portada y los capítulos sin reproducir.
+export const TOUR_VIDEO = '/video/recorrido-ronda.mp4';
+export const TOUR_POSTER = '/video/recorrido-portada.jpg';
 // Subtítulos opcionales en formato WebVTT, por ejemplo '/video/recorrido-ronda.vtt'.
 export const TOUR_CAPTIONS = null;
 
-// Capítulos en segundos. Ajustar los tiempos al montaje final del video.
+// Capítulos en segundos, medidos sobre el montaje final (3:20).
 export const chapters = [
-  { time: 0, title: 'Crear el proyecto y subir las piezas', text: 'La parrilla de entrega ordena cada pieza con su versión y su estado.' },
-  { time: 12, title: 'Revisar un video', text: 'Reproduce, pausa y ubica el fotograma exacto con su timecode.' },
-  { time: 24, title: 'Anotar y comentar', text: 'Lápiz, flecha, rectángulo o texto; el comentario queda en ese segundo.' },
-  { time: 38, title: 'Voz y prioridad', text: 'Notas de voz de hasta 60 segundos y comentarios urgentes o bloqueantes.' },
-  { time: 50, title: 'Subir una nueva versión', text: 'La V2 llega sin borrar la V1 ni sus comentarios.' },
-  { time: 62, title: 'Preview social', text: 'El carrusel como se vería en el feed, en 1:1, 4:5 o 16:9.' },
-  { time: 72, title: 'Pauta', text: 'Campañas, grupos de anuncios y un semáforo por pieza.' },
-  { time: 82, title: 'Equipo y aprobación', text: 'Invitaciones por correo, roles y la versión aprobada con nombre y fecha.' },
+  { time: 0, title: 'Inicio y proyectos', text: 'Tu espacio y un proyecto compartido nuevo para el cliente y el equipo.' },
+  { time: 17, title: 'Subir piezas y enlaces', text: 'Video, imágenes, PDF y sitios web en la parrilla de entrega, en el orden que quieras.' },
+  { time: 37, title: 'Revisar y anotar el video', text: 'Pausa en el fotograma, dibuja con lápiz o flecha y cada trazo abre su comentario.' },
+  { time: 60, title: 'Prioridad, voz y respuestas', text: 'Comentarios bloqueantes con /bloqueo, notas de voz, respuestas y resueltos.' },
+  { time: 77, title: 'Nueva versión', text: 'La V2 llega sin borrar la V1 ni sus comentarios, y puedes ir y volver.' },
+  { time: 93, title: 'Imagen, PDF y sitio web', text: 'Zoom y rectángulos sobre imágenes, PDF por páginas y la web en vivo.' },
+  { time: 115, title: 'Resumen y compartir', text: 'Pendientes y bloqueantes en un resumen, y el enlace por correo o WhatsApp.' },
+  { time: 125, title: 'Aprobar la versión', text: 'Revisores asignados y la versión aprobada queda en solo lectura.' },
+  { time: 133, title: 'Preview social', text: 'El carrusel con la cuenta y el texto, como se vería en el feed.' },
+  { time: 149, title: 'Pauta', text: 'Campañas, grupos de anuncios y solicitudes de cambio por campo.' },
+  { time: 173, title: 'Planificación y actividad', text: 'Las conversaciones en un calendario y el historial de cada proyecto.' },
+  { time: 185, title: 'Equipo y accesos', text: 'Invitaciones por correo con rol y quién entra a cada proyecto.' },
 ];
 
 export function chapterAt(seconds, list = chapters) {

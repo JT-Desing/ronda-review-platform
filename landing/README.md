@@ -22,7 +22,7 @@ pnpm build     # genera dist/
   alias de Zoho) y enlaces a Repolite.
 - `src/pages/index.astro`: textos de cada sección.
 - `src/components/ReviewRoom.astro` y `src/scripts/walkthrough.js`: el recorrido corto del inicio.
-- `src/data/tour.js`: video del recorrido completo y sus capítulos. Mientras `TOUR_VIDEO` sea `null` se muestra la portada con "Video en preparación". Para activarlo, copiar el MP4 a `public/video/` y poner su ruta; ajustar los segundos de cada capítulo al montaje final.
+- `src/data/tour.js` y `public/video/`: el recorrido completo (3:20, grabado sobre la app real con datos de ejemplo) y sus 12 capítulos. Si se regraba, hay que actualizar los segundos de cada capítulo.
 
 Los colores salen de `design-tokens.json` (Ronda Studio 0.2) y están copiados
 en `src/styles/global.css`. `src/scripts/liquid-motion.js` es copia del de la
@@ -45,5 +45,4 @@ subdominio (por ejemplo `app.`) en el túnel y actualizar `APP_URL` en
 - Crear el alias `ronda@repolite.link` en Zoho.
 - Páginas de términos y privacidad.
 - Imagen para compartir en redes (`og:image`).
-- Grabar el video del recorrido completo.
 - Las cuotas de 50 GB a 2 TB requieren tener los archivos en R2 (ver el documento de costos).
