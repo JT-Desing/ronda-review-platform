@@ -15,6 +15,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preload" href="/fonts/geist.woff2" as="font" type="font/woff2" crossorigin />
     <meta name="theme-color" content="#0C0B10" />
+    <script is:inline>document.documentElement.classList.add('js')</script>
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="es_CO" />
     <meta property="og:title" content={title} />
@@ -25,6 +26,40 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   <body>
     <a class="skip" href="#contenido">Saltar al contenido</a>
     <slot />
+    <script is:inline>
+      // Marca qué entra con animación. Corre al final del body, antes del primer pintado.
+      (() => {
+        const plan = [
+          ['.hero h1', 'title'], ['.hero .lede', '', 140], ['.hero-actions', '', 240], ['.hero-note', '', 320], ['.hero-room', 'room', 200],
+          ['.section-head h2', 'title'], ['.section-head p', '', 140],
+          ['.steps', 'track'], ['.step', '', 300, true],
+          ['.format-list > div', '', 0, true],
+          ['.extra', '', 0, true], ['.extra-art', 'inflate', 150],
+          ['.team-art', 'inflate'], ['.team h2', 'title'], ['.team-list li', '', 120, true],
+          ['.calc', ''], ['.switches', '', 80], ['.plan', '', 120, true], ['.fine', ''],
+          ['.faq-list details', '', 0, true],
+          ['.closing-art', 'inflate'], ['.closing h2', 'title', 120], ['.closing p', '', 220], ['.closing .liquid', '', 300],
+          ['.maker-inner', ''],
+        ];
+        const marked = [];
+        for (const [selector, kind, delay = 0, stagger = false] of plan) {
+          document.querySelectorAll(selector).forEach((el) => {
+            el.dataset.reveal = kind;
+            if (delay) el.style.setProperty('--d', `${delay}ms`);
+            if (stagger) el.style.setProperty('--i', String([...el.parentElement.children].indexOf(el)));
+            marked.push(el);
+          });
+        }
+        document.querySelectorAll('.team-art').forEach((el) => el.classList.add('parallax'));
+        document.querySelectorAll('.extra-art').forEach((el) => el.classList.add('parallax', 'parallax-soft'));
+        document.querySelectorAll('.closing-art').forEach((el) => el.classList.add('float'));
+        if (!('IntersectionObserver' in window)) { marked.forEach((el) => el.classList.add('is-in')); return; }
+        const io = new IntersectionObserver((entries) => {
+          for (const entry of entries) if (entry.isIntersecting) { entry.target.classList.add('is-in'); io.unobserve(entry.target); }
+        }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
+        marked.forEach((el) => io.observe(el));
+      })();
+    </script>
     <style is:global>
       .skip{position:absolute;left:16px;top:-60px;z-index:100;padding:10px 16px;border-radius:10px;background:var(--primary);color:var(--primary-text);text-decoration:none;font-weight:600}
       .skip:focus{top:12px}

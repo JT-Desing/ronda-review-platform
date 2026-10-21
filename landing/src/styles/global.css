@@ -36,3 +36,27 @@ p{margin:0;text-wrap:pretty}
 
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 @media (forced-colors:active){.btn{border:1px solid ButtonText}}
+
+/* Entradas al hacer scroll. Base.astro marca los elementos con data-reveal y agrega .is-in al verlos.
+   Solo se ocultan con JavaScript activo (html.js) y sin movimiento reducido. */
+:root{--spring:cubic-bezier(.2,.8,.25,1.12);--reveal-delay:calc(var(--i,0) * 90ms + var(--d,0ms))}
+@media (prefers-reduced-motion:no-preference){
+  html.js [data-reveal]{opacity:0;transform:translateY(28px);filter:blur(6px);transition:opacity 800ms var(--ease) var(--reveal-delay),transform 1000ms var(--spring) var(--reveal-delay),filter 800ms var(--ease) var(--reveal-delay),mask-position 1100ms var(--ease) var(--reveal-delay),-webkit-mask-position 1100ms var(--ease) var(--reveal-delay)}
+  /* La máscara baja de transparente a opaco; clip-path no sirve porque el observador lo cuenta como fuera de pantalla. */
+  html.js [data-reveal=title]{opacity:1;filter:none;transform:translateY(.35em);-webkit-mask-image:linear-gradient(#000 40%,transparent 60%);mask-image:linear-gradient(#000 40%,transparent 60%);-webkit-mask-size:100% 250%;mask-size:100% 250%;-webkit-mask-position:0 100%;mask-position:0 100%}
+  html.js [data-reveal=inflate]{transform:scale(.84) rotate(-3deg);filter:blur(14px)}
+  html.js [data-reveal=room]{transform:perspective(1400px) translateY(48px) rotateX(10deg) scale(.96);filter:blur(4px);transform-origin:50% 100%}
+  html.js [data-reveal=track]{opacity:1;transform:none;filter:none}
+  html.js [data-reveal].is-in{opacity:1;transform:none;filter:none;-webkit-mask-position:0 0;mask-position:0 0}
+  html.js [data-reveal=track]::before{transform:scaleX(0);transform-origin:left center;transition:transform 1400ms var(--ease) 200ms}
+  html.js [data-reveal=track].is-in::before{transform:none}
+  @media (max-width:860px){html.js [data-reveal=track]::before{transform:scaleY(0);transform-origin:center top}}
+
+  @supports (animation-timeline:view()){
+    .parallax{animation:drift linear both;animation-timeline:view();animation-range:cover}
+    .parallax-soft{--drift:14px}
+    @keyframes drift{from{translate:0 var(--drift,40px)}to{translate:0 calc(var(--drift,40px) * -1)}}
+  }
+  .float{animation:float 7s ease-in-out infinite}
+  @keyframes float{50%{translate:0 -14px;rotate:-2deg}}
+}
