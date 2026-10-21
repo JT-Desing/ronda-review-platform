@@ -1,0 +1,87 @@
+---
+import { Image, getImage } from 'astro:assets';
+import poster from '../assets/abstract-sculpture-planning.png';
+import { icons } from '../data/app-icons.js';
+import { TOUR_VIDEO, TOUR_CAPTIONS, chapters, clock } from '../data/tour.js';
+const posterSrc = (await getImage({ src: poster, width: 1200, format: 'webp' })).src;
+const ready = Boolean(TOUR_VIDEO);
+---
+<section class="section tour" id="recorrido" aria-labelledby="recorrido-titulo">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="recorrido-titulo">Ronda de principio a fin</h2>
+      <p>Un proyecto real en minuto y medio, desde que entra la primera pieza hasta que el cliente aprueba la versión final.</p>
+    </div>
+
+    <div class="tour-grid" data-tour data-ready={ready ? '' : undefined}>
+      <div class="player">
+        {ready ? (
+          <video data-video controls preload="none" poster={posterSrc} playsinline>
+            <source src={TOUR_VIDEO} type="video/mp4" />
+            {TOUR_CAPTIONS && <track kind="captions" src={TOUR_CAPTIONS} srclang="es" label="Español" default />}
+          </video>
+        ) : (
+          <div class="pending">
+            <Image src={poster} alt="" widths={[600, 1200]} sizes="(max-width: 960px) 100vw, 760px" />
+            <div class="pending-copy">
+              <span class="play" aria-hidden="true"><Fragment set:html={`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke-width="1.5">${icons.play}</svg>`} /></span>
+              <strong>Video en preparación</strong>
+              <span>Mientras tanto, mira el recorrido corto en la parte de arriba.</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <ol class="chapters" aria-label="Capítulos del recorrido">
+        {chapters.map((c, i) => (
+          <li>
+            <button type="button" data-chapter={i} data-time={c.time} disabled={!ready} aria-current={i === 0 ? 'true' : undefined}>
+              <span class="time">{clock(c.time)}</span>
+              <span class="chapter-copy"><strong>{c.title}</strong><span>{c.text}</span></span>
+            </button>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </div>
+</section>
+
+<style>
+  .tour-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:clamp(20px,3vw,40px);align-items:start}
+  .player{position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:16px;border:1px solid var(--line);background:#050506;box-shadow:0 40px 120px -50px rgb(160 120 230 / .4)}
+  .player video{display:block;width:100%;height:100%;background:#050506}
+  .pending :global(img){position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.55) saturate(.9)}
+  .pending-copy{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:8px;padding:24px;text-align:center}
+  .pending-copy strong{font-size:clamp(18px,2vw,22px);font-weight:600;letter-spacing:-.02em}
+  .pending-copy span:last-child{font-size:14px;color:var(--muted);max-width:34ch}
+  .play{display:grid;place-items:center;width:64px;height:64px;margin-bottom:8px;border-radius:50%;background:rgb(248 245 251 / .14);border:1px solid rgb(248 245 251 / .3);backdrop-filter:blur(8px);color:var(--text)}
+
+  .chapters{display:grid;gap:2px;margin:0;padding:0;list-style:none}
+  .chapters button{display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;width:100%;padding:12px 14px;border:0;border-radius:12px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;transition:background 160ms var(--ease)}
+  .chapters button:not(:disabled):hover{background:var(--surface-2)}
+  .chapters button:disabled{cursor:default}
+  .chapters button[aria-current=true]{background:var(--surface-1);box-shadow:inset 2px 0 0 var(--lavender)}
+  .tour-grid:not([data-ready]) .chapters button[aria-current=true]{background:transparent;box-shadow:none}
+  .time{padding-top:2px;font:500 12px/1.4 var(--mono);color:var(--lavender-soft);font-variant-numeric:tabular-nums}
+  .chapter-copy strong{display:block;font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .chapter-copy span{display:block;margin-top:2px;font-size:13.5px;line-height:1.45;color:var(--muted)}
+
+  @media (max-width:960px){.tour-grid{grid-template-columns:1fr}}
+</style>
+
+<script>
+  import { chapterAt } from '../data/tour.js';
+
+  const root = document.querySelector<HTMLElement>('[data-tour]');
+  const video = root?.querySelector<HTMLVideoElement>('[data-video]');
+  if (root && video) {
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('[data-chapter]')];
+    const mark = (index: number) => buttons.forEach((b, i) => (i === index ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')));
+    buttons.forEach((b) => b.addEventListener('click', () => {
+      video.currentTime = Number(b.dataset.time);
+      video.play().catch(() => {});
+      mark(Number(b.dataset.chapter));
+    }));
+    video.addEventListener('timeupdate', () => mark(chapterAt(video.currentTime)));
+  }
+</script>

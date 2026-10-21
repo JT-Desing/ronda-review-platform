@@ -4,6 +4,7 @@ import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import ReviewRoom from '../components/ReviewRoom.astro';
 import Pricing from '../components/Pricing.astro';
+import TourVideo from '../components/TourVideo.astro';
 import LiquidLink from '../components/LiquidLink.astro';
 import Logo from '../components/Logo.astro';
 import pautaArt from '../assets/abstract-sculpture-pauta.png';
@@ -31,6 +32,7 @@ const faqs = [
   { q: '¿Mis clientes necesitan cuenta?', a: 'Hoy sí. Los invitas por correo, crean una cuenta gratis y entran al proyecto con rol de revisor. Los enlaces para revisar sin registrarse están en desarrollo.' },
   { q: '¿Funciona en tablet y celular?', a: 'Sí. Puedes dibujar con el dedo o con un stylus, y en pantallas pequeñas los comentarios pasan a un panel inferior.' },
   { q: '¿Qué archivos acepta?', a: 'Video MP4, imágenes PNG, JPG y WebP, PDF y enlaces a sitios web. En los proyectos compartidos también puedes adjuntar documentos de Office y archivos ZIP.' },
+  { q: '¿Qué pasa si me quedo sin espacio?', a: 'Puedes sumar paquetes de 100 GB por $ 15.000 al mes en cualquier plan pago, sin cambiar de plan. Si necesitas varios TB, el plan a medida parte de 2 TB.' },
   { q: '¿Puedo cambiar de plan?', a: 'Cuando quieras. Si pasas a pago anual, pagas 10 meses y usas 12.' },
   { q: '¿Cómo pago un plan?', a: `Por ahora activamos los planes a mano: escríbenos a ${SALES_EMAIL} y te enviamos el enlace de pago. El pago dentro de Ronda está en camino.` },
 ];
@@ -52,7 +54,7 @@ const description = 'Comenta en el fotograma exacto, dibuja sobre la pieza y apr
           </div>
           <p class="hero-note">El plan Gratis no pide tarjeta.</p>
         </div>
-        <div class="hero-room"><ReviewRoom /></div>
+        <div class="hero-room"><ReviewRoom /><a class="tour-link" href="#recorrido">Ver el recorrido completo</a></div>
       </div>
     </section>
 
@@ -73,6 +75,8 @@ const description = 'Comenta en el fotograma exacto, dibuja sobre la pieza y apr
         </ol>
       </div>
     </section>
+
+    <TourVideo />
 
     <section class="section formats" id="formatos" aria-labelledby="formatos-titulo">
       <div class="wrap formats-grid">
@@ -174,6 +178,9 @@ const description = 'Comenta en el fotograma exacto, dibuja sobre la pieza y apr
   .hero-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:32px}
   .hero-note{margin-top:14px;font-size:13px;color:var(--faint)}
   @media (max-width:960px){.hero-grid{grid-template-columns:1fr}.hero-copy{max-width:640px}}
+  .tour-link{display:inline-block;margin-top:14px;margin-left:48px;font-size:14px;color:var(--lavender-soft);text-underline-offset:4px;text-decoration-color:rgb(212 193 251 / .4)}
+  .tour-link:hover{color:var(--text)}
+  @media (max-width:520px){.tour-link{margin-left:0}}
 
   .steps{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:28px;margin:0;padding:0;list-style:none}
   .steps::before{content:'';position:absolute;left:0;right:0;top:15px;height:2px;background:linear-gradient(90deg,var(--line-strong),var(--lavender) 70%,var(--success))}

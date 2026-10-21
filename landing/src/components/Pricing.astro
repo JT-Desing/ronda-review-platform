@@ -1,8 +1,8 @@
 ---
-import { plans, monthlyPrice, formatPrice, perSeatComparison, PER_SEAT_REFERENCE_USD } from '../data/plans.js';
+import { plans, customPlan, extraStorage, monthlyPrice, formatPrice, perSeatComparison, PER_SEAT_REFERENCE_USD, MAX_TEAM } from '../data/plans.js';
 import { SIGNUP_URL, SALES_EMAIL } from '../data/site.js';
 const start = perSeatComparison(5);
-const hrefFor = (id: string) => (id === 'gratis' ? SIGNUP_URL : `mailto:${SALES_EMAIL}?subject=${encodeURIComponent(`Plan ${plans.find((p) => p.id === id)!.name} de Ronda`)}`);
+const hrefFor = (id: string) => (id === 'gratis' ? SIGNUP_URL : `mailto:${SALES_EMAIL}?subject=${encodeURIComponent(`Plan ${[...plans, customPlan].find((p) => p.id === id)!.name} de Ronda`)}`);
 ---
 <section class="section pricing" id="precios" aria-labelledby="precios-titulo">
   <div class="wrap">
@@ -14,7 +14,7 @@ const hrefFor = (id: string) => (id === 'gratis' ? SIGNUP_URL : `mailto:${SALES_
     <div class="calc" data-calc>
       <label for="personas">¿Cuántas personas revisan?</label>
       <div class="calc-row">
-        <input id="personas" type="range" min="1" max="15" value={start.members} data-members />
+        <input id="personas" type="range" min="1" max={MAX_TEAM} value={start.members} data-members />
         <output for="personas" data-members-out>{start.members}</output>
       </div>
       <dl class="calc-result">
@@ -49,7 +49,22 @@ const hrefFor = (id: string) => (id === 'gratis' ? SIGNUP_URL : `mailto:${SALES_
         </li>
       ))}
     </ul>
-    <p class="fine">Precios de lanzamiento. Mientras terminamos el pago en línea, activamos los planes pagos por correo.</p>
+    <article class="custom">
+      <div class="custom-head">
+        <h3>{customPlan.name}</h3>
+        <p class="summary">{customPlan.summary}</p>
+        <p class="price">
+          <span class="from">Desde</span>
+          <span class="amount" data-price={customPlan.id}>{formatPrice(customPlan.price.COP, 'COP')}</span>
+          <span class="per">al mes</span>
+        </p>
+        <a class="btn" href={hrefFor(customPlan.id)}>{customPlan.cta}</a>
+      </div>
+      <ul class="features">{customPlan.features.map((f) => <li>{f}</li>)}</ul>
+    </article>
+
+    <p class="extra-storage">¿Te quedas sin espacio? Suma <strong>{extraStorage.storage}</strong> por <strong data-extra>{formatPrice(extraStorage.price.COP, 'COP')}</strong> al mes en cualquier plan pago, sin cambiar de plan.</p>
+    <p class="fine">Precios de lanzamiento en pesos colombianos ($) o dólares (USD). Mientras terminamos el pago en línea, activamos los planes pagos por correo.</p>
   </div>
 </section>
 
@@ -84,18 +99,28 @@ const hrefFor = (id: string) => (id === 'gratis' ? SIGNUP_URL : `mailto:${SALES_
   .features{display:grid;gap:10px;margin:22px 0 0;padding:0;list-style:none;font-size:14px;color:var(--muted)}
   .features li{display:flex;gap:10px}
   .features li::before{content:'';flex:none;width:6px;height:6px;margin-top:.55em;border-radius:50%;background:var(--lavender)}
-  .fine{margin-top:20px;font-size:13px;color:var(--faint)}
+  .custom{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px 48px;align-items:start;margin-top:12px;padding:28px;border-radius:14px;border:1px solid var(--line);background:linear-gradient(120deg,rgb(200 177 245 / .08),rgb(255 214 178 / .05))}
+  .custom h3{font-size:20px;letter-spacing:-.02em}
+  .custom .summary{min-height:0;max-width:44ch}
+  .custom .price{margin:18px 0}
+  .custom .btn{width:auto}
+  .custom .features{margin-top:4px}
+  .from{font-size:13px;color:var(--faint)}
+  .extra-storage{margin-top:20px;font-size:15px;color:var(--muted)}
+  .extra-storage strong{color:var(--text);font-weight:600}
+  .fine{margin-top:8px;font-size:13px;color:var(--faint)}
 
   @media (max-width:1060px){.plans{grid-template-columns:repeat(2,minmax(0,1fr))}}
   @media (max-width:760px){
     .calc{grid-template-columns:1fr;padding:20px}
     .calc-result{grid-column:1;grid-row:auto}
   }
-  @media (max-width:560px){.plans{grid-template-columns:1fr}.summary{min-height:0}.calc-result{grid-template-columns:1fr}}
+  @media (max-width:760px){.custom{grid-template-columns:1fr;padding:22px}}
+  @media (max-width:560px){.plans{grid-template-columns:1fr}.summary{min-height:0}.calc-result{grid-template-columns:1fr}.custom .btn{width:100%}}
 </style>
 
 <script>
-  import { plans, monthlyPrice, annualTotal, formatPrice, perSeatComparison } from '../data/plans.js';
+  import { plans, customPlan, extraStorage, monthlyPrice, annualTotal, formatPrice, perSeatComparison } from '../data/plans.js';
 
   const root = document.getElementById('precios')!;
   const members = root.querySelector<HTMLInputElement>('[data-members]')!;
@@ -106,7 +131,7 @@ const hrefFor = (id: string) => (id === 'gratis' ? SIGNUP_URL : `mailto:${SALES_
     const r = perSeatComparison(Number(members.value));
     out('[data-members-out]').textContent = String(r.members);
     out('[data-perseat]').textContent = `USD ${r.perSeat}`;
-    out('[data-plan-label]').textContent = `Ronda ${r.plan.name}`;
+    out('[data-plan-label]').textContent = r.plan.id === customPlan.id ? 'Ronda A medida, desde' : `Ronda ${r.plan.name}`;
     out('[data-ronda]').textContent = `USD ${r.ronda}`;
     out('[data-saving]').textContent = r.saving > 0 ? `Ahorras USD ${r.saving} al mes.` : 'Para una sola persona el precio es parecido; la diferencia aparece al sumar equipo.';
   }
@@ -117,6 +142,8 @@ const hrefFor = (id: string) => (id === 'gratis' ? SIGNUP_URL : `mailto:${SALES_
       const per = root.querySelector<HTMLElement>(`[data-per="${plan.id}"]`);
       if (per) per.textContent = billing === 'annual' ? `al mes, ${formatPrice(annualTotal(plan, currency), currency)} al año` : 'al mes';
     }
+    out(`[data-price="${customPlan.id}"]`).textContent = formatPrice(customPlan.price[currency], currency);
+    out('[data-extra]').textContent = formatPrice(extraStorage.price[currency], currency);
   }
 
   const bind = (attr: string, apply: (value: string) => void) => {
