@@ -1,0 +1,228 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import ReviewRoom from '../components/ReviewRoom.astro';
+import Pricing from '../components/Pricing.astro';
+import LiquidLink from '../components/LiquidLink.astro';
+import Logo from '../components/Logo.astro';
+import pautaArt from '../assets/abstract-sculpture-pauta.png';
+import socialArt from '../assets/abstract-sculpture-planning.png';
+import teamArt from '../assets/abstract-sculpture-team.png';
+import ribbon from '../assets/abstract-ribbon-inflated-v3.png';
+import { SIGNUP_URL, LOGIN_URL, SALES_EMAIL } from '../data/site.js';
+
+const steps = [
+  { chip: 'V1', title: 'Subes la pieza', text: 'Video, imagen, PDF o el enlace de un sitio web. Entra al proyecto como primera versión.' },
+  { chip: '00:06:12', title: 'Tu equipo comenta', text: 'Cada comentario guarda el instante, el dibujo y quién lo hizo. También se puede dejar una nota de voz.', mono: true },
+  { chip: 'V2', title: 'Subes la corrección', text: 'La versión nueva no borra la anterior. Los comentarios de la V1 siguen ahí para comparar.' },
+  { chip: 'Aprobada', title: 'Alguien la aprueba', text: 'Con un comentario bloqueante abierto, la versión no se puede aprobar. La decisión queda con nombre y fecha.', done: true },
+];
+
+const formats = [
+  { name: 'Video', text: 'Comentarios atados al fotograma, marcas en la línea de tiempo y dibujo encima del cuadro.' },
+  { name: 'Imagen', text: 'Dibuja, encierra o señala la zona exacta y deja el comentario pegado a ella.' },
+  { name: 'PDF', text: 'Presentaciones, guiones y artes finales, revisados página por página.' },
+  { name: 'Sitios web', text: 'Pega un enlace y anota sobre la página real, no sobre una captura.' },
+  { name: 'Voz', text: 'Graba hasta 60 segundos o adjunta un audio cuando explicarlo por escrito toma más tiempo.' },
+];
+
+const faqs = [
+  { q: '¿Mis clientes necesitan cuenta?', a: 'Hoy sí. Los invitas por correo, crean una cuenta gratis y entran al proyecto con rol de revisor. Los enlaces para revisar sin registrarse están en desarrollo.' },
+  { q: '¿Funciona en tablet y celular?', a: 'Sí. Puedes dibujar con el dedo o con un stylus, y en pantallas pequeñas los comentarios pasan a un panel inferior.' },
+  { q: '¿Qué archivos acepta?', a: 'Video MP4, imágenes PNG, JPG y WebP, PDF y enlaces a sitios web. En los proyectos compartidos también puedes adjuntar documentos de Office y archivos ZIP.' },
+  { q: '¿Puedo cambiar de plan?', a: 'Cuando quieras. Si pasas a pago anual, pagas 10 meses y usas 12.' },
+  { q: '¿Cómo pago un plan?', a: `Por ahora activamos los planes a mano: escríbenos a ${SALES_EMAIL} y te enviamos el enlace de pago. El pago dentro de Ronda está en camino.` },
+];
+
+const title = 'Ronda: revisión de video, diseño y pauta para equipos creativos';
+const description = 'Comenta en el fotograma exacto, dibuja sobre la pieza y aprueba versiones con tu equipo y tus clientes. Precio por equipo, no por persona.';
+---
+<Base title={title} description={description}>
+  <Header />
+  <main id="contenido">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <h1>Señala el cambio en el fotograma exacto.</h1>
+          <p class="lede">Ronda es la sala de revisión para equipos creativos. Tu equipo y tus clientes dibujan sobre el video, la imagen o el PDF, comentan en el segundo preciso y aprueban la versión que sale.</p>
+          <div class="hero-actions">
+            <LiquidLink href={SIGNUP_URL}>Crear cuenta gratis</LiquidLink>
+            <a class="btn" href="#precios">Ver precios</a>
+          </div>
+          <p class="hero-note">El plan Gratis no pide tarjeta.</p>
+        </div>
+        <div class="hero-room"><ReviewRoom /></div>
+      </div>
+    </section>
+
+    <section class="section flow" id="como-funciona" aria-labelledby="flujo-titulo">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="flujo-titulo">Una ronda, de la primera versión a la aprobada</h2>
+          <p>Lo que hoy se pierde entre correos, capturas con flechas y audios de WhatsApp queda en un solo hilo por pieza.</p>
+        </div>
+        <ol class="steps">
+          {steps.map((step) => (
+            <li class="step">
+              <span class:list={['chip', { mono: step.mono, done: step.done }]}>{step.chip}</span>
+              <h3>{step.title}</h3>
+              <p>{step.text}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <section class="section formats" id="formatos" aria-labelledby="formatos-titulo">
+      <div class="wrap formats-grid">
+        <div class="section-head">
+          <h2 id="formatos-titulo">Todo lo que pasa por revisión</h2>
+          <p>La misma forma de comentar sirve para el spot, el carrusel, la presentación al cliente y la landing de la campaña.</p>
+        </div>
+        <dl class="format-list">
+          {formats.map((f) => (<div><dt>{f.name}</dt><dd>{f.text}</dd></div>))}
+        </dl>
+      </div>
+    </section>
+
+    <section class="section extras" aria-label="Pauta y preview social">
+      <div class="wrap extras-grid">
+        <article class="extra">
+          <Image src={pautaArt} alt="" widths={[480, 800]} sizes="(max-width: 860px) 100vw, 600px" class="extra-art" />
+          <h2>Revisa la pauta antes de publicarla</h2>
+          <p>Ordena las piezas por campaña y grupo de anuncios. Cada pieza lleva su configuración, comentarios por campo y un semáforo. Si alguien cambia la configuración, la aprobación se cae y la pieza vuelve a revisión.</p>
+        </article>
+        <article class="extra">
+          <Image src={socialArt} alt="" widths={[480, 800]} sizes="(max-width: 860px) 100vw, 600px" class="extra-art" />
+          <h2>Mira el post como saldría en el feed</h2>
+          <p>Arma el carrusel con hasta 20 imágenes o videos, en 1:1, 4:5 o 16:9, con la cuenta y el texto. Es una simulación para decidir, y si una lámina no cuadra la anotas ahí mismo.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section team" aria-labelledby="equipo-titulo">
+      <div class="wrap team-grid">
+        <Image src={teamArt} alt="" widths={[480, 900]} sizes="(max-width: 860px) 100vw, 560px" class="team-art" />
+        <div>
+          <h2 id="equipo-titulo">Cada persona ve lo que le toca</h2>
+          <ul class="team-list">
+            <li><strong>Roles claros.</strong> Administración, edición y revisión. Quien revisa comenta; quien edita sube versiones y cambia estados.</li>
+            <li><strong>Invitaciones por correo.</strong> Llegan con un código y la persona entra directo al espacio del equipo.</li>
+            <li><strong>Presencia en vivo.</strong> Ves quién está revisando la misma pieza y puedes seguir su cursor.</li>
+            <li><strong>Privado y compartido, separados.</strong> Tus proyectos personales no aparecen en el espacio del equipo por accidente.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <Pricing />
+
+    <section class="section faq" id="preguntas" aria-labelledby="preguntas-titulo">
+      <div class="wrap faq-grid">
+        <div class="section-head"><h2 id="preguntas-titulo">Preguntas frecuentes</h2></div>
+        <div class="faq-list">
+          {faqs.map((f) => (
+            <details>
+              <summary>{f.q}</summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="closing" aria-labelledby="cierre-titulo">
+      <div class="wrap closing-inner">
+        <Image src={ribbon} alt="" widths={[600, 1000]} sizes="(max-width: 860px) 90vw, 620px" class="closing-art" />
+        <h2 id="cierre-titulo">Sube tu primera pieza hoy.</h2>
+        <p>El plan Gratis alcanza para revisar un proyecto real con tu equipo.</p>
+        <LiquidLink href={SIGNUP_URL}>Crear cuenta gratis</LiquidLink>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <Logo size={22} />
+      <nav aria-label="Pie de página">
+        <a href={LOGIN_URL}>Entrar</a>
+        <a href="#precios">Precios</a>
+        <a href={`mailto:${SALES_EMAIL}`}>{SALES_EMAIL}</a>
+      </nav>
+      <p>© 2026 Ronda</p>
+    </div>
+  </footer>
+</Base>
+
+<style>
+  .hero{padding-block:clamp(40px,7vw,96px) clamp(56px,8vw,112px);position:relative}
+  .hero::before{content:'';position:absolute;inset:-120px 0 auto;height:720px;z-index:-1;background:radial-gradient(60% 50% at 70% 35%,rgb(200 177 245 / .16),transparent 70%),radial-gradient(40% 40% at 90% 60%,rgb(255 214 178 / .08),transparent 70%);pointer-events:none}
+  .hero-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(32px,5vw,72px);align-items:center}
+  h1{font-size:clamp(40px,5.6vw,76px);line-height:.98;letter-spacing:-.05em;font-weight:600}
+  .lede{margin-top:24px;max-width:46ch;font-size:clamp(17px,1.5vw,19px);color:var(--muted)}
+  .hero-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:32px}
+  .hero-note{margin-top:14px;font-size:13px;color:var(--faint)}
+  @media (max-width:960px){.hero-grid{grid-template-columns:1fr}.hero-copy{max-width:640px}}
+
+  .steps{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:28px;margin:0;padding:0;list-style:none}
+  .steps::before{content:'';position:absolute;left:0;right:0;top:15px;height:2px;background:linear-gradient(90deg,var(--line-strong),var(--lavender) 70%,var(--success))}
+  .step{position:relative}
+  .chip{position:relative;display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:999px;background:var(--surface-3);border:1px solid var(--line-strong);font-size:13px;font-weight:600;box-shadow:0 0 0 6px var(--canvas)}
+  .chip.mono{font:500 12px/1 var(--mono);color:var(--lavender-soft)}
+  .chip.done{background:var(--success);border-color:var(--success);color:var(--primary-text)}
+  .step h3{margin-top:22px;font-size:20px;letter-spacing:-.02em}
+  .step p{margin-top:8px;font-size:15px;color:var(--muted);max-width:32ch}
+  @media (max-width:860px){
+    .steps{grid-template-columns:1fr;gap:32px;padding-left:4px}
+    .steps::before{left:15px;right:auto;top:8px;bottom:8px;width:2px;height:auto;background:linear-gradient(180deg,var(--line-strong),var(--lavender) 70%,var(--success))}
+    .step{padding-left:0}
+    .step h3{margin-top:14px}
+  }
+
+  .formats-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(32px,6vw,96px)}
+  .format-list{margin:0}
+  .format-list div{display:grid;grid-template-columns:140px 1fr;gap:24px;padding:22px 0;border-top:1px solid var(--line)}
+  .format-list div:last-child{border-bottom:1px solid var(--line)}
+  .format-list dt{font-size:20px;font-weight:600;letter-spacing:-.02em}
+  .format-list dd{margin:0;color:var(--muted);max-width:52ch}
+  @media (max-width:860px){.formats-grid{grid-template-columns:1fr}.format-list div{grid-template-columns:1fr;gap:6px}}
+
+  .extras{padding-top:0}
+  .extras-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(16px,2vw,24px)}
+  .extra{display:flex;flex-direction:column;padding:clamp(20px,3vw,36px);border-radius:18px;background:var(--surface-1);border:1px solid var(--line)}
+  .extra :global(.extra-art){width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;border-radius:12px;margin-bottom:28px;-webkit-mask-image:radial-gradient(75% 80% at 50% 45%,#000 55%,transparent);mask-image:radial-gradient(75% 80% at 50% 45%,#000 55%,transparent)}
+  .extra h2{font-size:clamp(24px,2.6vw,32px);line-height:1.08}
+  .extra p{margin-top:14px;color:var(--muted);max-width:52ch}
+  @media (max-width:860px){.extras-grid{grid-template-columns:1fr}}
+
+  .team-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,6vw,96px);align-items:center}
+  .team :global(.team-art){width:100%;height:auto;aspect-ratio:1;object-fit:cover;border-radius:18px}
+  .team h2{font-size:clamp(32px,4.2vw,52px);line-height:1.02}
+  .team-list{display:grid;gap:18px;margin:32px 0 0;padding:0;list-style:none;color:var(--muted)}
+  .team-list strong{color:var(--text);font-weight:600}
+  @media (max-width:860px){.team-grid{grid-template-columns:1fr}.team :global(.team-art){aspect-ratio:16/10}}
+
+  .faq-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(32px,6vw,96px)}
+  .faq-list details{border-top:1px solid var(--line)}
+  .faq-list details:last-child{border-bottom:1px solid var(--line)}
+  summary{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:22px 0;font-size:18px;font-weight:550;cursor:pointer;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:'';flex:none;width:10px;height:10px;border-right:1.6px solid var(--muted);border-bottom:1.6px solid var(--muted);transform:rotate(45deg) translateY(-3px);transition:transform 200ms var(--ease)}
+  details[open] summary::after{transform:rotate(-135deg) translateY(-3px)}
+  .faq-list p{padding:0 0 22px;color:var(--muted);max-width:60ch}
+  @media (max-width:860px){.faq-grid{grid-template-columns:1fr}}
+
+  .closing{padding-block:clamp(48px,8vw,112px) clamp(80px,12vw,160px);text-align:center;overflow:hidden}
+  .closing-inner{display:flex;flex-direction:column;align-items:center}
+  .closing :global(.closing-art){width:min(560px,86vw);height:auto;margin-bottom:-24px;filter:drop-shadow(0 40px 80px rgb(200 140 230 / .3))}
+  .closing h2{font-size:clamp(36px,5.4vw,68px);line-height:1;letter-spacing:-.05em}
+  .closing p{margin:18px 0 32px;color:var(--muted);font-size:18px}
+
+  .site-footer{border-top:1px solid var(--line);padding-block:28px}
+  .footer-inner{display:flex;flex-wrap:wrap;align-items:center;gap:16px 32px;font-size:14px;color:var(--faint)}
+  .footer-inner nav{display:flex;flex-wrap:wrap;gap:20px;margin-left:auto}
+  .footer-inner a{color:var(--muted);text-decoration:none}
+  .footer-inner a:hover{color:var(--text)}
+  @media (max-width:640px){.footer-inner nav{margin-left:0;width:100%}}
+</style>

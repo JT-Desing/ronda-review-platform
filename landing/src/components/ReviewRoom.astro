@@ -1,0 +1,361 @@
+---
+import { Image } from 'astro:assets';
+import frame from '../assets/abstract-sculpture-projects.png';
+import { initialComments, timecode, DURATION } from '../scripts/review-demo.js';
+const comments = initialComments();
+---
+<figure class="room" data-room aria-label="Demostración de una sala de revisión de Ronda">
+  <div class="room-bar">
+    <span class="kind">Video</span>
+    <div class="file">
+      <strong>Spot verano 20 s</strong>
+      <span>Campaña Costa · V3</span>
+    </div>
+    <div class="decision">
+      <span class="status" data-status>En revisión</span>
+      <button type="button" class="approve" data-approve>Aprobar V3</button>
+    </div>
+  </div>
+
+  <div class="room-body">
+    <div class="stage-column">
+      <div class="stage" data-stage>
+        <div class="frame" data-frame>
+          <Image src={frame} alt="Fotograma del spot: escultura de listones en lavanda, rosa y durazno" widths={[480, 760, 1100]} sizes="(max-width: 960px) 100vw, 720px" loading="eager" fetchpriority="high" />
+        </div>
+        <svg class="ink" data-ink viewBox="0 0 1000 625" aria-hidden="true" focusable="false"></svg>
+        <p class="hint" data-hint>Elige el lápiz y dibuja sobre el fotograma</p>
+      </div>
+
+      <div class="transport">
+        <button type="button" class="tool play" data-play aria-label="Pausar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-pause" d="M8 5v14M16 5v14" /><path class="i-play" d="M7 5.5v13l11-6.5z" /></svg>
+        </button>
+        <button type="button" class="tool pen" data-pen aria-pressed="false" aria-label="Lápiz">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.4 5.6l4 4M4 20l4.6-1 10.2-10.2a2.8 2.8 0 0 0-4-4L4.6 15z" /></svg>
+        </button>
+        <span class="tc" data-timecode aria-live="off">{timecode(0)}</span>
+        <div class="track" data-track role="slider" tabindex="0" aria-label="Línea de tiempo" aria-valuemin="0" aria-valuemax={DURATION} aria-valuenow="0" aria-valuetext={timecode(0)}>
+          <div class="track-fill" data-fill></div>
+          <div class="markers" data-markers>
+            {comments.map((c) => <span class="marker" style={`left:${(c.time / DURATION) * 100}%`} />)}
+          </div>
+          <div class="playhead" data-playhead></div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="comments" aria-label="Comentarios">
+      <header><h3>Comentarios</h3><span data-open>{comments.length} abiertos</span></header>
+      <ol data-list>
+        {comments.map((c) => (
+          <li class="comment">
+            <span class={`avatar tone-${c.tone}`} aria-hidden="true">{c.initials}</span>
+            <div class="comment-main">
+              <p class="who"><strong>{c.author}</strong> <span>{c.role}</span></p>
+              <button type="button" class="tc-chip">{timecode(c.time)}</button>
+              <p class="text">{c.text}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <p class="notice" data-notice role="status"></p>
+    </aside>
+  </div>
+</figure>
+
+<style>
+  .room{margin:0;border:1px solid var(--line);border-radius:18px;background:var(--surface-1);box-shadow:0 40px 120px -40px rgb(160 120 230 / .35),0 0 0 1px rgb(255 255 255 / .02) inset;overflow:hidden}
+  .room-bar{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .kind{padding:4px 8px;border-radius:6px;background:var(--surface-3);color:var(--lavender-soft);font-size:11px;font-weight:600}
+  .file{display:grid;min-width:0;line-height:1.25}
+  .file strong{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .file span{font-size:12px;color:var(--faint)}
+  .decision{display:flex;align-items:center;gap:8px;margin-left:auto}
+  .status{font-size:12px;color:var(--peach);white-space:nowrap}
+  .status::before{content:'';display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:currentColor;vertical-align:1px}
+  .status[data-approved]{color:var(--success)}
+  .approve{min-height:36px;padding:0 14px;border:0;border-radius:999px;background:var(--primary);color:var(--primary-text);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .approve:disabled{background:var(--surface-3);color:var(--muted);cursor:default}
+
+  .room-body{display:grid;grid-template-columns:minmax(0,1fr) 272px}
+  .stage-column{min-width:0;border-right:1px solid var(--line)}
+  .stage{position:relative;aspect-ratio:16/10;overflow:hidden;background:#000}
+  .frame{position:absolute;inset:0;transform-origin:52% 45%;will-change:transform}
+  .frame img{width:100%;height:100%;object-fit:cover}
+  .ink{position:absolute;inset:0;width:100%;height:100%;touch-action:pan-y}
+  .stage[data-drawing] .ink{cursor:crosshair;touch-action:none}
+  .ink :global(path){fill:none;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+  .ink :global(.mark-seed){stroke:var(--coral)}
+  .ink :global(.mark-user){stroke:var(--lavender)}
+  .ink :global(.mark-draw){stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 900ms var(--ease) forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .hint{position:absolute;left:12px;bottom:12px;padding:6px 10px;border-radius:999px;background:rgb(12 11 16 / .7);backdrop-filter:blur(8px);font-size:12px;color:var(--text);pointer-events:none;transition:opacity 300ms var(--ease)}
+  .hint[hidden]{display:block;opacity:0}
+
+  .transport{display:flex;align-items:center;gap:6px;padding:8px 12px}
+  .tool{display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:10px;background:transparent;cursor:pointer;color:var(--muted)}
+  .tool:hover{background:var(--surface-2);color:var(--text)}
+  .tool svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .play .i-play{display:none;fill:currentColor;stroke:none}
+  .play[data-paused] .i-play{display:block}.play[data-paused] .i-pause{display:none}
+  .pen[aria-pressed=true]{background:var(--lavender);color:var(--primary-text)}
+  .tc{font:500 12px/1 var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;min-width:62px;margin-left:4px}
+  .track{position:relative;flex:1;height:28px;margin-left:6px;cursor:pointer;border-radius:6px}
+  .track::before{content:'';position:absolute;left:0;right:0;top:50%;height:4px;margin-top:-2px;border-radius:2px;background:var(--surface-3)}
+  .track-fill{position:absolute;left:0;top:50%;height:4px;margin-top:-2px;width:0;border-radius:2px;background:var(--line-strong)}
+  .markers :global(.marker){position:absolute;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:var(--lavender);box-shadow:0 0 0 3px var(--surface-1)}
+  .markers :global(.marker[data-resolved]){background:var(--faint)}
+  .playhead{position:absolute;top:2px;bottom:2px;left:0;width:2px;margin-left:-1px;border-radius:1px;background:var(--text)}
+
+  .comments{display:flex;flex-direction:column;min-width:0;max-height:100%;padding:14px 0 0}
+  .comments header{display:flex;align-items:baseline;justify-content:space-between;padding:0 14px 10px}
+  .comments h3{font-size:14px;letter-spacing:-.01em}
+  .comments header span{font-size:12px;color:var(--faint)}
+  ol{flex:1;margin:0;padding:0 8px 8px;list-style:none;overflow:auto;max-height:340px;scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
+  ol :global(.comment){display:flex;gap:10px;padding:10px 6px;border-radius:12px;transition:background 200ms var(--ease)}
+  ol :global(.comment[data-active]){background:var(--surface-2)}
+  ol :global(.comment[data-resolved] .text){color:var(--faint);text-decoration:line-through;text-decoration-color:var(--line-strong)}
+  ol :global(.comment[data-fresh]){animation:arrive 420ms var(--ease)}
+  @keyframes arrive{from{opacity:0;transform:translateY(6px)}}
+  ol :global(.avatar){flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;font-size:11px;font-weight:650;color:var(--primary-text)}
+  ol :global(.tone-peach){background:var(--peach)}ol :global(.tone-mint){background:var(--mint)}ol :global(.tone-lavender){background:var(--lavender)}
+  ol :global(.comment-main){min-width:0;flex:1}
+  ol :global(.who){font-size:13px;line-height:1.3}
+  ol :global(.who span){color:var(--faint);font-size:12px}
+  ol :global(.tc-chip){margin-top:4px;padding:2px 7px;border:0;border-radius:6px;background:var(--surface-3);color:var(--lavender-soft);font:500 11px/1.5 var(--mono);cursor:pointer}
+  ol :global(.tc-chip:hover){background:var(--line-strong)}
+  ol :global(.text){margin-top:6px;font-size:13px;line-height:1.45;color:var(--text);overflow-wrap:anywhere}
+  ol :global(.comment input){width:100%;margin-top:6px;padding:8px 10px;border:1px solid var(--line-strong);border-radius:10px;background:var(--canvas);font-size:13px}
+  ol :global(.comment input:focus){outline:2px solid var(--lavender);outline-offset:0;border-color:transparent}
+  ol :global(.resolve){display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:4px 8px 4px 6px;border:1px solid var(--line);border-radius:999px;background:transparent;font-size:12px;color:var(--muted);cursor:pointer}
+  ol :global(.resolve:hover){border-color:var(--line-strong);color:var(--text)}
+  ol :global(.resolve[aria-pressed=true]){color:var(--success);border-color:transparent;background:rgb(184 227 209 / .1)}
+  .notice{min-height:0;margin:0 14px 12px;font-size:12px;color:var(--peach)}
+  .notice:empty{display:none}
+  .notice[data-ok]{color:var(--success)}
+
+  @media (max-width:960px){
+    .room-body{grid-template-columns:1fr}
+    .stage-column{border-right:0;border-bottom:1px solid var(--line)}
+    ol{max-height:none}
+  }
+  @media (max-width:520px){
+    .room-bar{flex-wrap:wrap}
+    .decision{width:100%;justify-content:space-between}
+    .tc{min-width:56px}
+  }
+</style>
+
+<script>
+  import { DURATION, timecode, initialComments, openCount, canApprove, visibleAnnotations, pointsToPath, strokeLength } from '../scripts/review-demo.js';
+
+  const room = document.querySelector<HTMLElement>('[data-room]');
+  if (room) setup(room);
+
+  function setup(room: HTMLElement) {
+    const $ = <T extends Element>(sel: string) => room.querySelector<T>(sel)!;
+    const stage = $<HTMLElement>('[data-stage]'), frame = $<HTMLElement>('[data-frame]'), ink = $<SVGSVGElement>('[data-ink]');
+    const play = $<HTMLButtonElement>('[data-play]'), pen = $<HTMLButtonElement>('[data-pen]'), hint = $<HTMLElement>('[data-hint]');
+    const tc = $<HTMLElement>('[data-timecode]'), track = $<HTMLElement>('[data-track]'), fill = $<HTMLElement>('[data-fill]'), playhead = $<HTMLElement>('[data-playhead]'), markers = $<HTMLElement>('[data-markers]');
+    const list = $<HTMLOListElement>('[data-list]'), openLabel = $<HTMLElement>('[data-open]'), notice = $<HTMLElement>('[data-notice]');
+    const approve = $<HTMLButtonElement>('[data-approve]'), status = $<HTMLElement>('[data-status]');
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const NS = 'http://www.w3.org/2000/svg';
+
+    type Comment = ReturnType<typeof initialComments>[number] & { draft?: boolean };
+    let comments: Comment[] = initialComments();
+    let time = reduced ? 6.5 : 0, playing = !reduced, visible = true, approved = false, active = '', fresh = '', drawnSeed = false, userCount = 0;
+    let last: number | undefined;
+
+    // Herramienta de dibujo activa por defecto solo con puntero fino, para no bloquear el scroll en pantallas táctiles.
+    setPen(matchMedia('(pointer: fine)').matches);
+
+    function setPen(on: boolean) {
+      pen.setAttribute('aria-pressed', String(on));
+      stage.toggleAttribute('data-drawing', on);
+      hint.textContent = on ? 'Dibuja sobre el fotograma para comentar en este instante' : 'Elige el lápiz y dibuja sobre el fotograma';
+    }
+    function setPlaying(on: boolean) {
+      playing = on;
+      play.toggleAttribute('data-paused', !on);
+      play.setAttribute('aria-label', on ? 'Pausar' : 'Reproducir');
+      last = undefined;
+    }
+    setPlaying(playing);
+
+    function paintTime() {
+      const pct = (time / DURATION) * 100;
+      fill.style.width = `${pct}%`;
+      playhead.style.left = `${pct}%`;
+      tc.textContent = timecode(time);
+      track.setAttribute('aria-valuenow', time.toFixed(1));
+      track.setAttribute('aria-valuetext', timecode(time));
+      // El fotograma se mueve un poco para que se lea como video.
+      if (!reduced) frame.style.transform = `scale(${1.04 + time * 0.004}) translate(${(time - 10) * -0.35}%, ${Math.sin(time / 3) * 0.6}%)`;
+      paintInk();
+    }
+
+    function paintInk() {
+      const shown = visibleAnnotations(comments, time);
+      const ids = new Set(shown.map((c) => c.id));
+      ink.querySelectorAll('path[data-id]').forEach((p) => { if (!ids.has(p.getAttribute('data-id')!)) p.remove(); });
+      for (const c of shown) {
+        if (ink.querySelector(`path[data-id="${c.id}"]`)) continue;
+        const path = document.createElementNS(NS, 'path');
+        path.setAttribute('d', c.path!);
+        path.dataset.id = c.id;
+        path.classList.add(c.id.startsWith('u') ? 'mark-user' : 'mark-seed');
+        ink.append(path);
+        if (!reduced && c.id === 'c2' && !drawnSeed) {
+          drawnSeed = true;
+          path.style.setProperty('--len', String(path.getTotalLength()));
+          path.classList.add('mark-draw');
+        }
+      }
+    }
+
+    function paintMarkers() {
+      markers.replaceChildren(...comments.map((c) => {
+        const m = document.createElement('span');
+        m.className = 'marker';
+        m.style.left = `${(c.time / DURATION) * 100}%`;
+        m.toggleAttribute('data-resolved', c.resolved);
+        return m;
+      }));
+    }
+
+    function paintComments() {
+      list.replaceChildren(...comments.map((c) => {
+        const li = document.createElement('li');
+        li.className = 'comment';
+        li.toggleAttribute('data-active', c.id === active);
+        li.toggleAttribute('data-resolved', c.resolved);
+        li.toggleAttribute('data-fresh', c.id === fresh);
+        const avatar = Object.assign(document.createElement('span'), { className: `avatar tone-${c.tone}`, textContent: c.initials });
+        avatar.setAttribute('aria-hidden', 'true');
+        const main = Object.assign(document.createElement('div'), { className: 'comment-main' });
+        const who = Object.assign(document.createElement('p'), { className: 'who' });
+        who.append(Object.assign(document.createElement('strong'), { textContent: c.author }), ' ', Object.assign(document.createElement('span'), { textContent: c.role }));
+        const chip = Object.assign(document.createElement('button'), { type: 'button', className: 'tc-chip', textContent: timecode(c.time) });
+        chip.setAttribute('aria-label', `Ir a ${timecode(c.time)}`);
+        chip.addEventListener('click', () => { setPlaying(false); time = c.time; active = c.id; paintTime(); paintComments(); });
+        main.append(who, chip);
+        if (c.draft) {
+          const input = Object.assign(document.createElement('input'), { type: 'text', placeholder: 'Escribe qué cambiarías y pulsa Enter', maxLength: 140 });
+          input.setAttribute('aria-label', `Comentario en ${timecode(c.time)}`);
+          const save = () => { c.text = input.value.trim() || 'Revisar esta zona.'; c.draft = false; fresh = ''; paintComments(); };
+          input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); save(); } });
+          input.addEventListener('blur', save);
+          main.append(input);
+          queueMicrotask(() => input.focus({ preventScroll: true }));
+        } else {
+          main.append(Object.assign(document.createElement('p'), { className: 'text', textContent: c.text }));
+          const resolve = Object.assign(document.createElement('button'), { type: 'button', className: 'resolve', textContent: c.resolved ? 'Resuelto' : 'Resolver' });
+          resolve.setAttribute('aria-pressed', String(c.resolved));
+          resolve.disabled = approved;
+          resolve.addEventListener('click', () => { c.resolved = !c.resolved; notice.textContent = ''; fresh = ''; paintAll(); });
+          main.append(resolve);
+        }
+        li.append(avatar, main);
+        return li;
+      }));
+      const open = openCount(comments);
+      openLabel.textContent = open === 1 ? '1 abierto' : `${open} abiertos`;
+    }
+
+    function paintDecision() {
+      status.textContent = approved ? 'Aprobado' : 'En revisión';
+      status.toggleAttribute('data-approved', approved);
+      approve.textContent = approved ? 'Reabrir V3' : 'Aprobar V3';
+    }
+
+    function paintAll() { paintComments(); paintMarkers(); paintInk(); paintDecision(); }
+
+    approve.addEventListener('click', () => {
+      notice.removeAttribute('data-ok');
+      if (approved) { approved = false; notice.textContent = ''; }
+      else if (!canApprove(comments)) {
+        const open = openCount(comments);
+        notice.textContent = `Faltan ${open === 1 ? '1 comentario' : `${open} comentarios`} por resolver antes de aprobar.`;
+        return;
+      } else { approved = true; notice.setAttribute('data-ok', ''); notice.textContent = 'V3 aprobada. Queda registrado quién la aprobó y cuándo.'; }
+      paintAll();
+    });
+
+    play.addEventListener('click', () => setPlaying(!playing));
+    pen.addEventListener('click', () => setPen(pen.getAttribute('aria-pressed') !== 'true'));
+
+    // Línea de tiempo: clic, arrastre y teclado.
+    const seekFrom = (e: PointerEvent) => {
+      const r = track.getBoundingClientRect();
+      time = Math.max(0, Math.min(DURATION, ((e.clientX - r.left) / r.width) * DURATION));
+      paintTime();
+    };
+    track.addEventListener('pointerdown', (e) => { setPlaying(false); track.setPointerCapture(e.pointerId); seekFrom(e); });
+    track.addEventListener('pointermove', (e) => { if (track.hasPointerCapture(e.pointerId)) seekFrom(e); });
+    track.addEventListener('keydown', (e) => {
+      const step = e.shiftKey ? 1 : 1 / 24;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault(); setPlaying(false);
+        time = Math.max(0, Math.min(DURATION, time + (e.key === 'ArrowRight' ? step : -step)));
+        paintTime();
+      }
+      if (e.key === ' ') { e.preventDefault(); setPlaying(!playing); }
+    });
+
+    // Dibujo: al soltar el trazo se crea un comentario en el instante actual.
+    let points: [number, number][] = [], live: SVGPathElement | null = null;
+    const toSvg = (e: PointerEvent): [number, number] => {
+      const r = ink.getBoundingClientRect();
+      return [((e.clientX - r.left) / r.width) * 1000, ((e.clientY - r.top) / r.height) * 625];
+    };
+    ink.addEventListener('pointerdown', (e) => {
+      if (!stage.hasAttribute('data-drawing') || approved) return;
+      e.preventDefault();
+      setPlaying(false);
+      ink.setPointerCapture(e.pointerId);
+      points = [toSvg(e)];
+      live = document.createElementNS(NS, 'path');
+      live.classList.add('mark-user');
+      ink.append(live);
+    });
+    ink.addEventListener('pointermove', (e) => {
+      if (!live) return;
+      points.push(toSvg(e));
+      live.setAttribute('d', pointsToPath(points));
+    });
+    const finish = () => {
+      if (!live) return;
+      live.remove();
+      live = null;
+      if (strokeLength(points) < 24) return;
+      userCount += 1;
+      const id = `u${userCount}`;
+      comments = [...comments, { id, author: 'Tú', role: 'Invitado', initials: 'TÚ', tone: 'lavender', time, text: '', resolved: false, path: pointsToPath(points), draft: true }];
+      comments.sort((a, b) => a.time - b.time);
+      active = id; fresh = id; hint.hidden = true; notice.textContent = '';
+      paintAll();
+    };
+    ink.addEventListener('pointerup', finish);
+    ink.addEventListener('pointercancel', finish);
+
+    // Solo reproduce mientras la sala está en pantalla.
+    new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; last = undefined; }).observe(room);
+
+    const loop = (now: number) => {
+      if (playing && visible) {
+        const dt = last === undefined ? 0 : Math.min((now - last) / 1000, 0.1);
+        last = now;
+        time = (time + dt) % DURATION;
+        const near = comments.find((c) => !c.resolved && Math.abs(c.time - time) < 0.6);
+        if (near && near.id !== active) { active = near.id; paintComments(); }
+        paintTime();
+      }
+      requestAnimationFrame(loop);
+    };
+    paintAll();
+    paintTime();
+    requestAnimationFrame(loop);
+  }
+</script>

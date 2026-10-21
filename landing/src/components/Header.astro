@@ -1,0 +1,47 @@
+---
+import Logo from './Logo.astro';
+import LiquidLink from './LiquidLink.astro';
+import { LOGIN_URL, SIGNUP_URL } from '../data/site.js';
+const links = [
+  { href: '#como-funciona', label: 'Cómo funciona' },
+  { href: '#formatos', label: 'Qué revisas' },
+  { href: '#precios', label: 'Precios' },
+  { href: '#preguntas', label: 'Preguntas' },
+];
+---
+<header class="site-header">
+  <div class="wrap bar">
+    <a href="/" class="home" aria-label="Ronda, inicio"><Logo /></a>
+    <nav aria-label="Secciones">
+      <ul>{links.map((link) => <li><a href={link.href}>{link.label}</a></li>)}</ul>
+    </nav>
+    <div class="actions">
+      <a class="login" href={LOGIN_URL}>Entrar</a>
+      <LiquidLink href={SIGNUP_URL} size="sm">Crear cuenta</LiquidLink>
+    </div>
+  </div>
+</header>
+
+<style>
+  .site-header{position:sticky;top:0;z-index:50;background:rgb(12 11 16 / .72);backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);border-bottom:1px solid transparent;transition:border-color 200ms var(--ease)}
+  :global(html[data-scrolled]) .site-header{border-bottom-color:var(--line)}
+  @supports not (backdrop-filter:blur(1px)){.site-header{background:var(--canvas)}}
+  @media (prefers-reduced-transparency:reduce){.site-header{background:var(--canvas);backdrop-filter:none}}
+  .bar{display:flex;align-items:center;gap:24px;min-height:68px}
+  .home{text-decoration:none;border-radius:8px}
+  nav{margin-left:auto}
+  ul{display:flex;gap:4px;margin:0;padding:0;list-style:none}
+  nav a{display:block;padding:10px 14px;border-radius:999px;color:var(--muted);font-size:14px;text-decoration:none;transition:color 160ms var(--ease),background 160ms var(--ease)}
+  nav a:hover{color:var(--text);background:var(--surface-2)}
+  .actions{display:flex;align-items:center;gap:6px}
+  .login{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;font-size:14px;color:var(--text);text-decoration:none;border-radius:999px}
+  .login:hover{background:var(--surface-2)}
+  @media (max-width:880px){nav{display:none}.actions{margin-left:auto}}
+  @media (max-width:380px){.login{padding:0 8px}}
+</style>
+
+<script>
+  const mark = () => document.documentElement.toggleAttribute('data-scrolled', scrollY > 8);
+  mark();
+  addEventListener('scroll', mark, { passive: true });
+</script>

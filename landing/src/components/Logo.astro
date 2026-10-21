@@ -1,0 +1,15 @@
+---
+interface Props { size?: number; wordmark?: boolean }
+const { size = 28, wordmark = true } = Astro.props;
+---
+<span class="logo">
+  <svg width={size} height={size} viewBox="100 60 1050 1150" aria-hidden="true" focusable="false">
+    <path fill="#F09ABF" d="M352 202C428 144 526 106 632 106C890 106 1101 313 1101 571C1101 720 1033 838 909 902C866 924 813 920 771 901C700 868 670 783 706 747C728 725 769 715 809 678C856 635 881 591 881 554C881 424 768 316 632 316C534 316 467 343 412 406L352 202Z"/>
+    <path fill="#B9A2F6" d="M352 202C486 131 676 171 765 273C789 300 807 328 821 363C769 333 700 316 632 316C481 316 372 424 372 559C372 646 417 700 489 750L869 1029C903 1054 916 1099 895 1135C873 1174 822 1183 788 1158L510 949V1074C510 1121 475 1157 428 1157C381 1157 345 1121 345 1074V915C226 825 154 713 154 566C154 408 224 275 352 202Z"/>
+  </svg>
+  {wordmark && <span class="logo-word">Ronda</span>}
+</span>
+<style>
+  .logo{display:inline-flex;align-items:center;gap:10px}
+  .logo-word{font-size:20px;font-weight:650;letter-spacing:-.04em}
+</style>
