@@ -26,6 +26,11 @@ export function ExternalWeb({url,name,activeTool='',setActiveTool=()=>{},activeC
   // page would make them appear attached to the screen, not to the document.
   const viewportMarks=marks.filter(mark=>mark.coordinateSpace==='document').map(mark=>documentMarkToViewport(mark,webMetrics));
   const commentMarkViewport=commentMark?documentMarkToViewport(commentMark,webMetrics):null;
+  const undoDraftAnnotation=()=>{setMarks(current=>current.filter(mark=>!mark.draft));setCommentMark(null);setCommentDraft('')};
+  useEffect(()=>{
+    const undo=e=>{if(e.defaultPrevented||readonly||!(e.ctrlKey||e.metaKey)||e.key.toLowerCase()!=='z'||!marks.some(mark=>mark.draft))return;e.preventDefault();undoDraftAnnotation();};
+    window.addEventListener('keydown',undo);return()=>window.removeEventListener('keydown',undo);
+  },[marks,readonly]);
   useEffect(()=>{
     const receive=event=>{
       if(event.source!==iframe.current?.contentWindow||event.origin!=='null')return;
@@ -101,7 +106,7 @@ export function ExternalWeb({url,name,activeTool='',setActiveTool=()=>{},activeC
       <AnnotationLayer activeTool={readonly||!hasDocumentBridge?'':activeTool} activeColor={activeColor} marks={viewportMarks} setMarks={saveViewportMarks} selectedFigure={selectedFigure} onAnnotationCreated={mark=>{if(hasDocumentBridge)openComment(viewportMarkToDocument(mark,webMetrics))}}/>
       {viewportMarks.flatMap(mark=>(mark.selectionRects||[]).map((rect,index)=><span key={`${mark.id||'selection'}-${index}`} className="figure-selection-highlight" aria-hidden="true" style={{left:`${rect.x*100}%`,top:`${rect.y*100}%`,width:`${rect.width*100}%`,height:`${rect.height*100}%`}}/>))}
       {viewportMarks.filter(mark=>mark.points?.[0]).map((mark,index)=><button type="button" key={mark.id||index} className={`figure-pin ${selectedFigure===mark.id?'selected':''}`} style={{left:`${mark.points[0].x*100}%`,top:`${mark.points[0].y*100}%`}} aria-label={`Anotación ${index+1}, ${figureComments.filter(comment=>comment.annotationId===mark.id).length} comentarios`} onClick={()=>openComment(mark)}>{index+1}</button>)}
-      {commentMarkViewport&&<form className="external-web-comment-popover" role="dialog" aria-label="Comentario en la anotación" style={{'--anchor-x':`${commentMarkViewport.points[0].x*100}%`,'--anchor-y':`${commentMarkViewport.points[0].y*100}%`}} onSubmit={publishQuickComment} onKeyDown={event=>{if(event.key==='Escape'){event.preventDefault();setCommentMark(null);setCommentDraft('')}if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();event.currentTarget.requestSubmit()}}}>
+      {commentMarkViewport&&<form className="external-web-comment-popover" role="dialog" aria-label="Comentario en la anotación" style={{'--anchor-x':`${commentMarkViewport.points[0].x*100}%`,'--anchor-y':`${commentMarkViewport.points[0].y*100}%`}} onSubmit={publishQuickComment} onKeyDown={event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='z'){event.preventDefault();event.stopPropagation();undoDraftAnnotation();return;}if(event.key==='Escape'){event.preventDefault();setCommentMark(null);setCommentDraft('')}if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();event.currentTarget.requestSubmit()}}}>
         <header><span className="external-web-comment-avatar">Tú</span><strong>Deja un comentario</strong><button type="button" aria-label="Cerrar comentario" onClick={()=>{setCommentMark(null);setCommentDraft('')}}>×</button></header>
         {figureComments.filter(comment=>comment.annotationId===commentMark.id).slice(-2).map(comment=><p className="external-web-comment-existing" key={comment.id}>{comment.text}</p>)}
         <textarea autoFocus maxLength={2000} aria-label="Escribe un comentario para esta anotación" placeholder="Añade contexto sobre este punto…" value={commentDraft} onChange={event=>setCommentDraft(event.target.value)}/>

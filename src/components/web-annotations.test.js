@@ -60,6 +60,8 @@ test('creating or selecting a web annotation opens an anchored comment composer'
   assert.match(layer,/onAnnotationCreated\(saved\)/);
   assert.match(component,/onAnnotationCreated=\{mark=>\{if\(hasDocumentBridge\)openComment\(viewportMarkToDocument\(mark,webMetrics\)\)\}\}/);
   assert.match(component,/external-web-comment-popover/);
+  assert.match(component,/undoDraftAnnotation/);
+  assert.match(component,/e\.key\.toLowerCase\(\)!=='z'\|\|!marks\.some\(mark=>mark\.draft\)/);
   assert.match(component,/onQuickComment\(commentMark,commentDraft\.trim\(\)\)/);
   assert.match(css,/\.external-web-comment-popover\{position:absolute;z-index:8/);
   assert.match(shared,/async function quickWebComment\(mark,text\)/);

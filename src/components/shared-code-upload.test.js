@@ -49,6 +49,9 @@ test('new annotations open an anchored comment composer for HTML, images and vid
   assert.match(stage,/onPublish=\{onQuickComment\}/);
   assert.match(popover,/Comentar esta anotación/);
   assert.match(popover,/Añade contexto sobre este punto/);
+  assert.match(popover,/event\.stopPropagation\(\);onUndo\?\.\(\)/);
+  assert.match(stage,/onUndo=\{undoMark\}/);
+  assert.match(room,/onUndo=\{undo\}/);
 });
 
 test('uploading a new team asset preserves the selected unsaved review instead of silently rejecting the file',async()=>{
