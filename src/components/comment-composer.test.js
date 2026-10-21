@@ -11,7 +11,9 @@ test('personal and shared review composers keep audio, text and send actions in 
   assert.match(personal, /composer-message-bar[\s\S]*?aria-label="Escribir comentario"[\s\S]*?aria-label="Publicar comentario"/);
   assert.match(shared, /<div className="composer-message-bar"><AudioCommentInput/);
   assert.match(shared, /composer-message-bar[\s\S]*?aria-label="Publicar comentario"/);
-  assert.match(shared, /className="composer-bottom"><label className="comment-priority"/);
+  assert.doesNotMatch(shared, /Prioridad del comentario|composer-bottom/);
+  assert.match(shared, /<PriorityCommands value=\{draft\.text\}/);
+  assert.match(shared, /priority:parsed\.priority/);
 });
 
 test('WhatsApp-style icon controls remain accessible and retain recording status', () => {

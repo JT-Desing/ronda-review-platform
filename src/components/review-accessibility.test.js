@@ -78,8 +78,7 @@ test('tablet review controls retain 44px touch targets despite compact base styl
  assert.match(css,/\.shared-review-room \.delivery-position-options button\{min-width:44px\}/);
  assert.match(css,/\.shared-review-room \.annotation-tools>button\{box-sizing:border-box;width:44px;height:44px;min-width:44px;min-height:44px\}/);
  assert.match(css,/\.shared-review-room \.comment-tabs button\{box-sizing:border-box;height:44px;min-height:44px\}/);
- assert.match(css,/\.shared-review-room \.comment-search input,\.app-shell \.shared-projects \.shared-review-room \.composer-bottom select\{box-sizing:border-box;height:44px;min-height:44px\}/);
- assert.match(css,/\.shared-review-room \.composer-bottom \.send\{box-sizing:border-box;width:44px;height:44px;min-width:44px;min-height:44px\}/);
+ assert.match(css,/\.shared-review-room \.comment-search input\{box-sizing:border-box;height:44px;min-height:44px\}/);
 });
 test('attached and saved comment audio controls meet tablet/mobile target height',()=>{
  const css=readFileSync(new URL('./shared-review-layout-fix.css',import.meta.url),'utf8');
