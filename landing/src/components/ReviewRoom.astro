@@ -1,387 +1,439 @@
 ---
 import { Image } from 'astro:assets';
 import frame from '../assets/abstract-sculpture-projects.png';
-import { initialComments, timecode, DURATION } from '../scripts/review-demo.js';
-const comments = initialComments();
+import { icons } from '../data/app-icons.js';
+import { STEPS, strokePath, COMMENT_TEXT } from '../scripts/walkthrough.js';
+const swatches = ['#ff725e', '#f2bd5c', '#8ebd72', '#67a9d4', '#b89be8', '#f1eee7'];
+const tools = [['pen', 'Lápiz'], ['arrow', 'Flecha'], ['square', 'Rectángulo'], ['type', 'Texto']];
+const icon = (name: string, size = 16) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke-width="1.5" aria-hidden="true">${icons[name]}</svg>`;
 ---
-<figure class="room" data-room aria-label="Demostración de una sala de revisión de Ronda">
-  <div class="room-bar">
-    <span class="kind">Video</span>
-    <div class="file">
-      <strong>Spot verano 20 s</strong>
-      <span>Campaña Costa · V3</span>
-    </div>
-    <div class="decision">
-      <span class="status" data-status>En revisión</span>
-      <button type="button" class="approve" data-approve>Aprobar V3</button>
-    </div>
-  </div>
-
-  <div class="room-body">
-    <div class="stage-column">
-      <div class="stage" data-stage>
-        <div class="scene" data-scene>
-          <Image src={frame} alt="Fotograma del spot: escultura de listones en lavanda, rosa y durazno" widths={[480, 760, 1100]} sizes="(max-width: 960px) 100vw, 720px" loading="eager" fetchpriority="high" />
-          <svg class="ink" data-ink viewBox="0 0 1000 625" preserveAspectRatio="none" aria-hidden="true" focusable="false"></svg>
+<figure class="demo" data-demo>
+  <div class="viewport" data-viewport aria-hidden="true">
+    <div class="app" data-app>
+      <header class="topbar">
+        <div class="crumbs">
+          <span class="crumb">Campaña Costa</span>
+          <Fragment set:html={icon('chevron', 14)} />
+          <div class="crumb-file"><strong>spot-verano.mp4</strong><small>Guardado en el espacio del equipo</small></div>
         </div>
-        <p class="hint" data-hint>Elige el lápiz y dibuja sobre el fotograma</p>
-      </div>
-
-      <div class="transport">
-        <button type="button" class="tool play" data-play aria-label="Pausar">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-pause" d="M8 5v14M16 5v14" /><path class="i-play" d="M7 5.5v13l11-6.5z" /></svg>
-        </button>
-        <button type="button" class="tool pen" data-pen aria-pressed="false" aria-label="Lápiz">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.4 5.6l4 4M4 20l4.6-1 10.2-10.2a2.8 2.8 0 0 0-4-4L4.6 15z" /></svg>
-        </button>
-        <span class="tc" data-timecode aria-live="off">{timecode(0)}</span>
-        <div class="track" data-track role="slider" tabindex="0" aria-label="Línea de tiempo" aria-valuemin="0" aria-valuemax={DURATION} aria-valuenow="0" aria-valuetext={timecode(0)}>
-          <div class="track-fill" data-fill></div>
-          <div class="markers" data-markers>
-            {comments.map((c) => <span class="marker" style={`left:${(c.time / DURATION) * 100}%`} />)}
-          </div>
-          <div class="playhead" data-playhead></div>
+        <div class="top-actions">
+          <span class="tbtn share"><Fragment set:html={icon('share', 15)} />Compartir</span>
+          <span class="tbtn approval" data-target="approve" data-approval><Fragment set:html={icon('check', 15)} /><span data-approval-label>Aprobar versión</span></span>
+          <span class="me">AN</span>
         </div>
-      </div>
-    </div>
+      </header>
 
-    <aside class="comments" aria-label="Comentarios">
-      <header><h3>Comentarios</h3><span data-open>{comments.length} abiertos</span></header>
-      <ol data-list>
-        {comments.map((c) => (
-          <li class="comment">
-            <span class={`avatar tone-${c.tone}`} aria-hidden="true">{c.initials}</span>
-            <div class="comment-main">
-              <p class="who"><strong>{c.author}</strong> <span>{c.role}</span></p>
-              <button type="button" class="tc-chip">{timecode(c.time)}</button>
-              <p class="text">{c.text}</p>
+      <div class="body">
+        <div class="main">
+          <section class="scene scene-grid" data-scene-grid>
+            <div class="grid-head">
+              <div><strong>Entrega · Campaña Costa</strong><small data-count>0 piezas · orden manual · almacenamiento del equipo</small></div>
+              <div class="grid-actions">
+                <div class="seg"><span class="on" data-tab-org>Organizar</span><span data-target="review-tab" data-tab-rev>Revisar</span></div>
+                <span class="tbtn" data-target="upload">Agregar archivos</span>
+              </div>
             </div>
-          </li>
-        ))}
-      </ol>
-      <p class="notice" data-notice role="status"></p>
-    </aside>
+            <p class="grid-empty" data-empty>Agrega tus piezas para verlas aquí. El orden se conserva al recargar.</p>
+            <div class="piece" data-piece>
+              <div class="piece-thumb">
+                <Image src={frame} alt="" widths={[320]} sizes="220px" />
+                <b>01</b><i>VIDEO</i>
+                <span class="piece-progress"><span data-progress></span></span>
+              </div>
+              <strong>spot-verano.mp4</strong>
+              <small data-piece-meta>Subiendo… 0%</small>
+              <small>0/0 aprobaciones</small>
+            </div>
+          </section>
+
+          <section class="scene scene-review" data-scene-review>
+            <div class="stage" data-stage>
+              <div class="cam" data-cam>
+                <Image src={frame} alt="" widths={[560, 900]} sizes="(max-width: 960px) 100vw, 560px" loading="eager" />
+                <svg viewBox="0 0 1000 562" preserveAspectRatio="none"><path class="stroke" data-stroke d={strokePath()} /></svg>
+              </div>
+              <span class="frame-badge" data-badge>00:00:00 · F0</span>
+              <span class="pin" data-pin>1</span>
+              <div class="popover" data-popover>
+                <header><span class="pop-avatar">R</span><strong>Deja un comentario</strong><span class="pop-x">×</span></header>
+                <div class="pop-text"><span data-typed></span><i class="caret"></i><span class="pop-placeholder" data-placeholder>Añade contexto sobre este punto…</span></div>
+                <footer><span>Ctrl/⌘ + Enter para publicar · Esc para cerrar</span><span class="pop-publish" data-target="publish" data-publish>Publicar</span></footer>
+              </div>
+              <span class="readonly" data-readonly>Versión aprobada · solo lectura</span>
+            </div>
+            <div class="tools" data-tools>
+              {tools.map(([name], i) => (
+                <span class="tool" data-tool={name} data-target={name === 'pen' ? 'pen' : undefined}><Fragment set:html={icon(name, 17)} /><kbd>{i + 1}</kbd></span>
+              ))}
+              <span class="divider"></span>
+              {swatches.map((c) => <span class:list={['swatch', { selected: c === '#b89be8' }]} style={`background:${c}`}></span>)}
+              <span class="divider"></span>
+              <span class="tool"><Fragment set:html={icon('undo', 16)} /></span>
+              <span class="tool"><Fragment set:html={icon('redo', 16)} /></span>
+            </div>
+            <div class="controls">
+              <span class="cbtn" data-target="play" data-play><span class="i-play"><Fragment set:html={icon('play', 18)} /></span><span class="i-pause"><Fragment set:html={icon('pause', 18)} /></span></span>
+              <span class="tc"><strong data-tc>00:00:00</strong> / 00:00:20</span>
+              <span class="scrub"><span class="scrub-fill" data-fill></span><span class="scrub-marker" data-marker></span><span class="scrub-knob" data-knob></span></span>
+              <Fragment set:html={icon('volume', 16)} />
+              <span class="fps">24 FPS</span>
+              <Fragment set:html={icon('maximize', 15)} />
+            </div>
+          </section>
+        </div>
+
+        <aside class="panel">
+          <small class="eyebrow">Revisión</small>
+          <strong class="panel-title">Comentarios</strong>
+          <small class="panel-count" data-pending>0 pendientes</small>
+          <span class="search">Buscar</span>
+          <p class="panel-empty" data-panel-empty>No hay comentarios pendientes en esta versión.</p>
+          <article class="card" data-card>
+            <header><span class="card-avatar">AN</span><div><strong>Ana Ruiz</strong><small data-card-status>Abierto</small></div></header>
+            <span class="card-time">6.50 s</span>
+            <p>{COMMENT_TEXT}</p>
+            <footer><span>Responder</span><span class="resolve" data-target="resolve" data-resolve><Fragment set:html={icon('check', 13)} />Resolver</span></footer>
+          </article>
+        </aside>
+      </div>
+
+      <div class="toast" data-toast></div>
+      <div class="cursor" data-cursor>
+        <svg width="20" height="22" viewBox="0 0 20 22"><path d="M2 1.5v16.2l4.3-4.1 2.9 6.6 3-1.3-2.9-6.5h6.1z" fill="#fff" stroke="#0c0b10" stroke-width="1.4" stroke-linejoin="round" /></svg>
+        <span class="ripple"></span>
+      </div>
+    </div>
   </div>
+
+  <figcaption class="steps-bar">
+    <button type="button" class="pause" data-toggle aria-label="Pausar recorrido">
+      <span class="i-pause"><Fragment set:html={icon('pause', 16)} /></span><span class="i-play"><Fragment set:html={icon('play', 16)} /></span>
+    </button>
+    <ol>
+      {STEPS.map((step, i) => (
+        <li><button type="button" data-step={i}><span class="bar"><span data-bar></span></span><span class="label">{step.label}</span></button></li>
+      ))}
+    </ol>
+  </figcaption>
 </figure>
 
 <style>
-  .room{margin:0;border:1px solid var(--line);border-radius:18px;background:var(--surface-1);box-shadow:0 40px 120px -40px rgb(160 120 230 / .35),0 0 0 1px rgb(255 255 255 / .02) inset;overflow:hidden}
-  .room-bar{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
-  .kind{padding:4px 8px;border-radius:6px;background:var(--surface-3);color:var(--lavender-soft);font-size:11px;font-weight:600}
-  .file{display:grid;min-width:0;line-height:1.25}
-  .file strong{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .file span{font-size:12px;color:var(--faint)}
-  .decision{display:flex;align-items:center;gap:8px;margin-left:auto}
-  .status{font-size:12px;color:var(--peach);white-space:nowrap}
-  .status::before{content:'';display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:currentColor;vertical-align:1px}
-  .status[data-approved]{color:var(--success)}
-  .approve{min-height:36px;padding:0 14px;border:0;border-radius:999px;background:var(--primary);color:var(--primary-text);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
-  .approve:disabled{background:var(--surface-3);color:var(--muted);cursor:default}
+  .demo{margin:0}
+  .viewport{position:relative;overflow:hidden;border-radius:16px;border:1px solid var(--line);background:#0c0b10;box-shadow:0 40px 120px -40px rgb(160 120 230 / .35)}
+  /* La app se dibuja a tamaño fijo y se escala al ancho disponible, como un video. */
+  .app{position:absolute;left:0;top:0;width:760px;transform-origin:0 0;font:400 12px/1.4 var(--font);color:#f5f2f8;user-select:none}
+  .app :global(svg){flex:none}
 
-  .room-body{display:grid;grid-template-columns:minmax(0,1fr) 272px}
-  .stage-column{min-width:0;border-right:1px solid var(--line)}
-  .stage{position:relative;aspect-ratio:16/10;overflow:hidden;background:#000}
-  .scene{position:absolute;inset:0;transform-origin:52% 45%;will-change:transform}
-  .scene img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-  .ink{position:absolute;inset:0;width:100%;height:100%;touch-action:pan-y}
-  .stage[data-drawing] .ink{cursor:crosshair;touch-action:none}
-  .ink :global(path){fill:none;stroke:var(--tone);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 1px 2px rgb(12 11 16 / .7))}
-  .ink :global(.mark){--tone:var(--lavender);transition:opacity 200ms var(--ease)}
-  .ink :global(.mark.tone-peach){--tone:var(--peach)}.ink :global(.mark.tone-mint){--tone:var(--mint)}
-  .ink :global(.mark[data-active] path){stroke-width:5}
-  .ink :global(.mark[data-resolved]){opacity:.45}
-  .ink :global(.mark-draw){stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 800ms var(--ease) forwards}
-  .ink :global(.pin circle){fill:var(--tone);stroke:rgb(12 11 16 / .55);stroke-width:2}
-  .ink :global(.pin text){fill:var(--primary-text);font:700 20px var(--font);text-anchor:middle;dominant-baseline:central}
-  .ink :global(.pin){animation:pop 260ms var(--ease)}
-  @keyframes draw{to{stroke-dashoffset:0}}
-  @keyframes pop{from{opacity:0}}
-  .hint{position:absolute;left:12px;top:12px;padding:6px 10px;border-radius:999px;background:rgb(12 11 16 / .7);backdrop-filter:blur(8px);font-size:12px;color:var(--text);pointer-events:none;transition:opacity 300ms var(--ease)}
-  .hint[hidden]{display:block;opacity:0}
+  .topbar{display:flex;align-items:center;gap:12px;height:52px;padding:0 14px;background:#111016;border-bottom:1px solid #2b2634}
+  .crumbs{display:flex;align-items:center;gap:8px;min-width:0;color:#b2a9bf}
+  .crumb{font-size:13px}
+  .crumb-file{display:grid;line-height:1.25}
+  .crumb-file strong{font-size:12px;color:#f5f2f8}
+  .crumb-file small{font-size:10px;color:#968ba4}
+  .top-actions{display:flex;align-items:center;gap:6px;margin-left:auto}
+  .tbtn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 11px;border:1px solid #484052;border-radius:7px;font-size:11.5px;font-weight:550;white-space:nowrap;transition:background 200ms,border-color 200ms,color 200ms,transform 120ms}
+  .tbtn.approval{border-color:#c8b1f5;background:rgb(242 189 92 / .09)}
+  .tbtn.approval[data-on]{border-color:#8ebd72;color:#8ebd72;background:rgb(142 189 114 / .1)}
+  .tbtn[data-press],.seg span[data-press],.tool[data-press],.cbtn[data-press],.pop-publish[data-press],.resolve[data-press]{transform:scale(.94)}
+  .me{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#d4c1fb;color:#201c29;font-size:10px;font-weight:700}
 
-  .transport{display:flex;align-items:center;gap:6px;padding:8px 12px}
-  .tool{display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:10px;background:transparent;cursor:pointer;color:var(--muted)}
-  .tool:hover{background:var(--surface-2);color:var(--text)}
-  .tool svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-  .play .i-play{display:none;fill:currentColor;stroke:none}
-  .play[data-paused] .i-play{display:block}.play[data-paused] .i-pause{display:none}
-  .pen[aria-pressed=true]{background:var(--lavender);color:var(--primary-text)}
-  .tc{font:500 12px/1 var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;min-width:62px;margin-left:4px}
-  .track{position:relative;flex:1;height:28px;margin-left:6px;cursor:pointer;border-radius:6px}
-  .track::before{content:'';position:absolute;left:0;right:0;top:50%;height:4px;margin-top:-2px;border-radius:2px;background:var(--surface-3)}
-  .track-fill{position:absolute;left:0;top:50%;height:4px;margin-top:-2px;width:0;border-radius:2px;background:var(--line-strong)}
-  .markers :global(.marker){position:absolute;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:var(--lavender);box-shadow:0 0 0 3px var(--surface-1)}
-  .markers :global(.marker.tone-peach){background:var(--peach)}.markers :global(.marker.tone-mint){background:var(--mint)}
-  .markers :global(.marker[data-active]){width:12px;height:12px;margin:-6px 0 0 -6px}
-  .markers :global(.marker[data-resolved]){background:var(--faint)}
-  .playhead{position:absolute;top:2px;bottom:2px;left:0;width:2px;margin-left:-1px;border-radius:1px;background:var(--text)}
+  .body{display:grid;grid-template-columns:minmax(0,1fr) 206px;height:430px}
+  .main{position:relative;border-right:1px solid #2b2634;overflow:hidden}
+  .scene{position:absolute;inset:0;padding:14px;transition:opacity 400ms var(--ease),transform 400ms var(--ease)}
+  .scene[data-off]{opacity:0;transform:scale(.985);pointer-events:none}
 
-  .comments{display:flex;flex-direction:column;min-width:0;max-height:100%;padding:14px 0 0}
-  .comments header{display:flex;align-items:baseline;justify-content:space-between;padding:0 14px 10px}
-  .comments h3{font-size:14px;letter-spacing:-.01em}
-  .comments header span{font-size:12px;color:var(--faint)}
-  ol{flex:1;margin:0;padding:0 8px 8px;list-style:none;overflow:auto;max-height:340px;scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
-  ol :global(.comment){display:flex;gap:10px;padding:10px 6px;border-radius:12px;transition:background 200ms var(--ease)}
-  ol :global(.comment[data-active]){background:var(--surface-2)}
-  ol :global(.comment[data-resolved] .text){color:var(--faint);text-decoration:line-through;text-decoration-color:var(--line-strong)}
-  ol :global(.comment[data-fresh]){animation:arrive 420ms var(--ease)}
-  @keyframes arrive{from{opacity:0;transform:translateY(6px)}}
-  ol :global(.avatar){flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;font-size:11px;font-weight:650;color:var(--primary-text)}
-  ol :global(.tone-peach){background:var(--peach)}ol :global(.tone-mint){background:var(--mint)}ol :global(.tone-lavender){background:var(--lavender)}
-  ol :global(.comment-main){min-width:0;flex:1}
-  ol :global(.who){font-size:13px;line-height:1.3}
-  ol :global(.who span){color:var(--faint);font-size:12px}
-  ol :global(.tc-chip){margin-top:4px;padding:2px 7px;border:0;border-radius:6px;background:var(--surface-3);color:var(--lavender-soft);font:500 11px/1.5 var(--mono);cursor:pointer}
-  ol :global(.tc-chip:hover){background:var(--line-strong)}
-  ol :global(.text){margin-top:6px;font-size:13px;line-height:1.45;color:var(--text);overflow-wrap:anywhere}
-  ol :global(.comment input){width:100%;margin-top:6px;padding:8px 10px;border:1px solid var(--line-strong);border-radius:10px;background:var(--canvas);font-size:13px}
-  ol :global(.comment input:focus){outline:2px solid var(--lavender);outline-offset:0;border-color:transparent}
-  ol :global(.resolve){display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:4px 8px 4px 6px;border:1px solid var(--line);border-radius:999px;background:transparent;font-size:12px;color:var(--muted);cursor:pointer}
-  ol :global(.resolve:hover){border-color:var(--line-strong);color:var(--text)}
-  ol :global(.resolve[aria-pressed=true]){color:var(--success);border-color:transparent;background:rgb(184 227 209 / .1)}
-  .notice{min-height:0;margin:0 14px 12px;font-size:12px;color:var(--peach)}
-  .notice:empty{display:none}
-  .notice[data-ok]{color:var(--success)}
+  .grid-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:14px;border:1px solid #2b2634;border-bottom:0;border-radius:12px 12px 0 0;background:#111016}
+  .grid-head strong{display:block;font-size:13px}
+  .grid-head small{font-size:10.5px;color:#968ba4}
+  .grid-actions{display:flex;gap:6px;align-items:center}
+  .seg{display:flex;padding:3px;border-radius:9px;background:#19161f}
+  .seg span{padding:6px 10px;border-radius:7px;font-size:11px;color:#b2a9bf;transition:background 200ms,color 200ms,transform 120ms}
+  .seg span.on{background:#25202e;color:#f5f2f8}
+  .grid-empty{margin:0;padding:24px 14px;border:1px solid #2b2634;border-top:0;border-radius:0 0 12px 12px;background:#111016;color:#b2a9bf;font-size:12.5px;min-height:250px}
+  .grid-empty[data-off]{color:transparent}
+  .piece{position:absolute;left:28px;top:96px;width:196px;padding:0 0 12px;border:1.5px solid #c8b1f5;border-radius:12px;background:#19161f;overflow:hidden;transition:opacity 350ms var(--ease),transform 450ms var(--spring)}
+  .piece[data-off]{opacity:0;transform:translateY(10px) scale(.96)}
+  .piece-thumb{position:relative;aspect-ratio:16/10;overflow:hidden}
+  .piece-thumb img{width:100%;height:100%;object-fit:cover;transition:filter 300ms}
+  .piece[data-loading] .piece-thumb img{filter:blur(6px) saturate(.6) brightness(.7)}
+  .piece-thumb b,.piece-thumb i{position:absolute;top:7px;padding:3px 6px;border-radius:5px;background:rgb(12 11 16 / .75);font:600 9.5px/1 var(--font);font-style:normal}
+  .piece-thumb b{left:7px}.piece-thumb i{right:7px}
+  .piece-progress{position:absolute;left:10px;right:10px;bottom:10px;height:4px;border-radius:2px;background:rgb(255 255 255 / .18);overflow:hidden;transition:opacity 300ms}
+  .piece-progress span{display:block;height:100%;width:0;background:#c8b1f5}
+  .piece:not([data-loading]) .piece-progress{opacity:0}
+  .piece strong{display:block;margin:10px 12px 2px;font-size:12px}
+  .piece small{display:block;margin:0 12px;font-size:10px;color:#968ba4}
 
-  @media (max-width:960px){
-    .room-body{grid-template-columns:1fr}
-    .stage-column{border-right:0;border-bottom:1px solid var(--line)}
-    ol{max-height:none}
-  }
-  @media (max-width:520px){
-    .room-bar{flex-wrap:wrap}
-    .decision{width:100%;justify-content:space-between}
-    .tc{min-width:56px}
-  }
+  .stage{position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:4px;background:#050506}
+  .cam{position:absolute;inset:0;transform-origin:52% 46%}
+  .cam img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .cam svg{position:absolute;inset:0;width:100%;height:100%}
+  .stroke{fill:none;stroke:#b89be8;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 1px 1px rgb(0 0 0 / .35))}
+  .frame-badge{position:absolute;right:10px;top:10px;padding:4px 6px;border:1px solid rgb(255 255 255 / .13);border-radius:4px;background:rgb(14 15 13 / .8);font:500 9.5px/1 var(--mono)}
+  .pin{position:absolute;display:grid;place-items:center;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:#f2bd5c;color:#201c29;font-size:11px;font-weight:700;box-shadow:0 2px 8px rgb(0 0 0 / .4);transition:transform 260ms var(--spring),background 200ms,color 200ms}
+  .pin[data-off]{transform:scale(0)}
+  .pin[data-published]{background:#141218;color:#fff;box-shadow:0 0 0 2px #f2bd5c,0 2px 8px rgb(0 0 0 / .4)}
+  .popover{position:absolute;width:236px;padding:10px;border:1px solid #484052;border-radius:12px;background:#19161f;box-shadow:0 18px 40px rgb(0 0 0 / .5);transition:opacity 220ms var(--ease),transform 260ms var(--spring)}
+  .popover[data-off]{opacity:0;transform:translateY(6px) scale(.97)}
+  .popover header{display:flex;align-items:center;gap:7px;font-size:11.5px}
+  .pop-avatar{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#d4c1fb;color:#201c29;font-size:9px;font-weight:700}
+  .pop-x{margin-left:auto;color:#b2a9bf;font-size:14px}
+  .pop-text{position:relative;min-height:44px;margin-top:8px;padding:7px 8px;border:1.5px solid #c8b1f5;border-radius:8px;background:#0c0b10;font-size:10.5px;line-height:1.45}
+  .pop-placeholder{position:absolute;left:8px;top:7px;color:#968ba4}
+  .pop-placeholder[data-off]{display:none}
+  .caret{display:inline-block;width:1px;height:12px;margin-left:1px;vertical-align:-2px;background:#f5f2f8;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .popover footer{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:8px;font-size:8.5px;color:#968ba4}
+  .pop-publish{padding:5px 11px;border-radius:999px;background:#c8b1f5;color:#201c29;font-size:10.5px;font-weight:650;transition:opacity 200ms,transform 120ms}
+  .pop-publish[data-disabled]{opacity:.45}
+  .readonly{position:absolute;left:50%;bottom:8px;padding:4px 9px;border:1px solid #2b2634;border-radius:999px;background:#19161f;color:#b2a9bf;font-size:10px;white-space:nowrap;transform:translateX(-50%);transition:opacity 300ms}
+  .readonly[data-off]{opacity:0}
+
+  .tools{display:flex;align-items:center;gap:3px;width:max-content;margin:10px auto 0;padding:5px;border:1px solid #484052;border-radius:12px;background:rgb(23 24 21 / .93);box-shadow:0 8px 30px rgb(0 0 0 / .53);transition:opacity 300ms,filter 300ms}
+  .tools[data-readonly]{opacity:.55;filter:saturate(.4)}
+  .tool{position:relative;display:grid;place-items:center;width:32px;height:32px;border-radius:5px;color:#f5f2f8;transition:box-shadow 160ms,background 160ms,transform 120ms}
+  .tool[data-active]{box-shadow:inset 0 -2px 0 #c8b1f5;background:rgb(200 177 245 / .1)}
+  .tool kbd{position:absolute;right:3px;bottom:1px;font:500 7px/1 var(--font);color:#968ba4}
+  .divider{width:1px;height:20px;margin:0 4px;background:#2b2634}
+  .swatch{width:18px;height:18px;margin:0 1px;border:2px solid #15131b;border-radius:50%;box-shadow:0 0 0 1px #655a73}
+  .swatch.selected{box-shadow:0 0 0 2px #f5f2f8}
+
+  .controls{display:flex;align-items:center;gap:9px;margin-top:8px;padding:0 4px;color:#f5f2f8}
+  .cbtn{display:grid;place-items:center;width:26px;height:26px;border-radius:6px;transition:transform 120ms}
+  .cbtn .i-pause{display:none}
+  .cbtn[data-playing] .i-pause{display:block}.cbtn[data-playing] .i-play{display:none}
+  .tc{font:400 10px/1 var(--mono);color:#968ba4;white-space:nowrap}
+  .tc strong{color:#f5f2f8;font-weight:600}
+  .scrub{position:relative;flex:1;height:14px}
+  .scrub::before{content:'';position:absolute;left:0;right:0;top:6px;height:2px;background:#2b2634}
+  .scrub-fill{position:absolute;left:0;top:6px;height:2px;width:0;background:#f5f2f8}
+  .scrub-knob{position:absolute;top:2px;left:0;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:#c8b1f5}
+  .scrub-marker{position:absolute;top:-6px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#ff725e;transition:transform 260ms var(--spring),background 200ms}
+  .scrub-marker[data-off]{transform:scale(0)}
+  .scrub-marker[data-resolved]{background:#8ebd72}
+  .fps{font-size:10px;color:#b2a9bf}
+
+  .panel{display:flex;flex-direction:column;padding:14px 12px;background:#111016;overflow:hidden}
+  .eyebrow{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:#968ba4}
+  .panel-title{margin-top:2px;font-size:15px;font-weight:600}
+  .panel-count{font-size:10.5px;color:#b2a9bf}
+  .search{margin:12px 0;padding:8px 10px;border:1px solid #2b2634;border-radius:8px;background:#19161f;color:#968ba4;font-size:10.5px}
+  .panel-empty{margin:18px 4px 0;font-size:10.5px;color:#b2a9bf;text-align:center}
+  .panel-empty[data-off]{display:none}
+  .card{padding:10px;border:1px solid #2b2634;border-radius:12px;background:#19161f;transition:opacity 300ms}
+  .card[data-off]{display:none}
+  .card[data-enter]{animation:card-in 480ms var(--spring)}
+  @keyframes card-in{from{opacity:0;transform:translateX(16px)}}
+  .card header{display:flex;align-items:center;gap:7px}
+  .card header strong{display:block;font-size:11px}
+  .card header small{font-size:9.5px;color:#f2bd5c}
+  .card[data-resolved] header small{color:#8ebd72}
+  .card-avatar{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#67a9d4;color:#0c0b10;font-size:8.5px;font-weight:700}
+  .card-time{display:inline-block;margin-top:7px;font:500 9.5px/1 var(--mono);color:#b2a9bf}
+  .card p{margin:6px 0 0;font-size:10.5px;line-height:1.45}
+  .card[data-resolved] p{color:#968ba4}
+  .card footer{display:flex;justify-content:space-between;align-items:center;margin-top:9px;padding-top:7px;border-top:1px solid #2b2634;font-size:10px;color:#b2a9bf}
+  .resolve{display:inline-flex;align-items:center;gap:4px;padding:3px 6px;border-radius:6px;transition:color 200ms,background 200ms,transform 120ms}
+  .resolve[data-on]{color:#8ebd72;background:rgb(142 189 114 / .1)}
+
+  .toast{position:absolute;left:50%;top:64px;z-index:15;padding:8px 14px;border-radius:999px;background:#f8f5fb;color:#201c29;font-size:11px;font-weight:650;white-space:nowrap;box-shadow:0 10px 30px rgb(0 0 0 / .4);transform:translate(-50%,0);transition:opacity 250ms var(--ease),transform 300ms var(--spring)}
+  .toast[data-off]{opacity:0;transform:translate(-50%,-8px)}
+
+  .cursor{position:absolute;left:0;top:0;z-index:20;width:20px;height:22px;pointer-events:none;will-change:transform;filter:drop-shadow(0 3px 6px rgb(0 0 0 / .45))}
+  .cursor svg{position:relative;z-index:1}
+  .ripple{position:absolute;left:-12px;top:-12px;width:26px;height:26px;border-radius:50%;background:rgb(200 177 245 / .45);opacity:0;transform:scale(.3)}
+  .cursor[data-click] .ripple{animation:ripple 320ms var(--ease)}
+  @keyframes ripple{40%{opacity:1}to{opacity:0;transform:scale(1.4)}}
+
+  /* Pantallas angostas: mismo flujo con el panel debajo. */
+  .app.narrow{width:440px}
+  .app.narrow .body{grid-template-columns:1fr;grid-template-rows:auto 150px;height:auto}
+  .app.narrow .main{height:352px;border-right:0;border-bottom:1px solid #2b2634}
+  .app.narrow .share,.app.narrow .crumb,.app.narrow .crumbs :global(svg){display:none}
+  .app.narrow .search,.app.narrow .eyebrow{display:none}
+  .app.narrow .panel{padding:10px 12px}
+  .app.narrow .panel-empty{margin-top:10px}
+  .app.narrow .grid-empty{min-height:200px}
+  .app.narrow .tool{width:30px;height:30px}
+  .app.narrow .grid-head{flex-direction:column;gap:10px}
+  .app.narrow .piece{top:150px}
+
+  .steps-bar{display:flex;align-items:flex-start;gap:12px;margin-top:14px}
+  .pause{flex:none;display:grid;place-items:center;width:36px;height:36px;border:1px solid var(--line-strong);border-radius:50%;background:transparent;color:var(--text);cursor:pointer}
+  .pause:hover{background:var(--surface-2)}
+  .pause .i-play{display:none}
+  .pause[data-paused] .i-play{display:block}.pause[data-paused] .i-pause{display:none}
+  .steps-bar ol{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;flex:1;margin:0;padding:0;list-style:none}
+  .steps-bar li button{display:block;width:100%;padding:0;border:0;background:none;text-align:left;cursor:pointer;color:var(--faint)}
+  .steps-bar li button[aria-current=step]{color:var(--text)}
+  .bar{display:block;height:3px;border-radius:2px;background:var(--surface-3);overflow:hidden}
+  .bar span{display:block;height:100%;width:0;background:var(--lavender)}
+  .label{display:block;margin-top:8px;font-size:12.5px;line-height:1.3}
+  .steps-bar li button:hover .label{color:var(--text)}
+  @media (max-width:520px){.steps-bar ol{grid-template-columns:repeat(2,1fr);row-gap:12px}}
 </style>
 
 <script>
-  import { DURATION, timecode, initialComments, openCount, canApprove, visibleAnnotations, pointsToPath, strokeLength, camera } from '../scripts/review-demo.js';
+  import { LOOP, STEPS, COMMENT_TEXT, stateAt, cursorAt, stamp, camera, strokePoint } from '../scripts/walkthrough.js';
 
-  const room = document.querySelector<HTMLElement>('[data-room]');
-  if (room) setup(room);
+  const demo = document.querySelector<HTMLElement>('[data-demo]');
+  if (demo) setup(demo);
 
-  function setup(room: HTMLElement) {
-    const $ = <T extends Element>(sel: string) => room.querySelector<T>(sel)!;
-    const stage = $<HTMLElement>('[data-stage]'), scene = $<HTMLElement>('[data-scene]'), ink = $<SVGSVGElement>('[data-ink]');
-    const play = $<HTMLButtonElement>('[data-play]'), pen = $<HTMLButtonElement>('[data-pen]'), hint = $<HTMLElement>('[data-hint]');
-    const tc = $<HTMLElement>('[data-timecode]'), track = $<HTMLElement>('[data-track]'), fill = $<HTMLElement>('[data-fill]'), playhead = $<HTMLElement>('[data-playhead]'), markers = $<HTMLElement>('[data-markers]');
-    const list = $<HTMLOListElement>('[data-list]'), openLabel = $<HTMLElement>('[data-open]'), notice = $<HTMLElement>('[data-notice]');
-    const approve = $<HTMLButtonElement>('[data-approve]'), status = $<HTMLElement>('[data-status]');
+  function setup(demo: HTMLElement) {
+    const q = <T extends Element = HTMLElement>(sel: string) => demo.querySelector<T>(sel)!;
+    const viewport = q('[data-viewport]'), app = q('[data-app]');
+    const el = {
+      grid: q('[data-scene-grid]'), review: q('[data-scene-review]'), count: q('[data-count]'), empty: q('[data-empty]'),
+      piece: q('[data-piece]'), progress: q('[data-progress]'), pieceMeta: q('[data-piece-meta]'), tabOrg: q('[data-tab-org]'), tabRev: q('[data-tab-rev]'),
+      stage: q('[data-stage]'), cam: q('[data-cam]'), stroke: q<SVGPathElement>('[data-stroke]'), badge: q('[data-badge]'), pin: q('[data-pin]'),
+      popover: q('[data-popover]'), typed: q('[data-typed]'), placeholder: q('[data-placeholder]'), publish: q('[data-publish]'), readonly: q('[data-readonly]'),
+      tools: q('[data-tools]'), pen: q('[data-tool="pen"]'), play: q('[data-play]'), tc: q('[data-tc]'), fill: q('[data-fill]'), knob: q('[data-knob]'), marker: q('[data-marker]'),
+      pending: q('[data-pending]'), panelEmpty: q('[data-panel-empty]'), card: q('[data-card]'), cardStatus: q('[data-card-status]'), resolve: q('[data-resolve]'),
+      approval: q('[data-approval]'), approvalLabel: q('[data-approval-label]'), toast: q('[data-toast]'), cursor: q('[data-cursor]'),
+      toggle: q<HTMLButtonElement>('[data-toggle]'),
+    };
+    const stepButtons = [...demo.querySelectorAll<HTMLButtonElement>('[data-step]')];
+    const bars = [...demo.querySelectorAll<HTMLElement>('[data-bar]')];
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const NS = 'http://www.w3.org/2000/svg';
+    const strokeLength = el.stroke.getTotalLength();
+    el.stroke.style.strokeDasharray = String(strokeLength);
 
-    type Comment = ReturnType<typeof initialComments>[number] & { draft?: boolean };
-    let comments: Comment[] = initialComments();
-    let time = reduced ? 6.5 : 0, playing = !reduced, visible = true, approved = false, active = '', fresh = '', userCount = 0;
-    let last: number | undefined;
+    let scale = 1, t = reduced ? STEPS[2].show : 0, playing = !reduced, visible = true, last: number | undefined, prevComment = 'none';
 
-    // Herramienta de dibujo activa por defecto solo con puntero fino, para no bloquear el scroll en pantallas táctiles.
-    setPen(matchMedia('(pointer: fine)').matches);
-
-    function setPen(on: boolean) {
-      pen.setAttribute('aria-pressed', String(on));
-      stage.toggleAttribute('data-drawing', on);
-      hint.textContent = on ? 'Dibuja sobre el fotograma para comentar en este instante' : 'Elige el lápiz y dibuja sobre el fotograma';
+    function fit() {
+      const width = viewport.clientWidth;
+      app.classList.toggle('narrow', width < 620);
+      scale = width / app.offsetWidth;
+      app.style.transform = `scale(${scale})`;
+      viewport.style.height = `${app.offsetHeight * scale}px`;
+      render();
     }
+
+    const flag = (node: Element, name: string, on: boolean) => node.toggleAttribute(name, on);
+    const appRect = () => app.getBoundingClientRect();
+
+    // Convierte un punto del fotograma (1000 x 562) a coordenadas de la app, con el movimiento de cámara aplicado.
+    function stagePoint(x: number, y: number): [number, number] {
+      const base = appRect(), r = el.cam.getBoundingClientRect();
+      return [(r.left - base.left + (x / 1000) * r.width) / scale, (r.top - base.top + (y / 562) * r.height) / scale];
+    }
+    // Posición sin escalar de un destino del cursor dentro de la app.
+    function point(target: string): [number, number] {
+      const base = appRect();
+      if (target === 'rest') return [app.offsetWidth * 0.78, app.offsetHeight * 0.86];
+      if (target === 'rest-stage') {
+        const r = el.stage.getBoundingClientRect();
+        return [(r.right - base.left) / scale - 60, (r.bottom - base.top) / scale - 40];
+      }
+      if (target.startsWith('stroke:')) return stagePoint(...strokePoint(Number(target.slice(7))));
+      const node = demo.querySelector(`[data-target="${target}"]`);
+      if (!node) return [0, 0];
+      const r = node.getBoundingClientRect();
+      return [(r.left + r.width / 2 - base.left) / scale, (r.top + r.height / 2 - base.top) / scale];
+    }
+
+    function render() {
+      const s = stateAt(t);
+      flag(el.grid, 'data-off', s.scene !== 'grid');
+      flag(el.review, 'data-off', s.scene !== 'review');
+      el.count.textContent = `${s.upload > 0 ? '1 pieza' : '0 piezas'} · orden manual · almacenamiento del equipo`;
+      flag(el.empty, 'data-off', s.upload > 0);
+      flag(el.piece, 'data-off', s.upload === 0);
+      flag(el.piece, 'data-loading', !s.uploaded);
+      el.progress.style.width = `${s.upload * 100}%`;
+      el.pieceMeta.textContent = s.uploaded ? 'VIDEO · V1 · 0 pendientes' : `Subiendo… ${Math.round(s.upload * 100)}%`;
+      el.tabOrg.classList.toggle('on', !s.reviewTab);
+      el.tabRev.classList.toggle('on', s.reviewTab);
+
+      const cam = camera(s.video);
+      el.cam.style.transform = `scale(${cam.scale}) translate(${cam.x}%, ${cam.y}%)`;
+      const st = stamp(s.video);
+      el.badge.textContent = `${st.time} · F${st.frame}`;
+      el.tc.textContent = st.time;
+      const pct = (s.video / 20) * 100;
+      el.fill.style.width = `${pct}%`;
+      el.knob.style.left = `${pct}%`;
+      el.marker.style.left = `${(6.5 / 20) * 100}%`;
+      flag(el.marker, 'data-off', s.comment === 'none');
+      flag(el.marker, 'data-resolved', s.comment === 'resolved');
+      flag(el.play, 'data-playing', s.playing);
+      flag(el.pen, 'data-active', s.pen && !s.approved);
+      el.stroke.style.strokeDashoffset = String(strokeLength * (1 - s.stroke));
+      el.stroke.style.opacity = s.stroke > 0 ? '1' : '0';
+
+      // El pin va donde empezó el trazo, como en el visor de la app; la ventana de comentario se abre a su lado.
+      const [px, py] = stagePoint(...strokePoint(0));
+      const sr = el.stage.getBoundingClientRect(), base = appRect();
+      const ox = px - (sr.left - base.left) / scale, oy = py - (sr.top - base.top) / scale;
+      el.pin.style.left = `${ox}px`;
+      el.pin.style.top = `${oy}px`;
+      flag(el.pin, 'data-off', s.pin === 'none');
+      flag(el.pin, 'data-published', s.pin === 'published');
+      el.popover.style.left = `${Math.max(8, Math.min(el.stage.offsetWidth - 244, ox - 200))}px`;
+      // Si no cabe debajo del pin, se sube lo justo para no salirse del visor.
+      el.popover.style.top = `${Math.max(6, Math.min(oy + 18, el.stage.offsetHeight - el.popover.offsetHeight - 6))}px`;
+      flag(el.popover, 'data-off', !s.popover);
+      el.typed.textContent = COMMENT_TEXT.slice(0, s.typed);
+      flag(el.placeholder, 'data-off', s.typed > 0);
+      flag(el.publish, 'data-disabled', s.typed === 0);
+      flag(el.readonly, 'data-off', !s.approved);
+      flag(el.tools, 'data-readonly', s.approved);
+
+      el.pending.textContent = s.pending === 1 ? '1 pendiente' : '0 pendientes';
+      flag(el.panelEmpty, 'data-off', s.comment !== 'none');
+      flag(el.card, 'data-off', s.comment === 'none');
+      if (prevComment === 'none' && s.comment !== 'none' && !reduced) { el.card.removeAttribute('data-enter'); void el.card.offsetWidth; el.card.setAttribute('data-enter', ''); }
+      prevComment = s.comment;
+      flag(el.card, 'data-resolved', s.comment === 'resolved');
+      el.cardStatus.textContent = s.comment === 'resolved' ? 'Resuelto' : 'Abierto';
+      flag(el.resolve, 'data-on', s.comment === 'resolved');
+      flag(el.approval, 'data-on', s.approved);
+      el.approvalLabel.textContent = s.approved ? 'Aprobado' : 'Aprobar versión';
+      if (s.toast) el.toast.textContent = s.toast;
+      flag(el.toast, 'data-off', !s.toast);
+
+      const c = cursorAt(t);
+      const [ax, ay] = point(c.from), [bx, by] = point(c.to);
+      el.cursor.style.transform = `translate(${ax + (bx - ax) * c.k - 2}px, ${ay + (by - ay) * c.k - 1}px)`;
+      flag(el.cursor, 'data-click', s.click);
+      demo.querySelectorAll('[data-press]').forEach((n) => n.removeAttribute('data-press'));
+      if (s.click) demo.querySelector(`[data-target="${c.to}"]`)?.setAttribute('data-press', '');
+      el.cursor.style.opacity = reduced ? '0' : String(1 - s.fade);
+      app.style.opacity = String(1 - s.fade * 0.6);
+
+      stepButtons.forEach((b, i) => { if (i === s.step) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+      bars.forEach((b, i) => { b.style.width = `${i < s.step ? 100 : i === s.step ? s.stepProgress * 100 : 0}%`; });
+    }
+
     function setPlaying(on: boolean) {
       playing = on;
-      play.toggleAttribute('data-paused', !on);
-      play.setAttribute('aria-label', on ? 'Pausar' : 'Reproducir');
       last = undefined;
+      flag(el.toggle, 'data-paused', !on);
+      el.toggle.setAttribute('aria-label', on ? 'Pausar recorrido' : 'Reproducir recorrido');
     }
     setPlaying(playing);
 
-    function paintTime() {
-      const pct = (time / DURATION) * 100;
-      fill.style.width = `${pct}%`;
-      playhead.style.left = `${pct}%`;
-      tc.textContent = timecode(time);
-      track.setAttribute('aria-valuenow', time.toFixed(1));
-      track.setAttribute('aria-valuetext', timecode(time));
-      // El fotograma se mueve un poco para que se lea como video.
-      if (!reduced) { const cam = camera(time); scene.style.transform = `scale(${cam.scale}) translate(${cam.x}%, ${cam.y}%)`; }
-      paintInk();
-    }
+    el.toggle.addEventListener('click', () => setPlaying(!playing));
+    stepButtons.forEach((b, i) => b.addEventListener('click', () => {
+      t = playing ? STEPS[i].start : STEPS[i].show;
+      last = undefined;
+      render();
+    }));
 
-    function paintInk() {
-      const shown = visibleAnnotations(comments, time);
-      const ids = new Set(shown.map((c) => c.id));
-      ink.querySelectorAll<SVGGElement>('g[data-id]').forEach((g) => { if (!ids.has(g.dataset.id!)) g.remove(); });
-      for (const c of shown) {
-        let g = ink.querySelector<SVGGElement>(`g[data-id="${c.id}"]`);
-        if (!g) {
-          g = document.createElementNS(NS, 'g');
-          g.dataset.id = c.id;
-          const path = document.createElementNS(NS, 'path');
-          path.setAttribute('d', c.path!);
-          const pin = document.createElementNS(NS, 'g');
-          pin.classList.add('pin');
-          // El pin usa las iniciales y el color del avatar del comentario.
-          const [px, py] = c.pin ?? [0, 0];
-          const dot = document.createElementNS(NS, 'circle');
-          dot.setAttribute('cx', String(px)); dot.setAttribute('cy', String(py)); dot.setAttribute('r', '27');
-          const label = document.createElementNS(NS, 'text');
-          label.setAttribute('x', String(px)); label.setAttribute('y', String(py));
-          label.textContent = c.initials;
-          pin.append(dot, label);
-          g.append(path, pin);
-          ink.append(g);
-          if (!reduced && playing) {
-            path.style.setProperty('--len', String(path.getTotalLength()));
-            path.classList.add('mark-draw');
-          }
-        }
-        g.setAttribute('class', `mark tone-${c.tone}`);
-        g.toggleAttribute('data-active', c.id === active);
-        g.toggleAttribute('data-resolved', c.resolved);
-      }
-    }
-
-    function paintMarkers() {
-      markers.replaceChildren(...comments.map((c) => {
-        const m = document.createElement('span');
-        m.className = `marker tone-${c.tone}`;
-        m.toggleAttribute('data-active', c.id === active);
-        m.style.left = `${(c.time / DURATION) * 100}%`;
-        m.toggleAttribute('data-resolved', c.resolved);
-        return m;
-      }));
-    }
-
-    function paintComments() {
-      list.replaceChildren(...comments.map((c) => {
-        const li = document.createElement('li');
-        li.className = 'comment';
-        li.toggleAttribute('data-active', c.id === active);
-        li.toggleAttribute('data-resolved', c.resolved);
-        li.toggleAttribute('data-fresh', c.id === fresh);
-        const avatar = Object.assign(document.createElement('span'), { className: `avatar tone-${c.tone}`, textContent: c.initials });
-        avatar.setAttribute('aria-hidden', 'true');
-        const main = Object.assign(document.createElement('div'), { className: 'comment-main' });
-        const who = Object.assign(document.createElement('p'), { className: 'who' });
-        who.append(Object.assign(document.createElement('strong'), { textContent: c.author }), ' ', Object.assign(document.createElement('span'), { textContent: c.role }));
-        const chip = Object.assign(document.createElement('button'), { type: 'button', className: 'tc-chip', textContent: timecode(c.time) });
-        chip.setAttribute('aria-label', `Ir a ${timecode(c.time)}`);
-        chip.addEventListener('click', () => { setPlaying(false); time = c.time; active = c.id; paintTime(); paintComments(); paintMarkers(); });
-        main.append(who, chip);
-        if (c.draft) {
-          const input = Object.assign(document.createElement('input'), { type: 'text', placeholder: 'Escribe qué cambiarías y pulsa Enter', maxLength: 140 });
-          input.setAttribute('aria-label', `Comentario en ${timecode(c.time)}`);
-          const save = () => { c.text = input.value.trim() || 'Revisar esta zona.'; c.draft = false; fresh = ''; paintComments(); };
-          input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); save(); } });
-          input.addEventListener('blur', save);
-          main.append(input);
-          queueMicrotask(() => input.focus({ preventScroll: true }));
-        } else {
-          main.append(Object.assign(document.createElement('p'), { className: 'text', textContent: c.text }));
-          const resolve = Object.assign(document.createElement('button'), { type: 'button', className: 'resolve', textContent: c.resolved ? 'Resuelto' : 'Resolver' });
-          resolve.setAttribute('aria-pressed', String(c.resolved));
-          resolve.disabled = approved;
-          resolve.addEventListener('click', () => { c.resolved = !c.resolved; notice.textContent = ''; fresh = ''; paintAll(); });
-          main.append(resolve);
-        }
-        li.append(avatar, main);
-        return li;
-      }));
-      const open = openCount(comments);
-      openLabel.textContent = open === 1 ? '1 abierto' : `${open} abiertos`;
-    }
-
-    function paintDecision() {
-      status.textContent = approved ? 'Aprobado' : 'En revisión';
-      status.toggleAttribute('data-approved', approved);
-      approve.textContent = approved ? 'Reabrir V3' : 'Aprobar V3';
-    }
-
-    function paintAll() { paintComments(); paintMarkers(); paintInk(); paintDecision(); }
-
-    approve.addEventListener('click', () => {
-      notice.removeAttribute('data-ok');
-      if (approved) { approved = false; notice.textContent = ''; }
-      else if (!canApprove(comments)) {
-        const open = openCount(comments);
-        notice.textContent = `Faltan ${open === 1 ? '1 comentario' : `${open} comentarios`} por resolver antes de aprobar.`;
-        return;
-      } else { approved = true; notice.setAttribute('data-ok', ''); notice.textContent = 'V3 aprobada. Queda registrado quién la aprobó y cuándo.'; }
-      paintAll();
-    });
-
-    play.addEventListener('click', () => setPlaying(!playing));
-    pen.addEventListener('click', () => setPen(pen.getAttribute('aria-pressed') !== 'true'));
-
-    // Línea de tiempo: clic, arrastre y teclado.
-    const seekFrom = (e: PointerEvent) => {
-      const r = track.getBoundingClientRect();
-      time = Math.max(0, Math.min(DURATION, ((e.clientX - r.left) / r.width) * DURATION));
-      paintTime();
-    };
-    track.addEventListener('pointerdown', (e) => { setPlaying(false); track.setPointerCapture(e.pointerId); seekFrom(e); });
-    track.addEventListener('pointermove', (e) => { if (track.hasPointerCapture(e.pointerId)) seekFrom(e); });
-    track.addEventListener('keydown', (e) => {
-      const step = e.shiftKey ? 1 : 1 / 24;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-        e.preventDefault(); setPlaying(false);
-        time = Math.max(0, Math.min(DURATION, time + (e.key === 'ArrowRight' ? step : -step)));
-        paintTime();
-      }
-      if (e.key === ' ') { e.preventDefault(); setPlaying(!playing); }
-    });
-
-    // Dibujo: al soltar el trazo se crea un comentario en el instante actual.
-    let points: [number, number][] = [], live: SVGPathElement | null = null;
-    const toSvg = (e: PointerEvent): [number, number] => {
-      const r = ink.getBoundingClientRect();
-      return [((e.clientX - r.left) / r.width) * 1000, ((e.clientY - r.top) / r.height) * 625];
-    };
-    ink.addEventListener('pointerdown', (e) => {
-      if (!stage.hasAttribute('data-drawing') || approved) return;
-      e.preventDefault();
-      setPlaying(false);
-      ink.setPointerCapture(e.pointerId);
-      points = [toSvg(e)];
-      const holder = document.createElementNS(NS, 'g');
-      holder.setAttribute('class', 'mark tone-lavender');
-      live = document.createElementNS(NS, 'path');
-      holder.append(live);
-      ink.append(holder);
-    });
-    ink.addEventListener('pointermove', (e) => {
-      if (!live) return;
-      points.push(toSvg(e));
-      live.setAttribute('d', pointsToPath(points));
-    });
-    const finish = () => {
-      if (!live) return;
-      live.parentNode?.remove();
-      live = null;
-      if (strokeLength(points) < 24) return;
-      userCount += 1;
-      const id = `u${userCount}`;
-      comments = [...comments, { id, author: 'Tú', role: 'Invitado', initials: 'TÚ', tone: 'lavender', time, text: '', resolved: false, pin: points[0], path: pointsToPath(points), draft: true }];
-      comments.sort((a, b) => a.time - b.time);
-      active = id; fresh = id; hint.hidden = true; notice.textContent = '';
-      paintAll();
-    };
-    ink.addEventListener('pointerup', finish);
-    ink.addEventListener('pointercancel', finish);
-
-    // Solo reproduce mientras la sala está en pantalla.
-    new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; last = undefined; }).observe(room);
+    new ResizeObserver(fit).observe(viewport);
+    new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; last = undefined; }).observe(demo);
+    document.addEventListener('visibilitychange', () => { last = undefined; });
 
     const loop = (now: number) => {
-      if (playing && visible) {
+      if (playing && visible && !document.hidden) {
         const dt = last === undefined ? 0 : Math.min((now - last) / 1000, 0.1);
         last = now;
-        time = (time + dt) % DURATION;
-        const near = comments.find((c) => !c.resolved && Math.abs(c.time - time) < 0.6);
-        if (near && near.id !== active) { active = near.id; paintComments(); paintMarkers(); }
-        paintTime();
+        t = (t + dt) % LOOP;
+        render();
       }
       requestAnimationFrame(loop);
     };
-    paintAll();
-    paintTime();
+    fit();
     requestAnimationFrame(loop);
   }
 </script>
