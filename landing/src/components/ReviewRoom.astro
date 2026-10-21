@@ -20,10 +20,10 @@ const comments = initialComments();
   <div class="room-body">
     <div class="stage-column">
       <div class="stage" data-stage>
-        <div class="frame" data-frame>
+        <div class="scene" data-scene>
           <Image src={frame} alt="Fotograma del spot: escultura de listones en lavanda, rosa y durazno" widths={[480, 760, 1100]} sizes="(max-width: 960px) 100vw, 720px" loading="eager" fetchpriority="high" />
+          <svg class="ink" data-ink viewBox="0 0 1000 625" preserveAspectRatio="none" aria-hidden="true" focusable="false"></svg>
         </div>
-        <svg class="ink" data-ink viewBox="0 0 1000 625" aria-hidden="true" focusable="false"></svg>
         <p class="hint" data-hint>Elige el lápiz y dibuja sobre el fotograma</p>
       </div>
 
@@ -81,16 +81,22 @@ const comments = initialComments();
   .room-body{display:grid;grid-template-columns:minmax(0,1fr) 272px}
   .stage-column{min-width:0;border-right:1px solid var(--line)}
   .stage{position:relative;aspect-ratio:16/10;overflow:hidden;background:#000}
-  .frame{position:absolute;inset:0;transform-origin:52% 45%;will-change:transform}
-  .frame img{width:100%;height:100%;object-fit:cover}
+  .scene{position:absolute;inset:0;transform-origin:52% 45%;will-change:transform}
+  .scene img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
   .ink{position:absolute;inset:0;width:100%;height:100%;touch-action:pan-y}
   .stage[data-drawing] .ink{cursor:crosshair;touch-action:none}
-  .ink :global(path){fill:none;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
-  .ink :global(.mark-seed){stroke:var(--coral)}
-  .ink :global(.mark-user){stroke:var(--lavender)}
-  .ink :global(.mark-draw){stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 900ms var(--ease) forwards}
+  .ink :global(path){fill:none;stroke:var(--tone);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 1px 2px rgb(12 11 16 / .7))}
+  .ink :global(.mark){--tone:var(--lavender);transition:opacity 200ms var(--ease)}
+  .ink :global(.mark.tone-peach){--tone:var(--peach)}.ink :global(.mark.tone-mint){--tone:var(--mint)}
+  .ink :global(.mark[data-active] path){stroke-width:5}
+  .ink :global(.mark[data-resolved]){opacity:.45}
+  .ink :global(.mark-draw){stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 800ms var(--ease) forwards}
+  .ink :global(.pin circle){fill:var(--tone);stroke:rgb(12 11 16 / .55);stroke-width:2}
+  .ink :global(.pin text){fill:var(--primary-text);font:700 20px var(--font);text-anchor:middle;dominant-baseline:central}
+  .ink :global(.pin){animation:pop 260ms var(--ease)}
   @keyframes draw{to{stroke-dashoffset:0}}
-  .hint{position:absolute;left:12px;bottom:12px;padding:6px 10px;border-radius:999px;background:rgb(12 11 16 / .7);backdrop-filter:blur(8px);font-size:12px;color:var(--text);pointer-events:none;transition:opacity 300ms var(--ease)}
+  @keyframes pop{from{opacity:0}}
+  .hint{position:absolute;left:12px;top:12px;padding:6px 10px;border-radius:999px;background:rgb(12 11 16 / .7);backdrop-filter:blur(8px);font-size:12px;color:var(--text);pointer-events:none;transition:opacity 300ms var(--ease)}
   .hint[hidden]{display:block;opacity:0}
 
   .transport{display:flex;align-items:center;gap:6px;padding:8px 12px}
@@ -105,6 +111,8 @@ const comments = initialComments();
   .track::before{content:'';position:absolute;left:0;right:0;top:50%;height:4px;margin-top:-2px;border-radius:2px;background:var(--surface-3)}
   .track-fill{position:absolute;left:0;top:50%;height:4px;margin-top:-2px;width:0;border-radius:2px;background:var(--line-strong)}
   .markers :global(.marker){position:absolute;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:var(--lavender);box-shadow:0 0 0 3px var(--surface-1)}
+  .markers :global(.marker.tone-peach){background:var(--peach)}.markers :global(.marker.tone-mint){background:var(--mint)}
+  .markers :global(.marker[data-active]){width:12px;height:12px;margin:-6px 0 0 -6px}
   .markers :global(.marker[data-resolved]){background:var(--faint)}
   .playhead{position:absolute;top:2px;bottom:2px;left:0;width:2px;margin-left:-1px;border-radius:1px;background:var(--text)}
 
@@ -148,14 +156,14 @@ const comments = initialComments();
 </style>
 
 <script>
-  import { DURATION, timecode, initialComments, openCount, canApprove, visibleAnnotations, pointsToPath, strokeLength } from '../scripts/review-demo.js';
+  import { DURATION, timecode, initialComments, openCount, canApprove, visibleAnnotations, pointsToPath, strokeLength, camera } from '../scripts/review-demo.js';
 
   const room = document.querySelector<HTMLElement>('[data-room]');
   if (room) setup(room);
 
   function setup(room: HTMLElement) {
     const $ = <T extends Element>(sel: string) => room.querySelector<T>(sel)!;
-    const stage = $<HTMLElement>('[data-stage]'), frame = $<HTMLElement>('[data-frame]'), ink = $<SVGSVGElement>('[data-ink]');
+    const stage = $<HTMLElement>('[data-stage]'), scene = $<HTMLElement>('[data-scene]'), ink = $<SVGSVGElement>('[data-ink]');
     const play = $<HTMLButtonElement>('[data-play]'), pen = $<HTMLButtonElement>('[data-pen]'), hint = $<HTMLElement>('[data-hint]');
     const tc = $<HTMLElement>('[data-timecode]'), track = $<HTMLElement>('[data-track]'), fill = $<HTMLElement>('[data-fill]'), playhead = $<HTMLElement>('[data-playhead]'), markers = $<HTMLElement>('[data-markers]');
     const list = $<HTMLOListElement>('[data-list]'), openLabel = $<HTMLElement>('[data-open]'), notice = $<HTMLElement>('[data-notice]');
@@ -165,7 +173,7 @@ const comments = initialComments();
 
     type Comment = ReturnType<typeof initialComments>[number] & { draft?: boolean };
     let comments: Comment[] = initialComments();
-    let time = reduced ? 6.5 : 0, playing = !reduced, visible = true, approved = false, active = '', fresh = '', drawnSeed = false, userCount = 0;
+    let time = reduced ? 6.5 : 0, playing = !reduced, visible = true, approved = false, active = '', fresh = '', userCount = 0;
     let last: number | undefined;
 
     // Herramienta de dibujo activa por defecto solo con puntero fino, para no bloquear el scroll en pantallas táctiles.
@@ -192,33 +200,49 @@ const comments = initialComments();
       track.setAttribute('aria-valuenow', time.toFixed(1));
       track.setAttribute('aria-valuetext', timecode(time));
       // El fotograma se mueve un poco para que se lea como video.
-      if (!reduced) frame.style.transform = `scale(${1.04 + time * 0.004}) translate(${(time - 10) * -0.35}%, ${Math.sin(time / 3) * 0.6}%)`;
+      if (!reduced) { const cam = camera(time); scene.style.transform = `scale(${cam.scale}) translate(${cam.x}%, ${cam.y}%)`; }
       paintInk();
     }
 
     function paintInk() {
       const shown = visibleAnnotations(comments, time);
       const ids = new Set(shown.map((c) => c.id));
-      ink.querySelectorAll('path[data-id]').forEach((p) => { if (!ids.has(p.getAttribute('data-id')!)) p.remove(); });
+      ink.querySelectorAll<SVGGElement>('g[data-id]').forEach((g) => { if (!ids.has(g.dataset.id!)) g.remove(); });
       for (const c of shown) {
-        if (ink.querySelector(`path[data-id="${c.id}"]`)) continue;
-        const path = document.createElementNS(NS, 'path');
-        path.setAttribute('d', c.path!);
-        path.dataset.id = c.id;
-        path.classList.add(c.id.startsWith('u') ? 'mark-user' : 'mark-seed');
-        ink.append(path);
-        if (!reduced && c.id === 'c2' && !drawnSeed) {
-          drawnSeed = true;
-          path.style.setProperty('--len', String(path.getTotalLength()));
-          path.classList.add('mark-draw');
+        let g = ink.querySelector<SVGGElement>(`g[data-id="${c.id}"]`);
+        if (!g) {
+          g = document.createElementNS(NS, 'g');
+          g.dataset.id = c.id;
+          const path = document.createElementNS(NS, 'path');
+          path.setAttribute('d', c.path!);
+          const pin = document.createElementNS(NS, 'g');
+          pin.classList.add('pin');
+          // El pin usa las iniciales y el color del avatar del comentario.
+          const [px, py] = c.pin ?? [0, 0];
+          const dot = document.createElementNS(NS, 'circle');
+          dot.setAttribute('cx', String(px)); dot.setAttribute('cy', String(py)); dot.setAttribute('r', '27');
+          const label = document.createElementNS(NS, 'text');
+          label.setAttribute('x', String(px)); label.setAttribute('y', String(py));
+          label.textContent = c.initials;
+          pin.append(dot, label);
+          g.append(path, pin);
+          ink.append(g);
+          if (!reduced && playing) {
+            path.style.setProperty('--len', String(path.getTotalLength()));
+            path.classList.add('mark-draw');
+          }
         }
+        g.setAttribute('class', `mark tone-${c.tone}`);
+        g.toggleAttribute('data-active', c.id === active);
+        g.toggleAttribute('data-resolved', c.resolved);
       }
     }
 
     function paintMarkers() {
       markers.replaceChildren(...comments.map((c) => {
         const m = document.createElement('span');
-        m.className = 'marker';
+        m.className = `marker tone-${c.tone}`;
+        m.toggleAttribute('data-active', c.id === active);
         m.style.left = `${(c.time / DURATION) * 100}%`;
         m.toggleAttribute('data-resolved', c.resolved);
         return m;
@@ -239,7 +263,7 @@ const comments = initialComments();
         who.append(Object.assign(document.createElement('strong'), { textContent: c.author }), ' ', Object.assign(document.createElement('span'), { textContent: c.role }));
         const chip = Object.assign(document.createElement('button'), { type: 'button', className: 'tc-chip', textContent: timecode(c.time) });
         chip.setAttribute('aria-label', `Ir a ${timecode(c.time)}`);
-        chip.addEventListener('click', () => { setPlaying(false); time = c.time; active = c.id; paintTime(); paintComments(); });
+        chip.addEventListener('click', () => { setPlaying(false); time = c.time; active = c.id; paintTime(); paintComments(); paintMarkers(); });
         main.append(who, chip);
         if (c.draft) {
           const input = Object.assign(document.createElement('input'), { type: 'text', placeholder: 'Escribe qué cambiarías y pulsa Enter', maxLength: 140 });
@@ -316,9 +340,11 @@ const comments = initialComments();
       setPlaying(false);
       ink.setPointerCapture(e.pointerId);
       points = [toSvg(e)];
+      const holder = document.createElementNS(NS, 'g');
+      holder.setAttribute('class', 'mark tone-lavender');
       live = document.createElementNS(NS, 'path');
-      live.classList.add('mark-user');
-      ink.append(live);
+      holder.append(live);
+      ink.append(holder);
     });
     ink.addEventListener('pointermove', (e) => {
       if (!live) return;
@@ -327,12 +353,12 @@ const comments = initialComments();
     });
     const finish = () => {
       if (!live) return;
-      live.remove();
+      live.parentNode?.remove();
       live = null;
       if (strokeLength(points) < 24) return;
       userCount += 1;
       const id = `u${userCount}`;
-      comments = [...comments, { id, author: 'Tú', role: 'Invitado', initials: 'TÚ', tone: 'lavender', time, text: '', resolved: false, path: pointsToPath(points), draft: true }];
+      comments = [...comments, { id, author: 'Tú', role: 'Invitado', initials: 'TÚ', tone: 'lavender', time, text: '', resolved: false, pin: points[0], path: pointsToPath(points), draft: true }];
       comments.sort((a, b) => a.time - b.time);
       active = id; fresh = id; hint.hidden = true; notice.textContent = '';
       paintAll();
@@ -349,7 +375,7 @@ const comments = initialComments();
         last = now;
         time = (time + dt) % DURATION;
         const near = comments.find((c) => !c.resolved && Math.abs(c.time - time) < 0.6);
-        if (near && near.id !== active) { active = near.id; paintComments(); }
+        if (near && near.id !== active) { active = near.id; paintComments(); paintMarkers(); }
         paintTime();
       }
       requestAnimationFrame(loop);

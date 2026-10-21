@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { timecode, initialComments, canApprove, openCount, visibleAnnotations, pointsToPath, strokeLength } from './review-demo.js';
+import { timecode, initialComments, canApprove, openCount, visibleAnnotations, pointsToPath, strokeLength, camera } from './review-demo.js';
 
 test('timecode usa minutos, segundos y fotogramas a 24 fps', () => {
   assert.equal(timecode(0), '00:00:00');
@@ -28,4 +28,17 @@ test('convierte puntos en un trazo y mide su largo', () => {
   assert.equal(pointsToPath([[0, 0], [3, 4]]), 'M0 0L3 4');
   assert.equal(pointsToPath([]), '');
   assert.equal(strokeLength([[0, 0], [3, 4], [3, 10]]), 11);
+});
+
+test('cada comentario de ejemplo tiene trazo y pin en su inicio', () => {
+  for (const comment of initialComments()) {
+    assert.ok(comment.path);
+    const [x, y] = comment.path.slice(1).split(/[C L]/).map(Number);
+    assert.deepEqual(comment.pin, [x, y]);
+  }
+});
+
+test('la cámara arranca y termina dentro de un rango corto', () => {
+  assert.deepEqual(camera(10), { scale: 1.08, x: -0, y: Math.sin(10 / 3) * 0.6 });
+  assert.ok(camera(20).scale < 1.13);
 });
