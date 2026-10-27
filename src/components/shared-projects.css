@@ -31,6 +31,7 @@
 .shared-projects .shared-toolbar input,.shared-projects .shared-toolbar select{height:44px;border-color:var(--line);background:var(--surface-1);border-radius:10px}
 .shared-projects select option{background:var(--surface-2);color:var(--text)}
 .shared-projects .shared-toolbar .primary-action{min-height:44px;padding:10px 18px;font-size:12px;white-space:normal}
+.app-shell .shared-projects .shared-toolbar button.shared-create-project{min-height:52px;padding:14px 24px;border:0;border-radius:999px;background:transparent;color:#201c29;font-size:13px;white-space:nowrap}
 .shared-projects .shared-layout{grid-template-columns:minmax(240px,300px) minmax(0,1fr);gap:28px}
 .shared-projects .shared-list{border:0;border-radius:0;background:transparent;overflow:visible}
 .shared-list-heading{display:flex;justify-content:space-between;align-items:center;padding:0 12px 12px;color:var(--muted);font-size:11px;letter-spacing:.04em}
@@ -51,8 +52,8 @@
 .shared-welcome-features{display:flex;justify-content:center;flex-wrap:wrap;gap:16px;color:var(--muted);font-size:11px}
 .shared-welcome-features span{display:inline-flex;align-items:center;gap:6px}
 .shared-projects .shared-conversation{border:0;border-left:1px solid var(--line);border-radius:0;background:transparent;padding:0 0 0 28px}
-@media(max-width:1000px){.shared-projects .shared-toolbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.shared-projects .shared-toolbar .primary-action{justify-self:start}.shared-projects .shared-layout{grid-template-columns:minmax(220px,260px) minmax(0,1fr)}}
-@media(max-width:780px){.shared-projects .shared-layout{grid-template-columns:1fr;gap:20px}.shared-projects .shared-toolbar{grid-template-columns:1fr}.shared-projects .shared-toolbar .primary-action{justify-self:stretch}.shared-projects .shared-conversation,.shared-project-welcome{border-left:0;border-top:1px solid var(--line);padding:24px 0 0}.shared-projects .shared-scope-help summary small{display:block;font-size:11px}.shared-projects .shared-project-welcome{min-height:240px}.shared-projects .dashboard-header{flex-wrap:wrap}}
+@media(max-width:1000px){.shared-projects .shared-toolbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.shared-projects .shared-toolbar .shared-create-project{justify-self:start}.shared-projects .shared-layout{grid-template-columns:minmax(220px,260px) minmax(0,1fr)}}
+@media(max-width:780px){.shared-projects .shared-layout{grid-template-columns:1fr;gap:20px}.shared-projects .shared-toolbar{grid-template-columns:1fr}.shared-projects .shared-toolbar .shared-create-project{justify-self:stretch}.shared-projects .shared-conversation,.shared-project-welcome{border-left:0;border-top:1px solid var(--line);padding:24px 0 0}.shared-projects .shared-scope-help summary small{display:block;font-size:11px}.shared-projects .shared-project-welcome{min-height:240px}.shared-projects .dashboard-header{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){.shared-projects .shared-project-row,.shared-scope-help summary>.icon:last-child{transition:none}}
 .project-invitations{margin:12px 0;border:1px solid var(--line);border-radius:12px;padding:12px 16px;background:var(--surface-1)}
 .project-invitations summary{cursor:pointer;font-size:13px;min-height:32px;align-content:center}

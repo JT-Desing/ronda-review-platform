@@ -75,6 +75,33 @@ export function sharedProjectService(repository) {
         return {ok:true};
       },true);
     },
+    async deletePermanently(space,actor,id,input,storage) {
+      if(!Number.isInteger(input.revision)||input.revision<0||typeof input.confirmName!=='string'||input.permanent!==true)throw workspaceError(400,'Confirma el nombre y la eliminación permanente del proyecto.');
+      const files=await repository.access(space,actor,async(db,role)=>{
+        if(role!=='admin')throw workspaceError(403,'Solo un administrador puede eliminar proyectos definitivamente.');
+        const project=(await db.query('SELECT id,name,revision,deleted_at FROM shared_projects WHERE workspace_id=$1 AND id=$2 FOR UPDATE',[space,id])).rows[0];
+        if(!project)throw workspaceError(404,'Proyecto no disponible.');
+        if(!project.deleted_at)throw workspaceError(409,'Primero mueve el proyecto a la papelera.');
+        if(project.revision!==input.revision||project.name!==input.confirmName)throw workspaceError(409,'El proyecto cambió. Actualiza antes de continuar.');
+        const uploads=(await db.query('SELECT id FROM shared_media_files WHERE workspace_id=$1 AND project_id=$2',[space,id])).rows;
+        await db.query('UPDATE shared_assets SET active_version_id=NULL WHERE workspace_id=$1 AND project_id=$2',[space,id]);
+        await db.query('DELETE FROM shared_comment_replies WHERE version_id IN (SELECT id FROM shared_versions WHERE workspace_id=$1 AND project_id=$2)',[space,id]);
+        await db.query('DELETE FROM shared_version_comments WHERE workspace_id=$1 AND project_id=$2',[space,id]);
+        await db.query('DELETE FROM shared_review_decisions WHERE version_id IN (SELECT id FROM shared_versions WHERE workspace_id=$1 AND project_id=$2)',[space,id]);
+        await db.query('DELETE FROM shared_versions WHERE workspace_id=$1 AND project_id=$2',[space,id]);
+        await db.query('DELETE FROM shared_assets WHERE workspace_id=$1 AND project_id=$2',[space,id]);
+        await db.query('DELETE FROM shared_media_files WHERE workspace_id=$1 AND project_id=$2',[space,id]);
+        await event(db,space,actor,'project.permanently_deleted',{projectId:id,name:project.name});
+        await db.query('DELETE FROM shared_projects WHERE workspace_id=$1 AND id=$2',[space,id]);
+        return uploads.map(file=>file.id);
+      },true);
+      if(storage?.discardUncommitted){
+        const results=await Promise.allSettled(files.map(uploadId=>storage.discardUncommitted({workspaceId:space,uploadId})));
+        const failures=results.filter(result=>result.status==='rejected').length;
+        if(failures)console.error('shared_project_file_cleanup_failed',failures);
+      }
+      return {ok:true};
+    },
     comment(space, actor, id, input) {
       const text = commentInput(input), key = requestId(input.requestId);
       return repository.access(space, actor, async db => {

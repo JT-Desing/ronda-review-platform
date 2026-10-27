@@ -41,7 +41,7 @@ test('blocked external pages can be captured only with browser permission and sa
   assert.match(component,/drawImage\(frame\.video,crop\.x,crop\.y,crop\.width,crop\.height,0,0,crop\.width,crop\.height\)/);
   assert.match(delivery,/addWebCapture=async\(file,intent=\{\}\)=>\{if\(!file\)return;await mutate\(async\(\)=>\{const result=await uploadFile\(context,file/);
   assert.match(delivery,/addWebCapture\(event\.detail\?\.file,event\.detail\)/);
-  assert.match(component,/captura fija/);
+  assert.match(component,/Al cargarla, podrás capturar la vista desde las herramientas de anotación/);
   assert.match(component,/Ronda guardará solo la vista web como pieza para anotar/);
 });
 
@@ -75,7 +75,7 @@ test('without the document bridge the live site offers the optional extension an
   assert.match(component,/marks\.filter\(mark=>mark\.coordinateSpace==='document'\)/);
   assert.match(component,/if\(!hasDocumentBridge\)return/);
   assert.match(component,/Capturar vista para anotar/);
-  assert.match(component,/Conecta la extensión una sola vez para fijar comentarios y anotaciones a la página viva/);
+  assert.match(component,/La vista integrada depende de las políticas del sitio/);
   assert.match(component,/Conectar este sitio/);
   assert.match(component,/VITE_RONDA_EXTENSION_STORE_URL/);
   assert.match(component,/recortaremos únicamente el área de la web visible/);

@@ -8,8 +8,9 @@ export function publicIPv4(ip){
   return !(a===0||a===10||a===127||a>=224||(a===100&&b>=64&&b<=127)||(a===169&&b===254)||(a===172&&b>=16&&b<=31)||(a===192&&(b===168||b===0||b===88&&c===99))||(a===198&&(b===18||b===19||b===51&&c===100))||(a===203&&b===0&&c===113));
 }
 export function externalUrl(value){
+  if(typeof value!=='string'||value.length>2048||value.includes('\0'))throw workspaceError(400,'Solo se permiten enlaces HTTPS públicos, sin credenciales ni puertos especiales.');
   let url;try{url=new URL(value);}catch{throw workspaceError(400,'Indica una URL HTTPS válida.');}
-  if(typeof value!=='string'||value.length>2048||url.protocol!=='https:'||url.username||url.password||url.port&&url.port!=='443'||!url.hostname.includes('.')||url.hostname.endsWith('.')||/(?:^|\.)(?:localhost|local|internal|test|invalid)$/.test(url.hostname)||isIP(url.hostname)&&!publicIPv4(url.hostname)||url.hostname.startsWith('['))throw workspaceError(400,'Solo se permiten enlaces HTTPS públicos, sin credenciales ni puertos especiales.');
+  if(url.hostname.includes('\0')||url.protocol!=='https:'||url.username||url.password||url.port&&url.port!=='443'||!url.hostname.includes('.')||url.hostname.endsWith('.')||/(?:^|\.)(?:localhost|local|internal|test|invalid)$/.test(url.hostname)||isIP(url.hostname)&&!publicIPv4(url.hostname)||url.hostname.startsWith('['))throw workspaceError(400,'Solo se permiten enlaces HTTPS públicos, sin credenciales ni puertos especiales.');
   url.hash='';return url;
 }
 export function linkKind(mime){

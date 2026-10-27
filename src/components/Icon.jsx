@@ -1,8 +1,8 @@
 import React from 'react';
 import { Calendar, Megaphone, UserSquare } from 'iconoir-react';
-import { Home, ViewGrid, Folder, Clock, Group, Settings, Search, ShareAndroid, Play, Pause, SoundHigh, Expand, EditPencil, ArrowUpRight, Square, Text, Undo, Redo, Check, MoreHoriz, MediaImage, Send, Sparks, NavArrowRight, Plus, Xmark, Bell, WarningTriangle, Link, LogOut, CursorPointer } from 'iconoir-react';
+import { Home, ViewGrid, Folder, Clock, Group, Settings, Search, ShareAndroid, Play, Pause, SoundHigh, Expand, EditPencil, ArrowUpRight, Square, Text, Undo, Redo, Check, MoreHoriz, MediaImage, Send, Sparks, NavArrowRight, Plus, Xmark, Bell, WarningTriangle, Link, LogOut, CursorPointer, Trash, Upload } from 'iconoir-react';
 
-const icons = { home: Home, grid: ViewGrid, folder: Folder, clock: Clock, users: Group, settings: Settings, search: Search, share: ShareAndroid, play: Play, pause: Pause, volume: SoundHigh, maximize: Expand, pen: EditPencil, arrow: ArrowUpRight, logout: LogOut, square: Square, type: Text, undo: Undo, redo: Redo, check: Check, more: MoreHoriz, image: MediaImage, send: Send, spark: Sparks, chevron: NavArrowRight, plus: Plus, x: Xmark, bell: Bell, alert: WarningTriangle, link: Link, cursor: CursorPointer };
+const icons = { home: Home, grid: ViewGrid, folder: Folder, clock: Clock, users: Group, settings: Settings, search: Search, share: ShareAndroid, play: Play, pause: Pause, volume: SoundHigh, maximize: Expand, pen: EditPencil, arrow: ArrowUpRight, logout: LogOut, square: Square, type: Text, undo: Undo, redo: Redo, check: Check, more: MoreHoriz, image: MediaImage, send: Send, spark: Sparks, chevron: NavArrowRight, plus: Plus, upload: Upload, x: Xmark, bell: Bell, alert: WarningTriangle, link: Link, cursor: CursorPointer, trash: Trash };
 
 // Labels belong to the surrounding control; decorative icons stay out of the accessibility tree.
 export default function Icon({ name, size = 18, className = '' }) {

@@ -11,6 +11,19 @@
 .account-alert,.account-import{padding:16px 24px;border-bottom:1px solid var(--line);background:var(--surface-2);font-size:14px;line-height:1.6}.account-import h2{font-size:18px}.account-alert button,.account-import button{margin:4px}.account-primary:disabled,.account-bar button:disabled{opacity:.55;cursor:wait}
 .account-session-dialog{color:var(--text);max-height:calc(100dvh - 32px);overflow:auto}.account-session-dialog::backdrop{background:rgb(0 0 0 / .78)}.account-session-dialog h1{margin-top:0}
 .account-text-button{display:block;min-height:44px;margin:12px auto 0;padding:8px 12px;border:0;background:transparent;color:var(--accent);font:inherit;font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer}.account-text-button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.account-recovery-status{display:inline-flex;align-items:center;gap:9px;min-height:34px;padding:0 12px;border:1px solid rgb(142 189 114 / .25);border-radius:999px;background:rgb(142 189 114 / .08);color:var(--text);font-size:12px;font-weight:650;letter-spacing:.01em}
+.account-recovery-status-icon{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:rgb(142 189 114 / .18);color:var(--green,#9bc982);font-size:12px;font-weight:800}
+.account-card .account-recovery h1{margin:22px 0 10px;text-wrap:balance}
+.account-card .account-recovery-copy{margin:0;color:var(--muted);line-height:1.65;text-wrap:pretty}
+.account-recovery-error{margin-top:20px;padding:14px 15px;border:1px solid rgb(255 114 94 / .28);border-radius:14px;background:rgb(255 114 94 / .07)}
+.account-recovery-error strong{display:block;margin-bottom:5px;color:var(--coral);font-size:13px}
+.account-card .account-recovery-error p{margin:0;color:var(--muted);font-size:12px;line-height:1.55;overflow-wrap:anywhere}
+.account-card .account-recovery-retry{display:block;width:100%;min-height:50px;margin-top:22px;border:1px solid transparent;box-shadow:0 8px 22px rgb(199 172 240 / .12);transition:transform 150ms ease-out,box-shadow 150ms ease-out,background-color 150ms ease-out}
+.account-card .account-recovery-retry:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 11px 26px rgb(199 172 240 / .2)}
+.account-card .account-recovery-retry:active:not(:disabled){transform:scale(.99)}
+.account-card .account-recovery-retry:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.account-card .account-recovery-retry:disabled{opacity:.68;cursor:wait}
+.account-recovery .account-text-button{margin-top:10px}
 .signup-workspace-choice{display:grid;gap:12px;margin:4px 0 0;padding:16px;border:1px solid var(--line);border-radius:var(--r-sm);min-width:0}
 .signup-workspace-choice legend{padding:0 6px;font-size:14px;font-weight:700}
 .account-card .signup-workspace-choice>label:not(:has(input[name="teamName"])):not(:has(input[name="invitationCode"])){display:flex;align-items:flex-start;gap:10px;font-weight:500;line-height:1.45;cursor:pointer}
@@ -24,6 +37,7 @@
 .workspace-onboarding .onboarding-personal button:disabled{opacity:.55;cursor:wait}
 @media(max-width:600px){.account-card .signup-workspace-choice{padding:12px}.workspace-onboarding .onboarding-options{display:grid;grid-template-columns:1fr}.workspace-onboarding .onboarding-options button{width:100%;text-align:left}}
 @media(max-width:600px){.account-card{padding:24px}.account-access{padding:16px}.account-bar{gap:8px;padding:12px}.account-bar small{display:block;margin:0}.account-bar button{min-height:44px}.account-bar>span[role=status]{width:100%;order:3}}
+@media(prefers-reduced-motion:reduce){.account-card .account-recovery-retry{transition:none}.account-card .account-recovery-retry:hover:not(:disabled),.account-card .account-recovery-retry:active:not(:disabled){transform:none}}
 .account-profile-menu{position:relative;z-index:60;flex:0 0 auto}
 .account-profile-trigger{position:relative;box-sizing:border-box;display:flex;align-items:center;gap:10px;min-width:44px;min-height:44px;padding:5px 10px 5px 5px;border:1px solid var(--line);border-radius:12px;background:var(--surface-1);color:var(--text);cursor:pointer;transition:background-color 150ms ease-out,border-color 150ms ease-out,transform 150ms ease-out}
 .account-profile-trigger:hover,.account-profile-trigger[aria-expanded=true]{background:var(--surface-2);border-color:var(--line)}

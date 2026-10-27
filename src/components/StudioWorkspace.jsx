@@ -10,6 +10,10 @@ import {usePersonalProjectTrash} from './PersonalProjectTrash.jsx';
 import reviewCover from './review-cover.svg';
 import {LinkImport} from './LinkImport.jsx';
 import {DeletedAssets} from './DeletedAssets.jsx';
+import {api} from '../state/accountStorage.js';
+import {teamWorkspaces} from '../domain/workspace-routing.js';
+import {setSharedProjectLocation} from '../domain/shared-project-link.js';
+import {demoSession} from '../state/demoSession.js';
 
 function CoverArt({ palette = 0 }) {
   return <span className={`studio-art palette-${palette}`} aria-hidden="true"><i/><i/><i/></span>;
@@ -84,7 +88,23 @@ export function ProjectLibrary({ onOpen, onNotify }) {
 
 export function StudioHome({ onNavigate, onOpen }) {
   const {state} = useRonda(); const summary=projectOverview(state);
+  const [teamProjects,setTeamProjects]=useState([]),[teamProjectsLoading,setTeamProjectsLoading]=useState(true),[teamProjectsError,setTeamProjectsError]=useState('');
   const deletion=usePersonalProjectTrash();
+  useEffect(()=>{
+    let active=true;
+    if(demoSession()){setTeamProjects([]);setTeamProjectsLoading(false);setTeamProjectsError('');return()=>{active=false;};}
+    setTeamProjectsLoading(true);setTeamProjectsError('');
+    (async()=>{
+      const {workspaces=[]}=await api('/api/workspaces');
+      const teams=teamWorkspaces(workspaces);
+      const lists=await Promise.all(teams.map(async workspace=>{
+        const {projects=[]}=await api(`/api/workspaces/${encodeURIComponent(workspace.id)}/projects`);
+        return projects.map(project=>({...project,workspaceId:workspace.id,workspaceName:workspace.name,assetCount:Number(project.asset_count||0),pending:Number(project.open_comments||0)+Number(project.open_review_comments||0)}));
+      }));
+      if(active)setTeamProjects(lists.flat());
+    })().catch(()=>{if(active){setTeamProjects([]);setTeamProjectsError('No se pudieron cargar los proyectos compartidos. Vuelve a intentarlo desde Proyectos del equipo.');}}).finally(()=>{if(active)setTeamProjectsLoading(false);});
+    return()=>{active=false;};
+  },[state.currentUserId]);
   const reviewer=state.members[state.currentUserId];
   const next=summary.projects.find(project => project.activeVersionId);
   const activeIds=new Set(summary.projects.map(project=>project.id));
@@ -92,13 +112,19 @@ export function StudioHome({ onNavigate, onOpen }) {
   const total=activeComments.length, resolved=activeComments.filter(comment => comment.status === 'resolved').length;
   const percent=total ? Math.round(resolved/total*100) : 0;
   const pending=activeComments.filter(comment => comment.status==='open').slice(0,3);
+  const teamAssets=teamProjects.reduce((total,project)=>total+project.assetCount,0);
+  const teamPending=teamProjects.reduce((total,project)=>total+project.pending,0);
   return <div className="dashboard-page studio-home"><div className="studio-home-layout"><div>
     <section className="studio-welcome"><CoverArt palette={0}/><div><span className="eyebrow">TU ESPACIO CREATIVO</span><h1>Una nueva ronda.<br/>Una mejor versión.</h1><p>{reviewer?.name?.split(' ')[0] || 'Hola'}, continúa donde lo dejaste y da forma a tu próxima entrega.</p><LiquidButton onClick={() => next ? onOpen(next) : onNavigate('projects')}>{next ? 'Continuar revisión' : 'Abrir proyectos'} <span aria-hidden="true">→</span></LiquidButton></div></section>
-    <header className="studio-section-heading"><h2>Tus proyectos</h2><button onClick={() => onNavigate('projects')}>Ver todos →</button></header>
-    <section className="studio-project-grid home-cards" aria-label="Proyectos de tu cuenta">{summary.projects.slice(0,3).map(project => <ProjectTile key={project.id} project={project} onDelete={deletion.requestDelete} onOpen={() => project.activeVersionId ? onOpen(project) : onNavigate('projects')}/>)}</section>
+    <header className="studio-section-heading"><h2>Proyectos del equipo</h2><button onClick={() => onNavigate('projects')}>Ver todos →</button></header>
+    <section className="studio-team-projects" aria-label="Proyectos compartidos con tus equipos" aria-busy={teamProjectsLoading}>
+      {teamProjectsLoading?<p className="studio-team-projects-state">Cargando proyectos de tus equipos…</p>:teamProjectsError?<p className="studio-team-projects-state" role="status">{teamProjectsError}</p>:teamProjects.length?<div className="studio-project-grid home-cards">{teamProjects.slice(0,3).map((project,index)=><ProjectTile key={`${project.workspaceId}:${project.id}`} project={{...project,assets:[],assetCount:project.assetCount,pending:project.pending,status:project.assetCount?'in_review':'draft',palette:index%4}} canRename={false} onOpen={selected=>setSharedProjectLocation(window,selected.workspaceId,selected.id)}/>)}</div>:<p className="studio-team-projects-state">Los proyectos compartidos de los equipos a los que perteneces aparecerán aquí.</p>}
+    </section>
+    <header className="studio-section-heading"><h2>Proyectos personales</h2><button onClick={() => onNavigate('personal')}>Ver todos →</button></header>
+    <section className="studio-project-grid home-cards" aria-label="Proyectos personales">{summary.projects.slice(0,3).map(project => <ProjectTile key={project.id} project={project} onDelete={deletion.requestDelete} onOpen={() => project.activeVersionId ? onOpen(project) : onNavigate('personal')}/>)}</section>
     {deletion.trash}{deletion.dialog}
-    {!summary.projects.length && <p className="studio-empty">No hay proyectos todavía. Crea el primero desde Proyectos.</p>}
-  </div><aside className="studio-home-aside"><section className="studio-home-panel"><h2>Estado de revisión</h2><div className="studio-progress"><div className="studio-progress-ring" style={{'--progress':`${percent}%`}}><strong>{total ? `${percent}%` : '—'}</strong></div><p>{total ? `${resolved} de ${total} comentarios resueltos` : 'Todavía no hay comentarios'}</p></div><div className="studio-counts"><span><strong>{summary.projects.length}</strong>Proyectos</span><span><strong>{summary.assets}</strong>Piezas</span><span><strong>{summary.pending}</strong>Pendientes</span></div><small>Datos de tu cuenta privada, no del equipo compartido.</small></section>
+    {!summary.projects.length && <p className="studio-empty">No tienes proyectos personales todavía. Los proyectos compartidos de tu equipo aparecen arriba.</p>}
+  </div><aside className="studio-home-aside"><section className="studio-home-panel"><h2>Estado de revisión personal</h2><div className="studio-progress"><div className="studio-progress-ring" style={{'--progress':`${percent}%`}}><strong>{total ? `${percent}%` : '—'}</strong></div><p>{total ? `${resolved} de ${total} comentarios resueltos` : 'Todavía no hay comentarios personales'}</p></div><div className="studio-counts"><span><strong>{summary.projects.length+teamProjects.length}</strong>Proyectos</span><span><strong>{summary.assets+teamAssets}</strong>Piezas</span><span><strong>{summary.pending+teamPending}</strong>Pendientes</span></div><small>Totales de tus proyectos personales y de los equipos a los que tienes acceso.</small></section>
     <section className="studio-home-panel"><h2>Siguiente revisión</h2>{next ? <><div className="studio-next"><img className="studio-review-cover" src={reviewCover} alt="" aria-hidden="true" width="64" height="64"/><div><strong>{next.name}</strong><small>{next.version?.name || 'Versión actual'}</small></div></div><LiquidButton onClick={() => onOpen(next)}>Abrir revisión →</LiquidButton></> : <p>Cuando tengas una pieza para revisar, podrás retomarla aquí.</p>}</section>
     <section className="studio-home-panel"><h2>Comentarios abiertos</h2>{pending.length ? pending.map(comment => <button className="studio-pending" key={comment.id} onClick={() => onNavigate('activity')}><span className="studio-pending-dot"/><span>{comment.text || 'Comentario de audio'}</span><span aria-hidden="true">↗</span></button>) : <p>No hay comentarios pendientes. Todo listo para una nueva ronda.</p>}<button className="studio-text-action" onClick={() => onNavigate('activity')}>Ver actividad →</button></section>
   </aside></div></div>;

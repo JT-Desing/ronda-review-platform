@@ -32,6 +32,7 @@ test('uploaded HTML has a sandboxed review surface while code remains inert and 
   assert.match(documentReview,/pointerEvents:drawing\?'none':'auto'/);
   assert.match(room,/html-annotation-tools/);
   assert.match(room,/<button type="button" title="Navegar documento" aria-label="Navegar documento" aria-pressed={!drawing}/);
+  assert.doesNotMatch(room,/tool-caret|<span[^>]*>⌄<\/span>/,'document navigation button contains only the cursor icon');
   assert.match(room,/onClick=\{\(\)=>setDrawing\(false\)\}/);
   assert.match(room,/setDrawing\(true\);props\.setActiveTool\(tool\)/);
   assert.match(room,/\['pen','arrow','square','type'\]/);

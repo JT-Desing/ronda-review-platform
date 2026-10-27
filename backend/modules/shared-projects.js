@@ -2,6 +2,7 @@ import { reply, body } from '../http.js';
 import { sharedProjectRepository } from '../repositories/shared-projects.js';
 import { sharedProjectService } from '../shared-project-service.js';
 import { workspaceError } from '../workspace-policy.js';
+import {localStorage} from '../storage/local.js';
 async function input(req, max) {
   const value = await body(req, max);
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw workspaceError(400, 'Se requiere un objeto JSON.');
@@ -10,7 +11,7 @@ async function input(req, max) {
 const uuid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 export async function handleSharedProjects({ req, res, path, account, pool }) {
   if (!account) return reply(res, 401, { error: 'Inicia sesión.' });
-  const match = path.match(new RegExp(`^/api/workspaces/(${uuid})/projects(?:/(${uuid})(?:/(comments|trash|restore|members)(?:/(${uuid}))?)?)?$`));
+  const match = path.match(new RegExp(`^/api/workspaces/(${uuid})/projects(?:/(${uuid})(?:/(comments|trash|restore|permanent|members)(?:/(${uuid}))?)?)?$`));
   if (!match) return reply(res, 404, { error: 'Ruta no disponible.' });
   const [, space, project, comments, comment] = match;
   const service = sharedProjectService(sharedProjectRepository(pool,{projectId:project}));
@@ -19,6 +20,7 @@ export async function handleSharedProjects({ req, res, path, account, pool }) {
   if (project && !comments && req.method === 'GET') return reply(res, 200, await service.read(space, account.id, project));
   if (project && !comments && req.method === 'PATCH') return reply(res, 200, await service.update(space, account.id, project, await input(req)));
   if(project&&comments==='members'&&!comment&&req.method==='PUT')return reply(res,200,await service.updateMembers(space,account.id,project,await input(req)));
+  if(project&&comments==='permanent'&&!comment&&req.method==='DELETE')return reply(res,200,await service.deletePermanently(space,account.id,project,await input(req),localStorage()));
   if (['trash','restore'].includes(comments)&&!comment&&req.method==='POST') return reply(res,200,await service.trash(space,account.id,project,await input(req),comments==='restore'));
   if (comments==='comments' && !comment && req.method === 'POST') return reply(res, 201, await service.comment(space, account.id, project, await input(req, 16384)));
   if (comment && req.method === 'PATCH') return reply(res, 200, await service.resolve(space, account.id, project, comment, await input(req)));

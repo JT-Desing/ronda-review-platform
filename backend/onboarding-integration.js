@@ -12,6 +12,7 @@ try{
  const email=`owner-${randomUUID()}@example.invalid`,password='Ronda-QA-only-2026!';
  assert.equal((await send('/api/auth/register',{name:'Ana QA',email,password:'short'})).status,400);
  const registered=await send('/api/auth/register',{name:'Ana QA',email,password});assert.equal(registered.status,200);const owner=(await registered.json()).user,cookie=registered.headers.get('set-cookie').split(';')[0];
+ process.env.RONDA_SUPERADMIN_IDS=owner.id;
  assert.equal((await send('/api/auth/register',{name:'Duplicate',email,password})).status,409);
  const personal=await (await fetch(base+'/api/workspaces',{headers:{Cookie:cookie}})).json();assert.equal(personal.workspaces.length,1);assert.equal(personal.workspaces[0].kind,'personal');
  const accountSnapshot=await(await fetch(base+'/api/data',{headers:{Cookie:cookie}})).json();
@@ -40,7 +41,7 @@ try{
   assert.equal((await send('/api/workspace-invitations/accept',{token:invitation.token},person.cookie)).status,404);
  }
  const team=await (await fetch(base+teamPath,{headers:{Cookie:cookie}})).json();assert.equal(team.members.length,5);assert.equal(team.invitations.length,0);
- assert.equal((await fetch(base+teamPath,{headers:{Cookie:people[4].cookie}})).status,404);
+ assert.equal((await fetch(base+teamPath,{headers:{Cookie:people[4].cookie}})).status,403,'workspace administration is reserved to the platform superadmin');
  assert.equal((await send(teamPath+'/invitations',{email:'forbidden@example.invalid',role:'admin'},people[2].cookie)).status,403);
  const projects=[];for(let index=0;index<3;index++){const r=await send(teamPath+'/projects',{name:`Proyecto de empresa ${index+1}`,client:'Aurora',requestId:randomUUID()},index===1?people[0].cookie:cookie);assert.equal(r.status,201);projects.push((await r.json()).project);}
  const teamProjects=await (await fetch(base+teamPath+'/projects',{headers:{Cookie:people[2].cookie}})).json();assert.equal(teamProjects.projects.length,3);

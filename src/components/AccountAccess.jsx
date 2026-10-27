@@ -184,7 +184,14 @@ export default function AccountAccess({ children }) {
   if(user&&ready&&onboarding)return <>{recovery}<WorkspaceOnboarding user={user} initialChoice={onboardingDraft?.choice} initialName={onboardingDraft?.name} initialCode={onboardingDraft?.code} initialError={onboardingDraft?.error||''} initialRequestId={onboardingDraft?.requestId} onLogout={logout} onComplete={async workspaceId=>{if(workspaceId)location.hash=`#team/${workspaceId}`;else{accountStorage.setItem('ronda-onboarding:v1',JSON.stringify('personal'));await retryAccount();}setOnboardingDraft(null);setOnboarding(false);setMount(value=>value+1);}}/></>;
   if (!user || !ready) return <main className="account-access"><section className="account-card">
     <span className="account-brand"><img src={rondaLogo} alt=""/><span>Ronda</span></span>
-    {signupRecovery&&<><h1>Tu cuenta está activa</h1><p>No pudimos cargar tu espacio todavía. Conservamos tu sesión y la información del registro; no necesitas crear otra cuenta ni volver a enviar el registro. Si estabas creando o aceptando un equipo, no repetiremos esa operación automáticamente.</p>{error&&<p role="alert" className="account-error">{error}</p>}<button className="account-primary" disabled={busy} onClick={retryCreatedSignup}>{busy?<BrandLoader size="inline" label="Cargando tu espacio…"/>:'Reintentar cargar mi espacio'}</button><button className="account-text-button" type="button" onClick={()=>{setSignupRecovery(null);setMode('login');setError('');}}>Ir a iniciar sesión</button></>}
+    {signupRecovery&&<section className="account-recovery" aria-labelledby="account-recovery-title">
+      <div className="account-recovery-status" role="status"><span className="account-recovery-status-icon" aria-hidden="true">✓</span><span>Tu acceso está conservado</span></div>
+      <h1 id="account-recovery-title">Tu cuenta está activa</h1>
+      <p className="account-recovery-copy">No pudimos cargar tu espacio en este intento. Tu sesión y la información del registro siguen guardadas; no necesitas crear otra cuenta ni volver a registrarte.</p>
+      {error&&<div role="alert" className="account-recovery-error"><strong>No se pudo abrir el espacio</strong><p>{error}</p></div>}
+      <button className="account-primary account-recovery-retry" type="button" disabled={busy} onClick={retryCreatedSignup}>{busy?<BrandLoader size="inline" label="Cargando tu espacio…"/>:'Reintentar cargar mi espacio'}</button>
+      <button className="account-text-button" type="button" onClick={()=>{setSignupRecovery(null);setMode('login');setError('');}}>Ir a iniciar sesión</button>
+    </section>}
     {!signupRecovery&&<>
     <h1>{mode === 'login' ? 'Tu próxima ronda empieza aquí.' : 'Crea tu espacio de revisión.'}</h1>
     <p>Proyectos, archivos y comentarios guardados en tu servidor.</p>

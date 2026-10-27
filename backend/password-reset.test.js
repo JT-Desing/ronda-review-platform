@@ -42,6 +42,11 @@ test('known accounts get a random fragment link while only its digest is stored'
   assert.equal(resetLink.search, '', 'the bearer token is not sent in the HTTP request URL');
   assert.match(value, /^[A-Za-z0-9_-]{43}$/);
   assert.equal(delivery.message.to, 'user@example.invalid');
+  assert.match(delivery.message.html,/Crear contraseña nueva/);
+  assert.match(delivery.message.html,/30 minutos/);
+  assert.match(delivery.message.html,/href="https:\/\/ronda\.test\/#reset=/);
+  assert.match(delivery.message.html,/src="cid:ronda-mark@ronda"/);
+  assert.equal(delivery.message.attachments[0].cid,'ronda-mark@ronda');
   assert.equal(pool.calls[6][1][0], digest(value));
   assert.notEqual(pool.calls[6][1][0], value);
   assert.match(pool.calls[6][0], /now\(\)\+interval '30 minutes'/);

@@ -36,7 +36,7 @@ export function SharedProjectMedia({workspaceId,projectId,role,onRoleUpdate,perm
   const deliveryGrid=<><SharedDeliveryGrid assets={assets} trash={trash} workspaceId={workspaceId} projectName={projectName} role={role} selected={selected} busy={busy} refreshing={refreshingAssets} error={error} progress={progress}
     onSelect={id=>{if(id!==selected&&(!reviewDirty.current||window.confirm('Hay cambios sin publicar. ¿Descartarlos?')))setSelected(id);}}
     onOrder={order=>mutate(()=>reviewSend(path+'/assets/order','PUT',{order,previousOrder:assets.map(a=>a.id)}),'Orden guardado para el equipo')}
-    onTrash={asset=>mutate(()=>reviewSend(path+'/assets/'+asset.id+'/trash','POST',{revision:asset.revision}),'Pieza movida a la papelera')}
+    onTrash={items=>mutate(()=>reviewSend(path+'/assets/trash','POST',{assets:items.map(asset=>({id:asset.id,revision:asset.revision}))}),items.length===1?'Pieza movida a la papelera':`${items.length} piezas movidas a la papelera`)}
     onRestore={asset=>mutate(()=>reviewSend(path+'/assets/'+asset.id+'/restore','POST',{revision:asset.revision}),'Pieza restaurada')}
     onUpload={()=>input.current?.click()}
     onRetryUpload={()=>{if(failedUpload.current)add(failedUpload.current.file);}}

@@ -70,6 +70,13 @@ test('mobile reviewer-save action overrides the compact desktop button height',(
  const css=readFileSync(new URL('./shared-review-layout-fix.css',import.meta.url),'utf8');
  assert.match(css,/@media\(max-width:780px\)\{\.app-shell \.shared-projects \.shared-original-review \.shared-review-people>label\{box-sizing:border-box;min-height:44px\}\.app-shell \.shared-projects \.shared-original-review \.shared-review-people>button\{min-height:44px\}\}/);
 });
+test('approval action has a prominent enabled state while disabled and approved states remain distinct',()=>{
+ const css=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
+ assert.match(css,/\.top-actions \.approval\{height:40px;min-height:40px/);
+ assert.match(css,/\.top-actions \.approval:not\(:disabled\):hover\{[^}]*box-shadow/);
+ assert.match(css,/\.top-actions \.approval:disabled:not\(\.approved\)\{[^}]*cursor:not-allowed/);
+ assert.match(css,/\.top-actions \.approval\.approved\{[^}]*color:#b7dbab/);
+});
 test('tablet review controls retain 44px touch targets despite compact base styles',()=>{
  const css=readFileSync(new URL('./shared-review-layout-fix.css',import.meta.url),'utf8');
  const accountCss=readFileSync(new URL('./account-access.css',import.meta.url),'utf8');

@@ -58,7 +58,7 @@ test('new-account onboarding offers separate company, invite-code and personal p
   assert.match(access,/Tu sesión sigue activa\. No vuelvas a registrarte/);
   assert.match(access,/setSignupRecovery\(\{account:result\.user,onboardingRecovery:false,signupChoice:''\}\)/);
   assert.match(access,/Tu sesión sigue activa, pero no pudimos cargar tu espacio/);
-  assert.match(access,/<h1>Tu cuenta está activa<\/h1>/);
+  assert.match(access,/<h1 id="account-recovery-title">Tu cuenta está activa<\/h1>/);
   assert.match(access,/Reintentar cargar mi espacio/);
   assert.match(access,/no repetiremos el registro ni la incorporación automáticamente/);
   assert.match(access,/catch \(e\) \{\s*setOnboardingDraft\(null\);\s*if\(mode==='register'&&e\.status===409\)/);

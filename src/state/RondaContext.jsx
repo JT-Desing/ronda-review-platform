@@ -3,7 +3,7 @@ import { COMMENT_STATUS, getPlanUsage, getVersionStatus, validateReviewDecision 
 import { normalizeSocialPreview } from '../domain/social-preview.js';
 import { appendAssetVersion } from '../domain/asset-versions.js';
 import { renameProject } from '../domain/project-name.js';
-import {trashProject,restoreProject} from '../domain/project-trash.js';
+import {trashProject,restoreProject,permanentlyDeleteProject} from '../domain/project-trash.js';
 import {trashAsset,restoreAsset} from '../domain/asset-trash.js';
 import {canCreateComment,safeCommentChanges} from '../domain/comments.js';
 import { createSeedState, STATE_VERSION, STORAGE_KEY } from '../data/seed.js';
@@ -34,6 +34,7 @@ export function rondaReducer(state, action) {
   switch (action.type) {
     case 'project/trash': return trashProject(state,payload,action.meta.occurredAt);
     case 'project/restore': return restoreProject(state,payload);
+    case 'project/deletePermanently': return permanentlyDeleteProject(state,payload);
     case 'asset/trash': return trashAsset(state,payload,action.meta.occurredAt);
     case 'asset/restore': return restoreAsset(state,payload);
     case 'project/rename': return renameProject(state, payload);

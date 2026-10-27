@@ -65,6 +65,8 @@ body{background:var(--canvas)}
 .studio-section-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:28px 0 16px}
 .studio-section-heading h2,.studio-home-panel h2{font-size:16px;letter-spacing:-.02em;font-weight:550;margin:0}
 .studio-section-heading button,.studio-text-action{background:none;border:0;min-height:44px;color:var(--muted);font-size:12px;cursor:pointer}
+.studio-team-projects{min-width:0}
+.studio-team-projects-state{margin:0;padding:18px;border:1px dashed var(--line-strong);border-radius:var(--r-md);color:var(--muted);font-size:12px;line-height:1.6}
 .studio-project-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
 .studio-project{position:relative;isolation:isolate;display:flex;flex-direction:column;overflow:hidden;border-radius:var(--r-md);border:1px solid transparent;text-align:left;color:var(--studio-ink);background:var(--tile-base);padding:0;min-width:0;cursor:pointer;transition:transform 160ms ease,border-color 160ms ease}
 .studio-project:hover{transform:translateY(-3px);border-color:var(--studio-lavender)}
@@ -141,7 +143,7 @@ body{background:var(--canvas)}
 .app-shell .sidebar.collapsed .side-nav>button>span,.app-shell .sidebar.collapsed .side-label,.app-shell .sidebar.collapsed .account-copy{display:none}
 .app-shell .sidebar.collapsed .side-nav.lower{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 .app-shell .sidebar .account>.avatar{flex:0 0 32px;min-width:32px;width:32px;height:32px;aspect-ratio:1;border-radius:50%}
-.app-shell .sidebar.collapsed .sidebar-collapse-indicator{position:absolute;top:-5px;right:-5px;width:18px;height:18px;margin:0;opacity:1;transform:none;border:1px solid var(--line-strong);border-radius:50%;background:var(--surface-2);color:var(--muted)}
+.app-shell .sidebar.collapsed .sidebar-collapse-indicator{display:none}
 .app-shell .sidebar.collapsed .account{box-sizing:border-box;flex:0 0 auto;align-items:center;justify-content:center;width:44px;min-height:62px;margin-top:auto;padding:12px 0 0;gap:0}
 .app-shell .sidebar.collapsed .account-menu-wrap{width:44px;flex:0 0 44px}
 .app-shell .sidebar.collapsed .account-menu-trigger{width:44px;height:44px;min-width:44px;min-height:44px;padding:4px;border-radius:12px}

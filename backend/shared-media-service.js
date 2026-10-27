@@ -79,6 +79,20 @@ export function sharedMediaService(repository,storage,inspect=inspectLink){
         await recordEvent(db,space,actor,deleted?'review.asset_trashed':'review.asset_restored',{projectId,assetId});return {ok:true};
       },true);
     },
+    async trashAssets(space,actor,projectId,{assets}){
+      if(!Array.isArray(assets)||assets.length<1||assets.length>100||assets.some(item=>!item||!UUID_PATTERN.test(item.id)||!Number.isInteger(item.revision))||new Set(assets.map(item=>item.id)).size!==assets.length)throw workspaceError(400,'La selección de piezas no es válida.');
+      return repository.access(space,actor,async(db,role)=>{
+        requireReviewAction(role,'upload');await repository.project(db,space,projectId);
+        const ids=assets.map(item=>item.id).sort();
+        const rows=(await db.query('SELECT id,revision,deleted_at FROM shared_assets WHERE workspace_id=$1 AND project_id=$2 AND id=ANY($3::uuid[]) ORDER BY id FOR UPDATE',[space,projectId,ids])).rows;
+        if(rows.length!==assets.length||rows.some(row=>row.deleted_at))throw workspaceError(404,'Una o más piezas ya no están disponibles. Actualiza la entrega.');
+        const revisions=new Map(assets.map(item=>[item.id,item.revision]));
+        if(rows.some(row=>row.revision!==revisions.get(row.id)))throw workspaceError(409,'Una o más piezas cambiaron. Actualiza antes de continuar.');
+        await db.query('UPDATE shared_assets SET deleted_at=now(),revision=revision+1 WHERE workspace_id=$1 AND project_id=$2 AND id=ANY($3::uuid[])',[space,projectId,ids]);
+        for(const assetId of ids)await recordEvent(db,space,actor,'review.asset_trashed',{projectId,assetId});
+        return {ok:true,count:ids.length};
+      },true);
+    },
     async listVersions(space,actor,projectId,assetId){
       return repository.access(space,actor,async db=>{
         const asset=await repository.asset(db,space,projectId,assetId);

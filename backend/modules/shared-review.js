@@ -34,6 +34,7 @@ export async function handleSharedReview({req,res,path,account,pool,sharedStorag
   if(parts[3]!=='projects')return reply(res,404,{error:'Ruta no disponible.'});
   const projectId=uuid(parts[4]);
   if(parts[5]==='assets'&&parts[6]==='order'&&parts.length===7&&req.method==='PUT')return reply(res,200,await media.orderAssets(space,account.id,projectId,await input()));
+  if(parts[5]==='assets'&&parts[6]==='trash'&&parts.length===7&&req.method==='POST')return reply(res,200,await media.trashAssets(space,account.id,projectId,await input()));
   if(parts[5]==='assets'&&parts[6]==='trash'&&parts.length===7&&req.method==='GET')return reply(res,200,await media.listAssets(space,account.id,projectId,true));
   if(parts[5]==='assets'&&parts.length===6&&req.method==='POST')return reply(res,201,await media.addLink(space,account.id,{...await input(),projectId}));
   if(parts[5]==='uploads'&&parts.length===6&&req.method==='POST')return reply(res,201,await media.reserve(space,account.id,{...await input(),projectId}));

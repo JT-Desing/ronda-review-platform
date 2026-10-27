@@ -35,9 +35,10 @@
 .app-shell .comments-panel .composer-message-bar{padding:4px;gap:2px;border-radius:26px;align-items:center}
 .app-shell .comments-panel .composer-message-bar .composer-input{flex:1 1 0;width:0;padding:0 4px}
 .app-shell .comments-panel .composer-message-bar .mention-editor{min-width:0}
+.app-shell .comments-panel .composer{max-height:none;overflow:visible}
 .app-shell .comments-panel .composer-message-bar textarea,
-.app-shell .comments-panel .restored-composer .composer-message-bar textarea{height:40px;min-height:40px;max-height:120px;padding:10px 2px;resize:none;line-height:20px;field-sizing:content;overflow-y:auto}
-.app-shell .comments-panel .composer-message-bar textarea:placeholder-shown{height:40px;max-height:40px;overflow-y:hidden}
+.app-shell .comments-panel .restored-composer .composer-message-bar textarea{height:52px;min-height:52px;max-height:120px;padding:4px 2px;resize:none;line-height:20px;field-sizing:content;overflow-y:auto}
+.app-shell .comments-panel .composer-message-bar textarea:placeholder-shown{height:52px;min-height:52px;max-height:52px;padding-block:4px;overflow-y:hidden}
 .app-shell .comments-panel .composer-message-bar .composer-meta{display:none}
 .app-shell .comments-panel .composer-message-bar:focus-within .composer-meta,
 .app-shell .comments-panel .composer-message-bar:has(textarea:not(:placeholder-shown)) .composer-meta{display:flex;min-height:20px}
@@ -73,3 +74,19 @@
 .priority-command-menu>footer{padding:8px 10px 4px;border-top:1px solid var(--line);color:var(--muted);font-size:9px}
 .command-dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
 .command-dot-high{background:#f2bd5c}.command-dot-blocking{background:#ff725e}
+@media(min-width:781px){.app-shell .review-layout.comments-collapsed{grid-template-columns:minmax(0,1fr) 58px}.app-shell .comments-panel.comments-collapsed{min-width:58px;width:58px}.app-shell .comments-panel.comments-collapsed>.panel-head{justify-content:center;padding:10px 8px}.app-shell .comments-panel.comments-collapsed>.panel-head>div,.app-shell .comments-panel.comments-collapsed>.panel-head>.mobile-close,.app-shell .comments-panel.comments-collapsed>:not(.panel-head){display:none}.app-shell .comments-panel .comments-collapse-toggle{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--muted);cursor:pointer}.app-shell .comments-panel .comments-collapse-toggle:hover{color:var(--text);border-color:var(--line-strong);background:var(--surface-3)}.app-shell .comments-panel .comments-collapse-toggle svg{width:18px;height:18px;transition:transform 160ms ease}.app-shell .comments-panel.comments-collapsed .comments-collapse-toggle svg{transform:rotate(180deg)}}
+@media(max-width:780px){.app-shell .comments-panel .comments-collapse-toggle{display:none}}
+.app-shell .comments-panel .comments-collapse-toggle{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--muted);cursor:pointer}
+.app-shell .comments-panel .comments-collapse-toggle:hover{color:var(--text);border-color:var(--line-strong);background:var(--surface-3)}
+.app-shell .comments-panel .comments-collapse-toggle svg{width:18px;height:18px;transition:transform 160ms ease}
+.app-shell .comments-panel.comments-collapsed .comments-collapse-toggle svg{transform:rotate(180deg)}
+.app-shell .comments-panel.comments-collapsed>:not(.panel-head){display:none}
+@media(max-width:780px){.app-shell .comments-panel.comments-collapsed{height:auto;min-height:0;flex:0 0 auto}.app-shell .comments-panel.comments-collapsed>.panel-head{min-height:58px}.app-shell .comments-panel.comments-collapsed>.panel-head>div{display:none}}
+.app-shell .comments-panel:has(.comments-collapse-toggle[aria-expanded=false])>:not(.panel-head){display:none}
+.app-shell .review-layout.shared-original-review:has(>.comments-panel>.panel-head>.comments-collapse-toggle[aria-expanded=false]){display:grid;grid-template-columns:minmax(0,1fr) 56px;transition:grid-template-columns 200ms ease}
+.app-shell .review-layout.shared-original-review:has(>.comments-panel>.panel-head>.comments-collapse-toggle[aria-expanded=false])>.comments-panel{display:flex;align-self:stretch;width:56px;min-width:56px;overflow:hidden;border-left:1px solid var(--line);background:var(--surface-1)}
+.app-shell .review-layout.shared-original-review:has(>.comments-panel>.panel-head>.comments-collapse-toggle[aria-expanded=false])>.comments-panel>.panel-head{display:flex;justify-content:center;min-height:58px;height:auto;padding:8px;border:0;background:transparent}
+.app-shell .review-layout.shared-original-review:has(>.comments-panel>.panel-head>.comments-collapse-toggle[aria-expanded=false])>.comments-panel>.panel-head>div{display:none}
+.app-shell .review-layout.shared-original-review:has(>.comments-panel>.panel-head>.comments-collapse-toggle[aria-expanded=false])>.comments-panel .comments-collapse-toggle{position:static;z-index:auto;flex:0 0 40px;width:40px;height:40px;margin:0;padding:0;border-radius:12px;box-shadow:none;transform:none}
+.app-shell .review-layout.shared-original-review:has(>.comments-panel>.panel-head>.comments-collapse-toggle[aria-expanded=false])>.comments-panel .comments-collapse-toggle svg{transform:rotate(180deg)}
+@media(prefers-reduced-motion:reduce){.app-shell .review-layout.shared-original-review:has(>.comments-panel>.panel-head>.comments-collapse-toggle[aria-expanded=false]){transition:none}}

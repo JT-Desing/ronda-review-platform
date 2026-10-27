@@ -3,6 +3,7 @@ import {publicIPv4,externalUrl,linkKind,inspectLink,suggestLinkName} from './ext
 test('rejects private, loopback, metadata, reserved IP and credential URLs',()=>{
   for(const ip of ['127.0.0.1','10.1.2.3','172.16.1.2','192.168.1.2','169.254.169.254','100.64.1.1','0.0.0.0','::1','198.18.0.1'])assert.equal(publicIPv4(ip),false);
   for(const url of ['http://example.com','https://localhost','https://127.1','https://2130706433','https://[::1]/','https://user:pass@example.com','https://example.com:8080'])assert.throws(()=>externalUrl(url));
+  assert.throws(()=>externalUrl('https://exa\0mple.com'),/Solo se permiten enlaces HTTPS públicos/);
 });
 test('classifies by actual Content-Type, not misleading names',()=>{assert.equal(linkKind('text/html; charset=utf-8'),'web');assert.equal(linkKind('video/mp4'),'video');assert.equal(linkKind('image/webp'),'image');assert.throws(()=>linkKind('application/octet-stream'));});
 test('suggests useful safe names from a link path and falls back to host at the root',()=>{

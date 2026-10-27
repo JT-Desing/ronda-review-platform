@@ -1,5 +1,6 @@
 import { randomInt } from 'node:crypto';
 import { token, digest, hashPassword } from './security.js';
+import { transactionalEmail, rondaEmailLogoAttachment } from './email-template.js';
 
 const invalid = (message, status = 400) => Object.assign(new Error(message), { status });
 const validEmail = value => typeof value === 'string' && value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -45,10 +46,19 @@ export async function requestPasswordReset({ pool, origin, email, requestAddress
   if (!user) return { accepted: true };
   const resetUrl = new URL('/', origin);
   resetUrl.hash = new URLSearchParams({ reset: value }).toString();
+  const resetLink=resetUrl.href;
   return { accepted: true, delivery: { tokenHash, message: {
     to: normalizedEmail,
     subject: 'Restablece tu contraseña de Ronda',
-    text: `Recibimos una solicitud para cambiar la contraseña de tu cuenta de Ronda.\n\nAbre este enlace en los próximos 30 minutos:\n${resetUrl}\n\nSi no solicitaste este cambio, ignora este mensaje.`,
+    text: `Recibimos una solicitud para cambiar la contraseña de tu cuenta de Ronda.\n\nAbre este enlace en los próximos 30 minutos:\n${resetLink}\n\nSi no solicitaste este cambio, ignora este mensaje.`,
+    html:transactionalEmail({
+      preheader:'Usa el enlace seguro para elegir una contraseña nueva.',
+      eyebrow:'Seguridad de la cuenta',title:'Restablece tu contraseña',
+      paragraphs:['Recibimos una solicitud para cambiar la contraseña de tu cuenta de Ronda. Puedes elegir una nueva desde el enlace seguro.'],
+      actionLabel:'Crear contraseña nueva',actionUrl:resetLink,
+      details:['El enlace vence en 30 minutos y solo puede utilizarse una vez.','Si no solicitaste este cambio, ignora este mensaje. Tu contraseña actual seguirá funcionando.'],
+    }),
+    attachments:[rondaEmailLogoAttachment],
   } } };
 }
 

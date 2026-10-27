@@ -68,6 +68,17 @@ try{
   assert.equal((await call(path+'/assets/'+asset.id+'/restore','POST',{revision:deleted.revision})).status,200);
   assert.equal((await call(versionPath)).status,200);
   assert.deepEqual((await (await call(versionPath+'/comments')).json()).comments,[],'restoring the asset does not put a resolved comment back into the active list');
+  const bulkIds=[];
+  for(const name of ['Bulk one','Bulk two'])bulkIds.push((await f.pool.query("INSERT INTO shared_assets(workspace_id,project_id,name,kind,created_by,request_id) VALUES($1,$2,$3,'image',$4,$5) RETURNING id,revision",[f.space,f.project,name,f.admin,randomUUID()])).rows[0]);
+  assert.equal((await call(path+'/assets/trash','POST',{assets:bulkIds},f.reviewer)).status,403,'bulk trash requires upload permission');
+  assert.equal((await call(path+'/assets/trash','POST',{assets:[] })).status,400,'bulk trash rejects an empty selection');
+  assert.equal((await call(path+'/assets/trash','POST',{assets:bulkIds.map(item=>({...item,revision:-1}))})).status,409,'bulk trash rejects stale revisions');
+  const bulkResult=await call(path+'/assets/trash','POST',{assets:bulkIds});assert.equal(bulkResult.status,200);assert.deepEqual(await bulkResult.json(),{ok:true,count:2});
+  const afterBulk=(await (await call(path+'/assets')).json()).assets;
+  assert.ok(bulkIds.every(item=>!afterBulk.some(asset=>asset.id===item.id)),'bulk trash removes every selected asset from the active delivery atomically');
+  const bulkTrash=(await (await call(path+'/assets/trash')).json()).assets;
+  assert.ok(bulkIds.every(item=>bulkTrash.some(asset=>asset.id===item.id)),'bulk trash preserves every selected asset for restoration');
+  for(const item of bulkIds){const current=bulkTrash.find(asset=>asset.id===item.id);assert.equal((await call(path+`/assets/${item.id}/restore`,'POST',{revision:current.revision})).status,200);}
   // A role update affects the existing authenticated session on the next request.
   await f.pool.query("UPDATE workspace_members SET role='reviewer' WHERE workspace_id=$1 AND user_id=$2",[f.space,f.editor]);
   assert.equal((await call(`${path}/assets`,'GET',undefined,f.editor)).status,200,'the member session remains active for reads after demotion');

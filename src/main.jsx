@@ -6,7 +6,7 @@ import {ShortcutHelp} from './components/ShortcutHelp.jsx';
 import {OriginalMediaStage} from './components/OriginalMediaStage.jsx';
 import {AnnotationLayer} from './components/AnnotationLayer.jsx';
 import {canLeaveSharedReview} from './state/sharedReviewState.js';
-import {sharedProjectGalleryWorkspace,setSharedProjectLocation} from './domain/shared-project-link.js';
+import {readSharedProjectLink,sharedProjectGalleryWorkspace,setSharedProjectLocation} from './domain/shared-project-link.js';
 import {readStudioView, setStudioViewLocation, watchSharedProjectLinks} from './domain/shared-link-navigation.js';
 import {readReviewRoute,setReviewRoute,reviewRoute,resolveReviewRouteAsset} from './domain/review-route.js';
 import {activityItem} from './domain/activity-item.js';
@@ -118,7 +118,7 @@ function CommentCard({ item, selected, onSelect, onResolve, onReply, onJump, mem
   </article>;
 }
 
-function CommentsPanel({ onClose, currentTime, setCurrentTime, draft, setDraft, recoveredDraft, selectedFigure, setSelectedFigure, annotationContext, figureTime, focusedComment, onJumpFigure, documentPage, reviewVersionId='version-amara-v3' }) {
+function CommentsPanel({ onClose, currentTime, setCurrentTime, draft, setDraft, recoveredDraft, selectedFigure, setSelectedFigure, annotationContext, figureTime, focusedComment, onJumpFigure, documentPage, reviewVersionId='version-amara-v3', collapsed=false, onToggleCollapsed=()=>{} }) {
   const { state, act } = useRonda();
   const comments = Object.values(state.comments).filter(comment=>comment.versionId===reviewVersionId).map(comment=>{
     const author=state.members[comment.authorId] || {name:comment.authorSnapshot||'Autor anterior',initials:(comment.authorSnapshot||'AA').split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase()};
@@ -139,8 +139,8 @@ function CommentsPanel({ onClose, currentTime, setCurrentTime, draft, setDraft, 
   const addFiles=async files=>{setAttachmentError('');if(attachments.length>=3){setAttachmentError('Máximo 3 adjuntos por comentario.');return;}const candidates=[...files].filter(file=>file.type.startsWith('image/')||file.type.startsWith('audio/')||file.name.toLowerCase().endsWith('.mp3')).slice(0,3-attachments.length);for(const file of candidates){if(file.size>2*1024*1024){setAttachmentError('Cada adjunto debe pesar menos de 2 MB para el almacenamiento local.');continue;}try{const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file)});setAttachments(current=>[...current,{id:crypto.randomUUID(),name:file.name,type:file.type||'audio/mpeg',dataUrl}].slice(0,3));}catch{setAttachmentError('No se pudo leer el archivo.')}}};
   const add = () => { const parsed=parseCommentCommand(draft); if(!parsed.text&&!attachments.length) return; const projectId=state.versions[reviewVersionId]?.projectId;if(!projectId||!state.projects[projectId])return;const time=selectedFigure?figureTime:currentTime; act('comment/add',{projectId,versionId:reviewVersionId,page:documentPage,authorId:state.currentUserId,assigneeId:state.currentUserId,priority:parsed.priority,text:parsed.text||'Referencia visual adjunta',attachments,timeSeconds:time,frame:formatTime(time).frame,annotationId:selectedFigure||null,annotationContext:selectedFigure?annotationContext:null}); setDraft('');setAttachments([]);setSelectedFigure(null);recoveredDraft.current=false; };
   const replyTo=(id,text)=>{const current=state.comments[id];act('comment/update',{id,changes:{replies:[...(current.replies||[]),{id:`reply-${Date.now()}`,authorId:state.currentUserId,text,createdAt:new Date().toISOString()}]}})};
-  return <aside className="comments-panel">
-    <div className="panel-head"><div><span className="panel-kicker">REVISIÓN</span><strong>Comentarios</strong><small>{comments.filter(c=>c.status==='open').length} pendientes de {comments.length}</small></div><button className="mobile-close" aria-label="Cerrar comentarios" onClick={onClose}><Icon name="x"/></button></div>
+  return <aside className={`comments-panel${collapsed?' comments-collapsed':''}`}>
+    <div className="panel-head"><div><span className="panel-kicker">REVISIÓN</span><strong>Comentarios</strong><small>{comments.filter(c=>c.status==='open').length} pendientes de {comments.length}</small></div><button className="comments-collapse-toggle" aria-label={collapsed?'Mostrar comentarios':'Ocultar comentarios'} aria-expanded={!collapsed} title={collapsed?'Mostrar comentarios':'Ocultar comentarios'} onClick={onToggleCollapsed}><Icon name="chevron"/></button><button className="mobile-close" aria-label="Cerrar comentarios" onClick={onClose}><Icon name="x"/></button></div>
     <div className="comment-toolbar"><div className="comment-tabs" role="tablist" aria-label="Filtrar comentarios">{['Todos','Abiertos','Resueltos'].map(item=><button key={item} role="tab" aria-selected={filter===item} className={filter===item?'active':''} onClick={()=>setFilter(item)}>{item}<span>{item==='Todos'?comments.length:comments.filter(c=>c.status===(item==='Abiertos'?'open':'resolved')).length}</span></button>)}</div><label className="comment-search"><Icon name="search" size={14}/><input aria-label="Buscar comentarios" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar"/></label></div>
     <label className="priority-filter">Prioridad<select aria-label="Filtrar por prioridad" value={priorityFilter} onChange={e=>setPriorityFilter(e.target.value)}><option value="all">Todas</option><option value="high">Urgentes</option><option value="blocking">Bloqueantes</option><option value="normal">Normales</option></select></label>
     <div className="comments-scroll">{visible.map(c=><div key={c.id} id={`thread-${c.id}`}><CommentCard item={c} members={state.members} selectedFigure={selectedFigure} annotationContext={annotationContext} selected={selected===c.id} onSelect={()=>{setSelected(c.id);onJumpFigure(c)}} onResolve={resolve} onReply={replyTo} onJump={item=>{setSelected(item.id);setCurrentTime?.(item.timeSeconds ?? (item.frame||0)/24);onJumpFigure(item)}}/></div>)}{emptyState&&<div className="comments-empty"><strong>{emptyState.title}</strong><span>{emptyState.detail}</span>{emptyState.action&&<button onClick={()=>{if(emptyState.kind==='priority')setPriorityFilter('all');else if(emptyState.kind==='search')setSearch('');else setFilter('Todos')}}>{emptyState.action}</button>}</div>}</div>
@@ -310,7 +310,7 @@ function App({demo=false,onExitDemo}) {
   sharedNavigationDirty.current=sharedDirty;
   useEffect(()=>watchSharedProjectLinks(window,{
     canNavigate:()=>{if(!sharedNavigationDirty.current)return true;setToast('Termina la carga o publica tus cambios antes de abrir otro enlace. Tu trabajo se conserva.');return false;},
-    onRouteSynced:hash=>setSharedLinkKey(hash),
+    onRouteSynced:hash=>{setSharedLinkKey(hash);const view=readSharedProjectLink(hash)?'projects':readStudioView(hash);if(view){setRequestedReviewVersion(readReviewRoute(hash));setSharedDirty(false);setCurrentViewRaw(view);}},
     onNavigate:(hash,view)=>{setSharedLinkKey(hash);setRequestedReviewVersion(readReviewRoute(hash));setSharedDirty(false);setCurrentViewRaw(view);},
   }),[]);
   const setCurrentView=(next,{versionId}={})=>{
@@ -359,6 +359,7 @@ function App({demo=false,onExitDemo}) {
   const [activeTool, setActiveTool] = useState('pen');
   const [activeColor, setActiveColor] = useState('#ff725e');
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsPanelCollapsed,setCommentsPanelCollapsed]=useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shortcutsOpen,setShortcutsOpen]=useState(false);
   const [summaryOpen,setSummaryOpen]=useState(false);
@@ -404,7 +405,7 @@ function App({demo=false,onExitDemo}) {
       {sectionSculptures[currentView]&&<div className="abstract-sculpture-background" aria-hidden="true"><img className="section-sculpture section-sculpture-primary" src={sectionSculptures[currentView]} alt="" draggable={false}/><img className="section-sculpture section-sculpture-companion" src={sectionCompanions[currentView]} alt="" draggable={false}/></div>}
       {demo&&<div className="demo-company-banner" role="status"><span>DEMO · Empresa activa · Datos ficticios. Los cambios se descartan al salir.</span><button onClick={onExitDemo}>Volver a mi cuenta</button></div>}
       {currentView!=='review' && <header className="studio-topbar"><span>{currentView==='projects'?'Espacio compartido':currentView==='team'?'Espacio de trabajo':state.workspace.name} <span aria-hidden="true">/</span> <strong>{{home:'Inicio',projects:'Proyectos del equipo',personal:'Mis proyectos personales',pauta:'Pauta',activity:'Actividad',planning:'Planificación',team:'Equipo',settings:'Configuración',branding:'Personalización'}[currentView]}</strong></span><div><NotificationCenter onNavigate={setCurrentView}/><AccountProfileMenu initials={state.members[state.currentUserId]?.initials} onNavigate={setCurrentView}/></div></header>}
-      {currentView==='home' && <StudioHome onNavigate={view=>setCurrentView(view==='projects'?'personal':view)} onOpen={openProject}/>}
+      {currentView==='home' && <StudioHome onNavigate={setCurrentView} onOpen={openProject}/>}
       {persistenceError&&<div className="persistence-alert" role="alert"><Icon name="alert" size={16}/><span><strong>Los cambios están solo en este dispositivo</strong><small>{persistenceError==='quota'?'El almacenamiento del navegador está lleno. Quita algunas referencias pesadas o libera espacio.':'El navegador bloqueó el almacenamiento local.'}</small></span><button onClick={retryPersistence}>Reintentar</button></div>}
       {currentView==='projects' && <ProjectActions key={sharedLinkKey} onOpen={openProject} onNotify={setToast} onDirtyChange={setSharedDirty}/>}
       {currentView==='personal' && <ProjectLibrary onOpen={openProject} onNotify={setToast}/>}
@@ -429,7 +430,7 @@ function App({demo=false,onExitDemo}) {
           <AccountProfileMenu initials={state.members[state.currentUserId]?.initials} onNavigate={setCurrentView}/>
         </div>
       </header>
-      <div className="review-layout">
+      <div className={`review-layout${commentsPanelCollapsed?' comments-collapsed':''}`}>
         <div className="review-main">
           <DeliveryGrid projectId={media?.projectId||'project-amara'} onRemove={id=>{if(media?.id===id){setCurrentView('personal');if(media.url)URL.revokeObjectURL(media.url);setMedia(null);setSelectedFigure(null);setFocusedComment(null);setCommentDraft('');}}} onNotify={setToast} onSelect={asset=>{if(media?.url)URL.revokeObjectURL(media.url);setMedia({...asset,setDuration:duration=>setMedia(current=>({...current,duration}))});setCurrentTime(0);setVersion(asset.versionNumber||1);setSelectedFigure(null);setFocusedComment(null);setCommentDraft('');const versionId=asset.versionId||`asset-${asset.id}-v${asset.versionNumber||1}`;setRequestedReviewVersion(versionId);setReviewRoute(window,versionId)}}/>
           <input ref={fileInput} className="visually-hidden" type="file" accept="video/*,image/*" onChange={loadMedia}/>
@@ -441,10 +442,10 @@ function App({demo=false,onExitDemo}) {
             <button className="ai-button" onClick={()=>setSummaryOpen(true)}><Icon name="spark"/><span><strong>Resumir cambios</strong><small>Ver pendientes y bloqueantes</small></span></button>
           </div>
         </div>
-        {socialMode&&(socialLoading||media?.id!==socialAssetId||!state.projects[media?.projectId||'project-amara']?.socialPreview?.assetIds.includes(media?.id))?<aside className="comments-panel"><div className="social-preview"><strong>Comentarios de la lámina</strong>{socialLoading?<BrandLoader label="Cargando la pieza seleccionada…"/>:<p>Selecciona un medio de la preview para revisar sus comentarios.</p>}</div></aside>:<CommentsPanel {...figureProps} onClose={()=>setCommentsOpen(false)} currentTime={currentTime} setCurrentTime={setCurrentTime} draft={commentDraft} setDraft={setCommentDraft} recoveredDraft={recoveredDraft}/>}
+        {socialMode&&(socialLoading||media?.id!==socialAssetId||!state.projects[media?.projectId||'project-amara']?.socialPreview?.assetIds.includes(media?.id))?<aside className={`comments-panel${commentsPanelCollapsed?' comments-collapsed':''}`}><div className="panel-head"><strong>Comentarios</strong><button className="comments-collapse-toggle" aria-label={commentsPanelCollapsed?'Mostrar comentarios':'Ocultar comentarios'} aria-expanded={!commentsPanelCollapsed} title={commentsPanelCollapsed?'Mostrar comentarios':'Ocultar comentarios'} onClick={()=>setCommentsPanelCollapsed(value=>!value)}><Icon name="chevron"/></button></div><div className="social-preview"><strong>Comentarios de la lámina</strong>{socialLoading?<BrandLoader label="Cargando la pieza seleccionada…"/>:<p>Selecciona un medio de la preview para revisar sus comentarios.</p>}</div></aside>:<CommentsPanel {...figureProps} collapsed={commentsPanelCollapsed} onToggleCollapsed={()=>setCommentsPanelCollapsed(value=>!value)} onClose={()=>setCommentsOpen(false)} currentTime={currentTime} setCurrentTime={setCurrentTime} draft={commentDraft} setDraft={setCommentDraft} recoveredDraft={recoveredDraft}/>}
       </div>
       {(!socialMode||(!socialLoading&&media?.id===socialAssetId))&&<button className="mobile-comments" onClick={()=>setCommentsOpen(true)}>{Object.values(state.comments).filter(c=>c.versionId===reviewVersionId).length} comentarios <span>{openCount} abiertos</span></button>}
-      {commentsOpen && <div className="comments-drawer"><div className="drawer-scrim" onClick={()=>setCommentsOpen(false)}/><CommentsPanel {...figureProps} onClose={()=>setCommentsOpen(false)} currentTime={currentTime} setCurrentTime={setCurrentTime} draft={commentDraft} setDraft={setCommentDraft} recoveredDraft={recoveredDraft}/></div>}
+      {commentsOpen && <div className="comments-drawer"><div className="drawer-scrim" onClick={()=>setCommentsOpen(false)}/><CommentsPanel {...figureProps} collapsed={commentsPanelCollapsed} onToggleCollapsed={()=>setCommentsPanelCollapsed(value=>!value)} onClose={()=>setCommentsOpen(false)} currentTime={currentTime} setCurrentTime={setCurrentTime} draft={commentDraft} setDraft={setCommentDraft} recoveredDraft={recoveredDraft}/></div>}
       </>}
       {shareOpen && <ShareDialog reviewVersionId={reviewVersionId} onClose={()=>setShareOpen(false)} onNotify={setToast}/>}
       {shortcutsOpen && <ShortcutHelp onClose={()=>setShortcutsOpen(false)}/>} 

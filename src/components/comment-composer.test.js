@@ -33,9 +33,26 @@ test('composer bar maintains keyboard focus and 44px touch controls', () => {
   assert.doesNotMatch(css, /transition:\s*all/);
 });
 
+test('review comments panel can be collapsed and reopened with an accessible toggle',()=>{
+ const source=component('../main.jsx'),shared=component('SharedReviewRoom.jsx'),css=component('comment-composer.css');
+ assert.match(source,/comments-collapse-toggle[\s\S]*?aria-expanded=\{!collapsed\}/);
+ assert.match(source,/commentsPanelCollapsed\?' comments-collapsed':''/);
+ assert.match(source,/onToggleCollapsed=\{\(\)=>setCommentsPanelCollapsed/);
+ assert.match(shared,/commentsPanelCollapsed \? "Mostrar comentarios" : "Ocultar comentarios"/);
+ assert.match(shared,/aria-expanded=\{!commentsPanelCollapsed\}/);
+ assert.match(shared,/onClick=\{\(\)=>setCommentsPanelCollapsed/);
+ assert.match(css,/review-layout\.shared-original-review:has\(>\.comments-panel>\.panel-head>\.comments-collapse-toggle\[aria-expanded=false\]\)\{display:grid;grid-template-columns:minmax\(0,1fr\) 56px/,'collapsed comments should reserve a slim side rail instead of covering the delivery controls');
+ assert.match(css,/shared-original-review:has\([\s\S]*?\)>.comments-panel\{display:flex;align-self:stretch;width:56px/,'the collapsed panel stays in its own grid column');
+ assert.match(css,/shared-original-review:has\([\s\S]*?\)>.comments-panel \.comments-collapse-toggle\{position:static/,'the toggle is integrated into the rail rather than absolutely floating');
+ assert.doesNotMatch(css,/top:130px;right:14px/,'the old overlay position must not return');
+ assert.match(css,/@media\(max-width:780px\)[\s\S]*?comments-panel\.comments-collapsed/);
+});
+
 test('composer starts compact and reveals contextual help during composition',()=>{
  const css=component('comment-composer.css');
- assert.match(css,/textarea:placeholder-shown\{height:40px;max-height:40px;overflow-y:hidden\}/);
+ assert.match(css,/composer-message-bar textarea:placeholder-shown\{height:52px;min-height:52px;max-height:52px;padding-block:4px;overflow-y:hidden\}/);
+ assert.match(css,/comments-panel \.composer\{max-height:none;overflow:visible\}/);
+ assert.match(css,/height:52px;min-height:52px;max-height:120px;padding:4px 2px;resize:none;line-height:20px/);
  assert.match(css,/composer-meta\{display:none\}/);
  assert.match(css,/:focus-within .composer-meta/);
  assert.match(css,/resize:none/);
