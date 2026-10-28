@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {Readable} from 'node:stream';
+import {reviewFixture} from './shared-review-qa-fixture.js';
+import {sharedReviewRepository} from './repositories/shared-review.js';
+import {localStorage} from './storage/local.js';
+import {sharedMediaService} from './shared-media-service.js';
+const f=await reviewFixture();
+try{
+  const repo=sharedReviewRepository(f.pool),media=sharedMediaService(repo,localStorage(f.root));
+  const bytes=Buffer.from('89504e470d0a1a0a00000000','hex');
+  const {uploadId}=await media.reserve(f.space,f.admin,{projectId:f.project,name:'QA',mime:'image/png',size:bytes.length,requestId:randomUUID()});
+  await media.receive(f.space,f.admin,uploadId,Readable.from([bytes]));
+  const {asset,version}=await media.completeUpload(f.space,f.admin,uploadId),context={projectId:f.project,assetId:asset.id,versionId:version.id};
+  const {sharedCommentService}=await import('./shared-comment-service.js');
+  const service=sharedCommentService(repo);
+  const input={text:'Cambiar el título',priority:'blocking',anchor:null,annotation:{tool:'arrow',color:'#ffffff',points:[{x:0,y:0},{x:1,y:1}]},requestId:randomUUID(),authorId:f.admin};
+  const created=await service.addComment(f.space,f.reviewer,context,input);
+  assert.equal(created.comment.authorId,f.reviewer);
+  assert.equal((await service.addComment(f.space,f.reviewer,context,input)).comment.id,created.comment.id);
+  const typeInput={text:'Texto sobre pieza',requestId:randomUUID(),annotation:{tool:'type',color:'#ffffff',points:[{x:0.2,y:0.3}],text:'Cambiar'}};
+  const typeComment=await service.addComment(f.space,f.reviewer,context,typeInput);
+  assert.equal((await service.addComment(f.space,f.reviewer,context,typeInput)).comment.id,typeComment.comment.id);
+  await assert.rejects(service.addComment(f.space,f.reviewer,{...context,versionId:randomUUID()},input),{status:404});
+  await assert.rejects(service.setStatus(f.space,f.reviewer,context,created.comment.id,{status:'resolved',revision:0}),{status:403});
+  await assert.rejects(service.editComment(f.space,f.editor,context,created.comment.id,{text:'Other',revision:0}),{status:403});
+  await service.editComment(f.space,f.reviewer,context,created.comment.id,{text:'Corregir título',revision:0});
+  await assert.rejects(service.editComment(f.space,f.reviewer,context,created.comment.id,{text:'Overwrite',revision:0}),{status:409});
+  await service.reply(f.space,f.admin,context,created.comment.id,{text:'Revisado',requestId:randomUUID()});
+  for(let i=0;i<49;i++)await service.addComment(f.space,f.reviewer,context,{text:`QA ${i}`,requestId:randomUUID()});
+  const a=await service.listComments(f.space,f.admin,context,{}),b=await service.listComments(f.space,f.admin,context,{cursor:a.nextCursor});
+  assert.equal(a.comments.length,50);assert.equal(b.comments.length,1);assert.equal(new Set([...a.comments,...b.comments].map(c=>c.id)).size,51);
+  assert.equal(a.comments.find(c=>c.id===created.comment.id).replies.length,1);
+  await f.pool.query("UPDATE shared_versions SET status='approved' WHERE id=$1",[version.id]);
+  await assert.rejects(service.addComment(f.space,f.admin,context,{text:'Late',requestId:randomUUID()}),{status:409});
+  console.log('PASS shared feedback: author, version, roles, conflict, replies, pagination, readonly.');
+}finally{await f.close();}

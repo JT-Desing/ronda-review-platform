@@ -7,15 +7,79 @@ services:
     container_name: ronda-review-platform
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "${RONDA_PORT:-8080}:8080"
     networks:
       - ronda-network
+    depends_on:
+      api:
+        condition: service_healthy
+
+  database:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file: ./backend/.env
+    volumes:
+      - ronda-database:/var/lib/postgresql/data
+    networks: [ronda-network]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U ronda -d ronda']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    env_file: ./backend/.env
+    volumes:
+      - ronda-files:/data/files
+    networks: [ronda-network]
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, 'fetch("http://127.0.0.1:3000/api/health").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file: ./backend/.env
+    entrypoint: [sh, /scripts/backup.sh]
+    volumes:
+      - ./backend/backup.sh:/scripts/backup.sh:ro
+      - ronda-files:/data/files:ro
+      - ./.backups:/backups
+    networks: [ronda-network]
+    depends_on:
+      database:
+        condition: service_healthy
+
+  offsite:
+    build: ./backend/offsite
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+      - path: ./backend/.env.offsite
+        required: false
+    environment:
+      OFFSITE_HOST: ronda-local
+    volumes:
+      - ronda-files:/data/files:ro
+    networks: [ronda-network]
+    depends_on:
+      database:
+        condition: service_healthy
+    profiles:
+      - offsite
 
   tunnel:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2026.8.0
     container_name: ronda-cloudflare-tunnel
     restart: unless-stopped
-    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:-}
     depends_on:
       ronda:
         condition: service_healthy
@@ -27,3 +91,7 @@ services:
 networks:
   ronda-network:
     name: ronda-network
+
+volumes:
+  ronda-database:
+  ronda-files:

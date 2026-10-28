@@ -1,0 +1,79 @@
+{
+  "checkedAt": "2026-10-20T19:12:01.469Z",
+  "origin": "https://ronda.repolite.link",
+  "scope": "Unauthenticated non-destructive production smoke; not a penetration-test certification",
+  "results": [
+    {
+      "name": "security_headers",
+      "status": 200,
+      "elapsedMs": 906,
+      "passed": true,
+      "headers": {
+        "content-security-policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' blob: data:; frame-src 'self' blob: https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+        "strict-transport-security": "max-age=31536000",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "x-frame-options": "SAMEORIGIN",
+        "permissions-policy": "camera=(), geolocation=(), payment=(), usb=(), microphone=(self), fullscreen=(self), clipboard-write=(self)"
+      }
+    },
+    {
+      "name": "anonymous_session",
+      "status": 200,
+      "elapsedMs": 347,
+      "passed": true,
+      "noStore": true
+    },
+    {
+      "name": "anonymous_workspaces",
+      "status": 401,
+      "elapsedMs": 345,
+      "passed": true
+    },
+    {
+      "name": "anonymous_account_data",
+      "status": 401,
+      "elapsedMs": 619,
+      "passed": true
+    },
+    {
+      "name": "anonymous_test_project",
+      "status": 401,
+      "elapsedMs": 309,
+      "passed": true
+    },
+    {
+      "name": "cross_origin_write_rejected",
+      "status": 403,
+      "elapsedMs": 222,
+      "passed": true
+    },
+    {
+      "name": "missing_origin_write_rejected",
+      "status": 403,
+      "elapsedMs": 330,
+      "passed": true
+    },
+    {
+      "name": "invalid_json_handled",
+      "status": 400,
+      "elapsedMs": 325,
+      "passed": true
+    },
+    {
+      "name": "no_sensitive_file_/.env",
+      "status": 200,
+      "elapsedMs": 226,
+      "passed": true,
+      "spaFallback": true
+    },
+    {
+      "name": "no_sensitive_file_/.git/config",
+      "status": 200,
+      "elapsedMs": 326,
+      "passed": true,
+      "spaFallback": true
+    }
+  ],
+  "passed": true
+}

@@ -1,0 +1,17 @@
+/* Sculpted paper compositions: shading belongs to the artwork, not UI chrome. */
+.studio-art{isolation:isolate}
+.studio-art i{box-shadow:inset 0 1px 1px #ffffff45,0 14px 30px #24123418}
+.studio-art i:nth-child(1){background:linear-gradient(135deg,var(--tile-a) 10%,var(--tile-base) 65%,var(--tile-c));border-radius:45% 55% 60% 40% / 55% 45% 55% 45%;transform:rotate(-22deg)}
+.studio-art i:nth-child(2){background:linear-gradient(150deg,var(--tile-c),var(--tile-b) 58%,var(--tile-a));border-radius:60% 40% 35% 65% / 45% 55% 45% 55%;transform:rotate(-35deg)}
+.studio-art i:nth-child(3){background:linear-gradient(125deg,var(--tile-c),var(--tile-base) 65%,var(--tile-a));border-radius:35% 65% 55% 45% / 60% 45% 55% 40%;transform:rotate(-30deg)}
+.studio-welcome>.studio-art{inset:0 0 0 43%;background:transparent;overflow:visible}
+.studio-welcome>.studio-art::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,var(--surface-1),transparent 36%);z-index:4;pointer-events:none}
+.studio-welcome>.studio-art i:nth-child(1){width:115%;height:100%;left:6%;top:-56%;border-radius:0 0 50% 50%;transform:rotate(14deg);background:linear-gradient(125deg,#7b65ce 4%,#ab96ef 50%,#d2baf3 90%);z-index:1}
+.studio-welcome>.studio-art i:nth-child(2){width:84%;height:117%;right:-30%;top:20%;transform:rotate(-32deg);border-radius:65% 45% 0 0;background:linear-gradient(125deg,#ffe0ac 5%,#f7bf9e 58%,#efa8bc);z-index:2}
+.studio-welcome>.studio-art i:nth-child(3){width:115%;height:65%;left:18%;bottom:-34%;transform:rotate(-20deg);border-radius:60% 60% 0 0;background:linear-gradient(125deg,#6552b2 5%,#b292d6 35%,#eab1d1 65%,#f9c2cb);z-index:3;box-shadow:0 -15px 35px #40275425,inset 0 1px 1px #ffffff50}
+.studio-next>.studio-art i{box-shadow:0 4px 10px #24123418}
+.studio-project-grid:not(.list) .folder-project:not(.with-preview) .studio-art{background:var(--tile-base)}
+.studio-project-grid:not(.list) .folder-project:not(.with-preview) .studio-art i:nth-child(1){background:linear-gradient(135deg,var(--tile-a),var(--tile-base),var(--tile-c))}
+.studio-project-grid:not(.list) .folder-project:not(.with-preview) .studio-art i:nth-child(2){background:linear-gradient(150deg,var(--tile-c),var(--tile-b),var(--tile-a))}
+.studio-project-grid:not(.list) .folder-project:not(.with-preview) .studio-art i:nth-child(3){background:linear-gradient(125deg,var(--tile-c),var(--tile-base),var(--tile-a))}
+@media(max-width:680px){.studio-welcome>.studio-art{inset:0 0 0 35%;opacity:.7}.studio-welcome>.studio-art::after{background:linear-gradient(90deg,var(--surface-1),transparent 90%)}.studio-welcome>div{width:92%}}

@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {token,digest} from './security.js';
+import {reviewFixture} from './shared-review-qa-fixture.js';
+import {workspaceRepository} from './repositories/workspaces.js';
+import {workspaceService} from './workspace-service.js';
+const f=await reviewFixture();
+try {
+ const repository=workspaceRepository(f.pool),service=workspaceService(repository);
+ const key=randomUUID(),input={name:'Equipo persistente QA',requestId:key};
+ const [first,retry]=await Promise.all([service.createTeam(f.admin,input),service.createTeam(f.admin,input)]);
+ assert.equal(first.workspace.id,retry.workspace.id);
+ assert.equal(Number((await f.pool.query('SELECT count(*) FROM workspace_events WHERE workspace_id=$1 AND action=$2',[first.workspace.id,'workspace.created'])).rows[0].count),1);
+ await assert.rejects(service.createTeam(f.admin,{...input,name:'Otro equipo'}),{status:409});
+ const email=async id=>(await f.pool.query('SELECT email FROM users WHERE id=$1',[id])).rows[0].email;
+ const outsider={id:f.outsider,email:await email(f.outsider)};
+ const invited=await service.invite(f.space,f.admin,{email:outsider.email.toUpperCase(),role:'reviewer'});
+ await assert.rejects(service.invite(f.space,f.admin,{email:outsider.email,role:'reviewer'}),{status:409});
+ await assert.rejects(service.accept({id:f.editor,email:await email(f.editor)},invited.token),{status:403});
+ await service.updateInvitation(f.space,f.admin,invited.invitation.id,'editor');
+ await service.accept(outsider,invited.token);
+ assert.equal((await repository.read(f.space,f.outsider)).workspace.role,'editor');
+ await assert.rejects(service.accept(outsider,invited.token),{status:404});
+ const staleToken=token();
+ const stale=(await f.pool.query("INSERT INTO workspace_invitations(workspace_id,email,role,token_hash,created_by,expires_at) VALUES($1,$2,'reviewer',$3,$4,now()+interval '7 days') RETURNING id",[f.space,outsider.email,digest(staleToken),f.admin])).rows[0];
+ await assert.rejects(service.accept(outsider,staleToken),{status:409,message:'Ya perteneces a este equipo.'});
+ assert.equal((await f.pool.query('SELECT accepted_at FROM workspace_invitations WHERE id=$1',[stale.id])).rows[0].accepted_at,null,'a stale duplicate invite must not be silently consumed');
+ await service.revoke(f.space,f.admin,stale.id);
+ await assert.rejects(service.invite(f.space,f.admin,{email:outsider.email,role:'reviewer'}),{status:409});
+ for(const actor of [f.editor,f.reviewer,f.outsider]){
+  await assert.rejects(service.updateMember(f.space,actor,f.admin,'reviewer'),{status:403});
+  await assert.rejects(service.invite(f.space,actor,{email:'new@example.invalid',role:'admin'}),{status:403});
+ }
+ await assert.rejects(service.updateMember(f.space,f.admin,f.admin,null),{status:409});
+ await assert.rejects(service.updateMember(f.space,f.admin,f.admin,'editor'),{status:409});
+ await service.updateMember(f.space,f.admin,f.outsider,null);
+ await assert.rejects(repository.read(f.space,f.outsider),{status:404});
+ const revoked=await service.invite(f.space,f.admin,{email:outsider.email,role:'reviewer'});
+ await service.revoke(f.space,f.admin,revoked.invitation.id);
+ await assert.rejects(service.accept(outsider,revoked.token),{status:404});
+ const expired=await service.invite(f.space,f.admin,{email:outsider.email,role:'reviewer'});
+ await f.pool.query("UPDATE workspace_invitations SET expires_at=now()-interval '1 second' WHERE id=$1",[expired.invitation.id]);
+ await assert.rejects(service.accept(outsider,expired.token),{status:404});
+ await assert.rejects(service.updateInvitation(f.space,f.admin,expired.invitation.id,'admin'),{status:404});
+ console.log('PASS invitations: duplicate, different email, role change, used/revoked/expired; permissions and last admin; concurrent creation persists once.');
+ const team=first.workspace.id;
+ await f.pool.query("INSERT INTO workspace_members VALUES($1,$2,'admin')",[team,f.editor]);
+ await service.updateMember(team,f.editor,f.admin,'reviewer');
+ assert.equal((await service.createTeam(f.admin,input)).workspace.role,'reviewer','creation retry must reflect the current role');
+ await service.updateMember(team,f.editor,f.admin,null);
+ await assert.rejects(service.createTeam(f.admin,input),{status:404});
+ console.log('PASS creation retry respects demotion and removal.');
+} finally {await f.close();}

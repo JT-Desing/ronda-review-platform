@@ -1,0 +1,7 @@
+.account-brand{display:inline-flex;align-items:center;gap:12px;color:#f5f2f8;font-size:28px;font-weight:650;letter-spacing:-.035em;margin-bottom:22px}
+.account-brand img{display:block;width:44px;height:44px;object-fit:contain}
+.account-session-loading{text-align:center}.account-session-loading .account-brand{margin-bottom:8px}
+.onboarding-options{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}
+.onboarding-options button{flex:1;min-height:48px;padding:12px;border:1px solid var(--line,#443b50);border-radius:10px;background:var(--surface-2,#201b27);color:var(--text,#f5efff);cursor:pointer}
+.onboarding-options button[aria-pressed=true]{border-color:var(--accent,#c7acf0);background:var(--surface-3,#30263b)}
+.workspace-onboarding form h2{font-size:18px;margin:0}.workspace-onboarding form p{font-size:12px;line-height:1.5}.workspace-onboarding input{box-sizing:border-box;width:100%;min-height:44px}.onboarding-footer{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}.onboarding-footer button{min-height:40px;background:transparent;color:inherit;border:1px solid var(--line,#443b50);border-radius:8px;padding:8px 12px;cursor:pointer}

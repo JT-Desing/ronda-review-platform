@@ -1,0 +1,9 @@
+.app-shell button.liquid-button{position:relative;isolation:isolate;display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:var(--liquid-padding,14px 24px);border:0;border-radius:999px;background:transparent;color:#201c29;font:inherit;font-size:13px;font-weight:600;cursor:pointer;overflow:visible;flex-shrink:0}
+.liquid-button-surface{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:-1}
+.liquid-button-base{fill:var(--liquid-color,#fff);stroke:var(--liquid-hover,#201c29);stroke-width:.7}
+.liquid-button-shapes{fill:var(--liquid-hover,#201c29)}
+.liquid-button-label{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;pointer-events:none;user-select:none;color:#fff;mix-blend-mode:difference}
+.app-shell button.liquid-button:focus-visible{outline:2px solid var(--accent);outline-offset:5px}
+.app-shell button.liquid-button:disabled{opacity:.5;cursor:default}
+@media(prefers-reduced-motion:reduce){.liquid-lobe{display:none}.liquid-button-shapes{filter:none;transition:none}}
+@media(forced-colors:active){.liquid-button-surface{display:none}.app-shell button.liquid-button{background:ButtonFace;color:ButtonText;border:1px solid ButtonText}}

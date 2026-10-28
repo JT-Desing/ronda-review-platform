@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {dayKey,mentionedMembers,planningComments,heatLevel} from './planning.js';
+test('planning uses workspace day and rejects invalid dates',()=>{assert.equal(dayKey('2026-10-10T01:00:00Z'),'2026-10-09');assert.equal(dayKey('bad'),null)});
+test('mentions match complete member names, not name prefixes',()=>{const members={a:{id:'a',name:'Ana Ruiz'}};assert.deepEqual(mentionedMembers('@Ana Ruiz, revisar',members),['a']);assert.deepEqual(mentionedMembers('@Ana Ruiza',members),[])});
+test('planning resolves actual project via version and separates mentions from assignment',()=>{const state={members:{a:{id:'a',name:'Ana Ruiz'}},versions:{v:{projectId:'real'}},comments:{c:{id:'c',projectId:'old',versionId:'v',text:'@Ana Ruiz revisar',createdAt:'2026-10-09T12:00:00Z',status:'open'}}};const items=planningComments(state,{project:'real',person:'a'});assert.equal(items.length,1);assert.equal(items[0].assigneeId,undefined);assert.equal(planningComments(state,{status:'resolved'}).length,0)});
+test('heat is zero for empty days and bounded',()=>{assert.equal(heatLevel(0,4),0);assert.equal(heatLevel(1,4),1);assert.equal(heatLevel(10,4),4)});

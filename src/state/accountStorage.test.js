@@ -1,0 +1,74 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+const local = new Map();
+globalThis.localStorage = { getItem:key=>local.get(key)??null,setItem:(key,value)=>local.set(key,value),removeItem:key=>local.delete(key) };
+globalThis.window = { addEventListener(){},dispatchEvent(){} };
+globalThis.CustomEvent = class { constructor(type,options={}){this.type=type;this.detail=options.detail;} };
+const {initializeAccount,accountStorage,flushAccount,pendingAccountCopy,recoverCopy,retryAccount,dismissPendingCopy,api} = await import('./accountStorage.js');
+test('account storage serializes saves and isolates pending backups', async()=>{
+  const requests=[];
+  globalThis.fetch=async(path,options)=>{requests.push(JSON.parse(options.body));return {ok:true,json:async()=>({revision:requests.length})};};
+  initializeAccount({id:'qa-a'},{data:{},revision:0});
+  accountStorage.setItem('ronda-pauta:v1','{"groups":[]}');
+  await flushAccount();
+  assert.equal(requests[0].revision,0);
+  assert.equal(pendingAccountCopy(),null);
+  initializeAccount({id:'qa-b'},{data:{},revision:0});
+  assert.equal(accountStorage.getItem('ronda-pauta:v1'),null);
+});
+test('a conflict preserves local data and refuses stale recovery',async()=>{
+  initializeAccount({id:'qa-conflict'},{data:{},revision:4});
+  globalThis.fetch=async()=>({ok:false,json:async()=>({error:'Conflict'})});
+  accountStorage.setItem('ronda-pauta:v1','{"groups":[]}');
+  await assert.rejects(flushAccount(),/Conflict/);
+  assert.equal(pendingAccountCopy().dirty,true);
+  assert.throws(()=>recoverCopy({revision:3,data:{}}),/otra revisión/);
+});
+test('choosing server version remembers the exact copy without deleting its recovery backup',async()=>{
+  const id='qa-dismiss';
+  const copy={data:{draft:'synthetic offline work'},revision:3,dirty:true};
+  initializeAccount({id},{data:{server:'current'},revision:4});
+  local.set(`ronda-account:${id}`,JSON.stringify(copy));
+  assert.deepEqual(pendingAccountCopy(),copy);
+  dismissPendingCopy(copy);
+  assert.equal(pendingAccountCopy(),null);
+  assert.equal(local.get(`ronda-account:${id}`),JSON.stringify(copy),'the active recovery copy stays untouched until a newer write exists');
+  initializeAccount({id},{data:{server:'current'},revision:4});
+  assert.equal(pendingAccountCopy(),null,'the same resolved copy does not prompt after re-login');
+  globalThis.fetch=async(_path,options)=>({ok:true,json:async()=>({revision:5,data:JSON.parse(options.body).data})});
+  accountStorage.setItem('new','later local change');
+  await flushAccount();
+  assert.equal(local.get(`ronda-account-dismissed:${id}`),undefined,'a newer local write re-enables normal pending-copy detection');
+  assert.ok([...local.entries()].some(([key,value])=>key.startsWith(`ronda-account-recovery:${id}:`)&&value===JSON.stringify(copy)),'the earlier copy remains recoverable after the active slot is updated');
+});
+test('local storage quota does not prevent a server save',async()=>{
+  initializeAccount({id:'qa-quota'},{data:{},revision:0});
+  const original=globalThis.localStorage;
+  globalThis.localStorage={...original,setItem(){throw new Error('Quota');}};
+  globalThis.fetch=async()=>({ok:true,json:async()=>({revision:1})});
+  accountStorage.setItem('ronda-pauta:v1','{"groups":[]}');
+  await flushAccount();
+  assert.equal(accountStorage.getItem('ronda-pauta:v1'),'{"groups":[]}');
+  globalThis.localStorage=original;
+});
+test('expired session preserves unsaved private data and retries the same revision after recovery',async()=>{
+  initializeAccount({id:'qa-expired'},{data:{},revision:7});
+  const events=[];const originalDispatch=window.dispatchEvent;
+  window.dispatchEvent=event=>events.push(event.type);
+  globalThis.fetch=async()=>({ok:false,status:401,json:async()=>({error:'Sesión vencida'})});
+  accountStorage.setItem('draft','sin publicar');
+  await assert.rejects(flushAccount(),error=>error.status===401);
+  assert.equal(pendingAccountCopy().dirty,true);
+  assert.equal(pendingAccountCopy().data.draft,'sin publicar');
+  assert.ok(events.includes('ronda-session-expired'));
+  let payload;
+  globalThis.fetch=async(_path,options)=>{payload=JSON.parse(options.body);return {ok:true,json:async()=>({revision:8})};};
+  await retryAccount();
+  assert.deepEqual(payload,{data:{draft:'sin publicar'},revision:7});
+  assert.equal(pendingAccountCopy(),null);
+  window.dispatchEvent=originalDispatch;
+});
+test('private API hung request terminates instead of leaving account access busy forever',async()=>{
+  globalThis.fetch=()=>new Promise(()=>{});
+  await assert.rejects(api('/api/data',{timeoutMs:5}),error=>error.code==='request_timeout');
+});

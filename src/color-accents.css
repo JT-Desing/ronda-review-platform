@@ -1,0 +1,48 @@
+/* Decorative pigment only: existing geometry, media and interactions remain intact. */
+.studio-home,.studio-library{--pigment-lavender:#c8b1f5;--pigment-pink:#f4c5dc;--pigment-mint:#b9eeeb;background-image:radial-gradient(ellipse 55% 240px at 92% 0%,#c8b1f50a,transparent 75%),radial-gradient(ellipse 40% 240px at 5% 100%,#b9eeeb06,transparent 75%)}
+.studio-home .studio-section-heading{border-bottom:1px solid transparent;border-image:linear-gradient(90deg,#c8b1f560,#f4c5dc30,#b9eeeb18,transparent) 1;padding-bottom:14px}
+.studio-library .dashboard-header{border-bottom:1px solid transparent;border-image:linear-gradient(90deg,#c8b1f560,#f4c5dc30,#b9eeeb18,transparent) 1;padding-bottom:20px}
+.studio-home .studio-home-panel{border-bottom-color:#c8b1f526;background-image:radial-gradient(ellipse at 90% 20%,#c8b1f50a,transparent 75%)}
+.studio-home .studio-home-panel:nth-child(2){background-image:radial-gradient(ellipse at 90% 20%,#f4c5dc0a,transparent 75%);border-bottom-color:#f4c5dc26}
+.studio-home .studio-home-panel:nth-child(3){background-image:radial-gradient(ellipse at 90% 20%,#b9eeeb0a,transparent 75%)}
+.studio-home .studio-counts>span{box-shadow:inset 0 1px 0 #c8b1f545;background-image:linear-gradient(145deg,#c8b1f50d,transparent 70%)}
+.studio-home .studio-counts>span:nth-child(2){box-shadow:inset 0 1px 0 #f4c5dc45;background-image:linear-gradient(145deg,#f4c5dc0d,transparent 70%)}
+.studio-home .studio-counts>span:nth-child(3){box-shadow:inset 0 1px 0 #b9eeeb45;background-image:linear-gradient(145deg,#b9eeeb0d,transparent 70%)}
+.studio-home .studio-counts>span strong{color:var(--studio-lavender)}
+.studio-home .studio-counts>span:nth-child(2) strong{color:var(--studio-pink)}
+.studio-home .studio-counts>span:nth-child(3) strong{color:var(--studio-mint)}
+.studio-project-grid .folder-project.palette-0{--folder-line:#78658b;--folder-accent:#d4c1fb;--folder-front:#23202b;--folder-back:#2d2837;--folder-pigment:#c8b1f5}
+.studio-project-grid .folder-project.palette-1{--folder-line:#806a60;--folder-accent:#ffd6b2;--folder-front:#272221;--folder-back:#342d29;--folder-pigment:#ffd6b2}
+.studio-project-grid .folder-project.palette-2{--folder-line:#557b78;--folder-accent:#b9eeeb;--folder-front:#1d2729;--folder-back:#273437;--folder-pigment:#b9eeeb}
+.studio-project-grid .folder-project.palette-3{--folder-line:#805f75;--folder-accent:#f4c5dc;--folder-front:#29212a;--folder-back:#352a36;--folder-pigment:#f4c5dc}
+.studio-project-grid:not(.list) .folder-project .studio-project-copy:before{background:radial-gradient(ellipse at 88% 8%,color-mix(in srgb,var(--folder-pigment) 7%,transparent),transparent 72%),var(--folder-front)}
+.studio-project-grid:not(.list) .folder-project footer{border-top-color:color-mix(in srgb,var(--folder-pigment) 24%,transparent)}
+.studio-library .studio-search{border-color:#c8b1f53a;box-shadow:inset 0 1px 0 #f4c5dc10}
+.studio-library .studio-filters button[aria-pressed=true]{box-shadow:0 2px 12px #c8b1f518}
+@media(hover:hover){.studio-project-grid:not(.list) .folder-project:hover{box-shadow:0 10px 30px #0003,0 0 18px color-mix(in srgb,var(--folder-pigment) 9%,transparent)}}
+@media(forced-colors:active){.studio-home,.studio-library,.studio-home .studio-home-panel,.studio-home .studio-counts>span{background-image:none}.studio-home .studio-section-heading,.studio-library .dashboard-header{border-image:none;border-bottom-color:CanvasText}}
+
+/* Shared pigment language outside media: backgrounds, section seams and chrome only. */
+/* The project gallery shares the canvas; a content-height gradient here creates hard rectangular seams. */
+.app-shell .dashboard-page:not(.studio-home):not(.studio-library):not(.shared-projects){background-image:radial-gradient(ellipse 55% 220px at 100% 0%,#c8b1f50b,transparent 75%),radial-gradient(ellipse 35% 260px at 0% 95%,#b9eeeb07,transparent 75%)}
+.app-shell .dashboard-page:not(.studio-home):not(.studio-library)>.dashboard-header{border-bottom:1px solid transparent;border-image:linear-gradient(90deg,#c8b1f550,#f4c5dc28,#b9eeeb15,transparent) 1;padding-bottom:20px}
+.app-shell :is(.settings-section,.identity-section){border-top-color:#c8b1f53b;background-image:radial-gradient(ellipse 65% 120px at 100% 0%,#c8b1f508,transparent 75%)}
+.app-shell :is(.settings-section,.identity-section):nth-child(even){border-top-color:#b9eeeb35;background-image:radial-gradient(ellipse 65% 120px at 100% 0%,#b9eeeb08,transparent 75%)}
+.app-shell :is(.settings-section-number,.settings-section-title>.icon){color:var(--accent);border-color:#c8b1f540;background:#c8b1f50c}
+.app-shell .identity-preview{border-color:#c8b1f532;background-image:radial-gradient(ellipse at 100% 0%,#f4c5dc09,transparent 70%)}
+.app-shell .activity-group>h2{border-bottom:1px solid transparent;border-image:linear-gradient(90deg,#c8b1f548,#f4c5dc20,transparent) 1;padding-bottom:12px}
+.app-shell .activity-item.unread{box-shadow:inset 2px 0 0 #c8b1f580;background-image:linear-gradient(90deg,#c8b1f50b,transparent 65%)}
+.app-shell .activity-filters{border-color:#c8b1f530;background-image:radial-gradient(ellipse at 100% 0%,#c8b1f509,transparent 70%)}
+.app-shell :is(.member-table,.team-summary){border-color:#c8b1f530}
+.app-shell .member-table>header{background-image:linear-gradient(90deg,#c8b1f50c,#f4c5dc06,transparent)}
+.app-shell .shared-list-heading{border-bottom:1px solid #c8b1f530;margin-bottom:8px}
+.app-shell .shared-project-row.selected{border-color:#c8b1f54a;background-image:radial-gradient(ellipse at 100% 0%,#c8b1f510,transparent 75%)}
+.app-shell .shared-conversation>header{border-bottom-color:#c8b1f538}
+.app-shell .shared-project-media{border-top-color:#b9eeeb30;border-bottom-color:#f4c5dc24}
+.app-shell :is(.shared-review-heading,.shared-review-toolbar){background-image:radial-gradient(ellipse at 100% 0%,#c8b1f50a,transparent 70%)}
+.app-shell .shared-review-comments{border-color:#c8b1f530}
+.app-shell .asset-bar{border-bottom-color:#c8b1f538;background-image:linear-gradient(90deg,#c8b1f507,transparent 70%)}
+.app-shell .storyboard-toggle{border-color:#c8b1f538;background-image:linear-gradient(100deg,#c8b1f508,#f4c5dc04,transparent)}
+.app-shell .storyboard-order{border-top-color:#c8b1f526}
+/* Heat levels, approval badges, annotation colours and original media are intentionally untouched. */
+@media(forced-colors:active){.app-shell .dashboard-page,.app-shell :is(.settings-section,.identity-section,.identity-preview,.activity-item,.activity-filters,.member-table>header,.shared-project-row.selected,.shared-review-heading,.shared-review-toolbar,.asset-bar,.storyboard-toggle){background-image:none}.app-shell .dashboard-page>.dashboard-header,.app-shell .activity-group>h2{border-image:none;border-bottom-color:CanvasText}}

@@ -1,0 +1,44 @@
+.original-media-stage .media-viewport{width:100%;max-height:70vh;overflow:auto;scrollbar-width:thin;overscroll-behavior:contain;background:#050506}
+.app-shell .original-media-stage{padding:18px 20px 0}
+.app-shell .original-media-stage .media-stage,.app-shell .original-media-stage .image-view-controls{max-width:none}
+.app-shell .original-media-stage[data-media-type=image] .media-viewport{height:clamp(260px,44dvh,560px);max-height:none;scrollbar-gutter:stable}
+.app-shell .original-media-stage[data-media-type=image] .frame-badge{display:none}
+.app-shell .original-media-stage .annotation-tools{position:relative;left:auto;bottom:auto;transform:none;display:flex;flex-wrap:wrap;justify-content:center;gap:4px;width:max-content;max-width:100%;margin:12px auto 0;padding:7px;border-radius:12px;overflow:visible}
+.app-shell .original-media-stage .annotation-tools>button,.app-shell .shared-original-review .original-media-stage .annotation-tools>button{width:40px;height:40px;min-width:40px;min-height:40px}
+.app-shell .original-media-stage .annotation-tools .color-options{gap:6px;flex-shrink:0}
+.app-shell .shared-original-review .original-media-stage .color-options button{width:24px;height:24px;min-width:24px;min-height:24px}
+.app-shell .original-media-stage .image-view-controls button{min-height:40px;padding:0 12px;font-size:12px}
+.app-shell .original-media-stage .image-player-controls{min-height:40px;margin-top:0}
+.original-media-stage .media-stage:fullscreen{box-sizing:border-box;padding:16px;background:var(--canvas,#0c0b10);overflow:auto}
+.app-shell .original-media-stage .media-stage:fullscreen .media-viewport{height:calc(100dvh - 110px);max-height:none}
+.app-shell .original-media-stage .media-viewport.is-fit{display:flex;align-items:flex-start}
+.app-shell .original-media-stage .media-viewport.is-fit>.film-frame{min-width:0;margin-inline:auto}
+.app-shell .original-media-stage .media-viewport.is-zoomed{display:block}
+@media(max-width:1050px){.app-shell .original-media-stage[data-media-type=image] .media-viewport{height:clamp(260px,44dvh,560px)}.app-shell .original-media-stage .media-stage{display:flex;flex-direction:column}.app-shell .original-media-stage .annotation-tools{order:-1;position:sticky;top:8px;z-index:8;margin:0 auto 12px}}
+@media(max-width:680px){.app-shell .original-media-stage{padding:12px 10px 0}.app-shell .original-media-stage .image-view-controls{padding:0;gap:10px}.app-shell .original-media-stage .image-view-controls>span{display:none}.app-shell .original-media-stage .image-view-controls>div{justify-content:center;width:100%;gap:5px}.app-shell .original-media-stage .image-view-controls button{min-height:44px;padding:0 9px;font-size:11px}.app-shell .original-media-stage[data-media-type=image] .media-viewport{height:clamp(240px,42dvh,460px)}.app-shell .original-media-stage .annotation-tools{gap:4px;padding:6px}.app-shell .original-media-stage .annotation-tools>button,.app-shell .shared-original-review .original-media-stage .annotation-tools>button{width:44px;height:44px;min-width:44px;min-height:44px}.app-shell .shared-original-review .original-media-stage .color-options button{width:32px;height:32px;min-width:32px;min-height:32px}.app-shell .original-media-stage .color-options{order:1;flex-basis:100%;justify-content:center;padding:8px 4px}.app-shell .original-media-stage .tool-divider{display:none}}
+.media-brand-loading{position:absolute;inset:0;z-index:3;display:grid;place-items:center;background:#09080ee0;pointer-events:none}
+.original-media-stage .film-frame{min-width:100%;flex-shrink:0;aspect-ratio:16/9}
+.original-media-stage .annotation-layer:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
+.original-media-stage .image-view-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;max-width:960px;margin:0 auto 12px;color:var(--muted);font-size:11px}
+.original-media-stage .image-view-controls>div{display:flex;align-items:center;gap:6px}
+.original-media-stage .image-view-controls button{min-height:34px;min-width:34px;padding:0 10px;background:var(--surface-2);border:1px solid var(--line);border-radius:7px;color:var(--text);font:inherit;font-size:11px;cursor:pointer}
+.original-media-stage .image-view-controls output{min-width:38px;text-align:center;font-variant-numeric:tabular-nums}
+.original-media-stage .image-player-controls{justify-content:flex-end;min-height:44px}
+.original-media-stage .annotation-tools>button{transition:background-color 140ms ease,box-shadow 140ms ease,color 140ms ease,transform 140ms ease}
+.original-media-stage .annotation-toolbar-wrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+.original-media-stage .annotation-readonly-status{margin:0;padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:12px;line-height:1.3}
+.original-media-stage .annotation-tools>button:disabled,.original-media-stage .color-options button:disabled{opacity:.42;cursor:not-allowed;filter:saturate(.45)}
+.original-media-stage .color-options button:disabled:hover{transform:none}
+.original-media-stage .annotation-tools>button:active:not(:disabled){transform:scale(.94)}
+.original-media-stage .color-options button{transition:box-shadow 140ms ease,transform 140ms ease}
+.original-media-stage .color-options button:hover{transform:translateY(-2px)}
+.original-media-stage .figure-pin{transition:background-color 140ms ease,box-shadow 140ms ease}
+.original-media-stage .figure-pin.selected{box-shadow:0 0 0 4px #cbb4ee35}
+.original-media-stage .image-view-controls button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.original-media-stage .image-view-controls button:disabled{opacity:.4;cursor:default}
+@media(max-width:780px){.original-media-stage .image-view-controls{padding:0 12px}.original-media-stage .image-view-controls>div{flex-wrap:wrap}.original-media-stage .image-view-controls button{min-height:40px}.original-media-stage .annotation-tools{bottom:-50px}}
+@media(prefers-reduced-motion:reduce){.original-media-stage .annotation-tools>button,.original-media-stage .color-options button,.original-media-stage .figure-pin{transition:none}.original-media-stage .color-options button:hover,.original-media-stage .annotation-tools>button:active:not(:disabled){transform:none}}
+.media-stage .stage-exit-fullscreen{display:none}
+.media-stage:fullscreen .stage-exit-fullscreen{display:inline-flex;align-items:center;gap:8px;position:absolute;right:20px;top:20px;z-index:30;min-height:44px;padding:10px 14px;border:1px solid #71647f;border-radius:12px;background:#1a1622;color:#f4effa;cursor:pointer}
+.media-stage:fullscreen .stage-exit-fullscreen:focus-visible{outline:2px solid #ccb1f3;outline-offset:3px}
+@media(max-width:780px){.app-shell .topbar .secondary,.app-shell .topbar .approval,.app-shell .shared-review-room .topbar .approval{min-width:44px;min-height:44px;height:44px}.app-shell .original-media-stage .image-view-controls button{min-width:44px;min-height:44px}.app-shell .original-media-stage .player-controls>button,.app-shell .shared-projects .shared-original-review .original-media-stage .player-controls>button{min-width:44px;min-height:44px}.app-shell .original-media-stage .figure-pin{width:44px;height:44px}.app-shell .shared-original-review .original-media-stage .color-options button{width:44px;height:44px;min-width:44px;min-height:44px;border:12px solid transparent;background-clip:content-box}.app-shell .shared-original-review .delivery-grid .upload-button{min-width:44px;min-height:44px}.app-shell .shared-original-review .shared-review-people button{min-height:44px}.app-shell .shared-original-review .shared-original-comments .comment-location,.app-shell .shared-original-review .shared-original-comments .comment-foot button,.app-shell .shared-original-review .comments-panel.shared-original-comments .comment-card>button:not(.comment-location),.app-shell .shared-original-review .comments-panel.shared-original-comments .restored-composer .audio-comment-input label,.app-shell .shared-original-review .comments-panel.shared-original-comments .restored-composer .audio-comment-input button{min-height:44px;height:44px}}

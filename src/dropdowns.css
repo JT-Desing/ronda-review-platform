@@ -1,0 +1,26 @@
+/* Preserve native forms, keyboard navigation and mobile pickers as fallback. */
+body select{color-scheme:dark;accent-color:#cbb6f1;font:inherit}
+body select:not([multiple]){border:1px solid #494151;border-radius:12px;background-color:#15121b;color:#f7f3fc;min-height:40px;padding:10px 13px;cursor:pointer;transition:border-color 160ms ease,box-shadow 160ms ease,background-color 160ms ease}
+body select:not([multiple]):hover:not(:disabled){border-color:#88739f;background-color:#1c1725}
+body select:not([multiple]):focus-visible{outline:2px solid #cbb6f1;outline-offset:3px;box-shadow:0 0 0 5px #b596e912}
+body select:disabled{cursor:not-allowed;opacity:.55}
+body select option,body select optgroup{background:#1c1725;color:#f7f3fc}
+@supports(appearance:base-select){
+  body select:not([multiple]),body select:not([multiple])::picker(select){appearance:base-select}
+  body select:not([multiple]){display:inline-flex;align-items:center;gap:18px;background-image:none}
+  body select:not([multiple])::picker-icon{color:#bcb0cc;transition:rotate 180ms ease;font-size:12px}
+  body select:not([multiple]):open::picker-icon{rotate:180deg}
+  body select:not([multiple]):open{border-color:#b99cde;box-shadow:0 0 0 3px #b596e91a}
+  body select:not([multiple])::picker(select){margin-block:7px;padding:6px;border:1px solid #51435f;border-radius:14px;background:#1b1622;color:#f7f3fc;box-shadow:0 18px 48px #0009,0 3px 12px #0005,inset 0 1px 0 #ffffff08;max-block-size:min(340px,55vh);overflow:auto;scrollbar-width:thin;scrollbar-color:#665275 transparent;animation:ronda-picker-in 160ms cubic-bezier(.2,.75,.25,1);font:inherit}
+  body select:not([multiple]) option{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:42px;box-sizing:border-box;padding:10px 12px;border:0;border-radius:9px;background:transparent;color:#eee8f6;cursor:pointer;font:inherit;transition:background-color 120ms ease,color 120ms ease;white-space:normal;overflow-wrap:anywhere}
+  body select:not([multiple]) option:hover,body select:not([multiple]) option:focus{outline:none;background:#30263c;color:#fff}
+  body select:not([multiple]) option:checked{background:#342743;color:#eadbff;font-weight:600}
+  body select:not([multiple]) option::checkmark{order:1;color:#dbc1ff;margin-inline-start:auto}
+  body select:not([multiple]) option:disabled{opacity:.4;cursor:not-allowed}
+  body select:not([multiple]) optgroup{padding:6px;color:#b6a4c7;font-size:12px}
+}
+.workspace-picker-popup{border-radius:14px;box-shadow:0 18px 48px #0008,0 3px 12px #0004;animation:ronda-picker-in 160ms cubic-bezier(.2,.75,.25,1)}
+.workspace-picker-option{transition:background-color 120ms ease,color 120ms ease}
+@keyframes ronda-picker-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){body select:not([multiple]),body select:not([multiple])::picker(select),body select:not([multiple])::picker-icon,body select:not([multiple]) option,.workspace-picker-popup,.workspace-picker-option{animation:none;transition:none}}
+@media(forced-colors:active){body select:not([multiple]){border:1px solid ButtonText;background:ButtonFace;color:ButtonText}body select:not([multiple])::picker(select){background:Canvas;color:CanvasText;border-color:CanvasText;box-shadow:none}body select:not([multiple]) option:checked{background:Highlight;color:HighlightText}}

@@ -1,0 +1,3 @@
+overrides:
+  # geist pulls next as a peer; the app never runs it. Keep it on a patched release.
+  next: ^16.4.1

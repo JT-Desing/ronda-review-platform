@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+import {randomUUID} from 'node:crypto';
+import {Readable} from 'node:stream';
+import {mkdtemp,cp,rm,readFile} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import pg from 'pg';
+import {reviewFixture} from './shared-review-qa-fixture.js';
+import {sharedReviewRepository} from './repositories/shared-review.js';
+import {sharedMediaService} from './shared-media-service.js';
+import {localStorage} from './storage/local.js';
+const container=process.env.RONDA_QA_CONTAINER;
+if(!/^ronda-review-qa-[a-f0-9]{32}$/.test(container||''))throw new Error('Labelled QA container required');
+assert.equal(execFileSync('docker',['inspect','--format','{{index .Config.Labels "ronda.qa"}}',container],{encoding:'utf8'}).trim(),'shared-review');
+const f=await reviewFixture(),backup=await mkdtemp(join(tmpdir(),'ronda-backup-qa-')),url=new URL(process.env.RONDA_QA_DATABASE_URL),db=url.pathname.slice(1),restore=db+'_restore';
+let restored;
+try{
+  const storage=localStorage(f.root),media=sharedMediaService(sharedReviewRepository(f.pool),storage),png=Buffer.from('89504e470d0a1a0a00000000','hex');
+  const {uploadId}=await media.reserve(f.space,f.admin,{projectId:f.project,name:'backup.png',mime:'image/png',size:png.length,requestId:randomUUID()});
+  await media.receive(f.space,f.admin,uploadId,Readable.from([png]));const original=await media.completeUpload(f.space,f.admin,uploadId);
+  await f.pool.query('INSERT INTO account_data(user_id,data) VALUES($1,$2)',[f.admin,{private:'preserve'}]);
+  const dump=execFileSync('docker',['exec',container,'pg_dump','-Fc','-U','postgres','-d',db],{maxBuffer:16777216});
+  await cp(f.root,join(backup,'files'),{recursive:true});await f.pool.query(`CREATE DATABASE "${restore}"`);
+  execFileSync('docker',['exec','-i',container,'pg_restore','--exit-on-error','-U','postgres','-d',restore],{input:dump,maxBuffer:16777216});
+  url.pathname='/'+restore;restored=new pg.Pool({connectionString:url.href});
+  assert.deepEqual((await restored.query('SELECT data FROM account_data WHERE user_id=$1',[f.admin])).rows[0].data,{private:'preserve'});
+  assert.equal((await restored.query('SELECT file_id FROM shared_versions WHERE id=$1',[original.version.id])).rows[0].file_id,original.version.fileId);
+  assert.deepEqual(await readFile(join(backup,'files',f.space,original.version.fileId)),png);
+  console.log('PASS QA backup restore: PostgreSQL identities/private data and shared original bytes preserved.');
+}finally{if(restored)await restored.end();await f.pool.query(`DROP DATABASE IF EXISTS "${restore}"`);await f.close();await rm(backup,{recursive:true});}

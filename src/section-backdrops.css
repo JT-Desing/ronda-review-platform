@@ -1,0 +1,36 @@
+/* Reference-derived satin sculpture. Original RGB and alpha, no tint/desaturation filters. */
+.app-shell .dashboard-workspace{position:relative;isolation:isolate;background-image:none;--sculpture-top:120px}
+.app-shell .dashboard-workspace::before{content:none}
+.app-shell .dashboard-workspace .dashboard-page{background-image:none}
+.abstract-sculpture-background{position:absolute;z-index:-1;right:24px;top:var(--sculpture-top);width:clamp(180px,20vw,260px);height:auto;pointer-events:none;user-select:none;opacity:.6;filter:none;object-fit:contain}
+.dashboard-workspace[data-view='home']{--sculpture-top:420px}
+.dashboard-workspace[data-view='planning']{--sculpture-top:180px}
+.dashboard-workspace[data-view='branding']{--sculpture-top:210px}
+.dashboard-workspace[data-view='projects'] .abstract-sculpture-background{right:168px;top:148px}
+.dashboard-workspace[data-view='pauta'] .abstract-sculpture-background{top:auto;bottom:16px;right:24px}
+.dashboard-workspace[data-view='planning'] .abstract-sculpture-background{right:24px;top:180px}
+.dashboard-workspace[data-view='planning'] .abstract-sculpture-background{display:none}
+.dashboard-workspace[data-view='activity'] .abstract-sculpture-background,
+.dashboard-workspace[data-view='team'] .abstract-sculpture-background,
+.dashboard-workspace[data-view='settings'] .abstract-sculpture-background{display:none}
+.dashboard-workspace[data-view='team'] .abstract-sculpture-background{right:24px;top:auto;bottom:16px}
+.dashboard-workspace[data-view='branding'] .abstract-sculpture-background{top:100px;right:24px}
+/* Functional surfaces stay opaque where the decoration passes behind them. */
+.app-shell .studio-home-panel,.app-shell .shared-project-welcome{background-color:var(--canvas)}
+@media(max-width:1200px){.abstract-sculpture-background{display:none}}
+/* The decorative frame is shared by every section, with distinct corner assets. */
+.app-shell .dashboard-workspace .abstract-sculpture-background{display:block;position:absolute;inset:80px 0 0;width:auto;height:auto;z-index:-1;overflow:hidden;opacity:1;pointer-events:none;min-height:calc(100% - 80px)}
+.section-sculpture{position:absolute;object-fit:contain;height:auto;pointer-events:none;user-select:none}
+.section-sculpture-primary{width:clamp(190px,24vw,340px);right:-90px;top:-45px;opacity:.66;transform:rotate(-16deg)}
+.section-sculpture-companion{width:clamp(170px,21vw,290px);left:-125px;top:570px;opacity:.45;transform:rotate(24deg)}
+.dashboard-workspace[data-view='home'] .section-sculpture-primary{top:320px;right:-115px;transform:rotate(18deg)}
+.dashboard-workspace[data-view='projects'] .section-sculpture-primary{top:0;transform:rotate(12deg)}
+.dashboard-workspace[data-view='personal'] .section-sculpture-companion{top:450px;transform:rotate(-25deg)}
+.dashboard-workspace[data-view='pauta'] .section-sculpture-primary{top:5px;transform:rotate(32deg)}
+.dashboard-workspace[data-view='planning'] .section-sculpture-primary{top:-65px;transform:rotate(-32deg)}
+.dashboard-workspace[data-view='activity'] .section-sculpture-companion{top:420px;left:-95px}
+.dashboard-workspace[data-view='team'] .section-sculpture-primary{transform:rotate(22deg)}
+.dashboard-workspace[data-view='branding'] .section-sculpture-companion{transform:rotate(-35deg)}
+@media(max-width:900px){.section-sculpture-primary{width:210px;right:-100px;top:-25px;opacity:.48}.section-sculpture-companion{width:190px;left:-135px;opacity:.34}}
+@media(max-width:600px){.app-shell .dashboard-workspace .abstract-sculpture-background{inset-block-start:60px}.section-sculpture-primary{width:160px;right:-95px;opacity:.38}.section-sculpture-companion{width:150px;left:-115px;top:640px;opacity:.28}}
+@media(forced-colors:active),(prefers-reduced-transparency:reduce){.app-shell .dashboard-workspace .abstract-sculpture-background{display:none}}

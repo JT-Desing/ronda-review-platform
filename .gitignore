@@ -9,3 +9,7 @@ Thumbs.db
 .vscode/
 .idea/
 coverage/
+.backups/
+.worktrees/
+.superpowers/
+!.env.offsite.example

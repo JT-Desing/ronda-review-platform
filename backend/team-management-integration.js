@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {reviewFixture} from './shared-review-qa-fixture.js';
+import {workspaceRepository} from './repositories/workspaces.js';
+import {workspaceService} from './workspace-service.js';
+import http from 'node:http';
+import {createApp} from './app.js';
+import {digest} from './security.js';
+const f=await reviewFixture();
+let server;
+try{
+  const repo=workspaceRepository(f.pool),service=workspaceService(repo);
+  const email=(await f.pool.query('SELECT email FROM users WHERE id=$1',[f.outsider])).rows[0].email;
+  const result=await service.invite(f.space,f.admin,{email,role:'reviewer'});
+  const before=await repo.read(f.space,f.admin);
+  assert.equal(before.members.length,3);assert.equal(before.invitations.length,1);
+  assert.ok(!JSON.stringify(before).includes(result.token));
+  const origin='https://team-qa.invalid',tokens={};
+  for(const id of [f.admin,f.editor]){const token=randomUUID();tokens[id]=token;await f.pool.query("INSERT INTO sessions VALUES($1,$2,now()+interval '1 hour')",[digest(token),id]);}
+  server=http.createServer(createApp({pool:f.pool,origin}));
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const patch=actor=>fetch(`http://127.0.0.1:${server.address().port}/api/workspaces/${f.space}/invitations/${result.invitation.id}`,{method:'PATCH',headers:{Origin:origin,'Content-Type':'application/json',Cookie:`ronda_session=${tokens[actor]}`},body:JSON.stringify({role:'editor'})});
+  assert.equal((await patch(f.editor)).status,403);
+  assert.equal((await patch(f.admin)).status,200);
+  await assert.rejects(service.updateInvitation(f.space,f.editor,result.invitation.id,'admin'),{status:403});
+  await assert.rejects(service.updateInvitation(f.space,f.admin,result.invitation.id,'owner'),{status:400});
+  await service.updateInvitation(f.space,f.admin,result.invitation.id,'editor');
+  const wrongSpace=(await f.pool.query("INSERT INTO workspaces(name) VALUES('Other QA') RETURNING id")).rows[0].id;
+  await f.pool.query("INSERT INTO workspace_members VALUES($1,$2,'admin')",[wrongSpace,f.admin]);
+  await assert.rejects(service.updateInvitation(wrongSpace,f.admin,result.invitation.id,'admin'),{status:404});
+  const account={id:f.outsider,email};
+  await service.accept(account,result.token);
+  const accepted=await repo.read(f.space,f.admin);
+  assert.equal(accepted.invitations.length,0);assert.equal(accepted.members.find(m=>m.id===f.outsider).role,'editor');
+  await assert.rejects(service.updateInvitation(f.space,f.admin,result.invitation.id,'reviewer'),{status:404});
+  await service.updateMember(f.space,f.admin,f.outsider,'reviewer');
+  assert.equal((await repo.read(f.space,f.admin)).members.find(m=>m.id===f.outsider).role,'reviewer');
+  await assert.rejects(service.updateMember(f.space,f.admin,f.admin,null),{status:409});
+  console.log('PASS team: pending visibility, role updates, permissions, isolation, acceptance, active roles and last-admin guard.');
+}finally{if(server)await new Promise(resolve=>server.close(resolve));await f.close();}
