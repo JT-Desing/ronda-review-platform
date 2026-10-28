@@ -25,7 +25,31 @@ Límites operativos: 100 proyectos por espacio, 1000 comentarios por proyecto; s
 
 Volúmenes ronda-prototype_ronda-database y ronda-prototype_ronda-files. Reiniciar contenedores/PC no los elimina. NO ejecutar docker compose down -v ni eliminar estos volúmenes.
 
-Copias en .backups/FECHA_UTC/, con database.dump, files.tar.gz y COMPLETE solo al terminar ambos. No tienen retención automática para evitar borrar respaldo útil; vigilar el espacio. No son respaldo contra pérdida del PC: copiar una versión completa a un disco o servidor externo de confianza. Este directorio está excluido de Git y de la imagen Docker. Las credenciales backend/.env y del túnel se conservan por separado, fuera de Git.
+Copias en .backups/FECHA_UTC/, con database.dump, files.tar.gz y COMPLETE solo al terminar ambos. Se borran las de más de `BACKUP_RETENTION_DAYS` días (14 por defecto) y solo después de completar una nueva. Cada copia incluye todos los archivos, así que ocupan espacio rápido; vigilar el disco. No son respaldo contra pérdida del PC: para eso está el respaldo externo de abajo. Este directorio está excluido de Git y de la imagen Docker. Las credenciales backend/.env y del túnel se conservan por separado, fuera de Git.
+
+Las subidas se escriben a disco (`flush` y `fsync` del directorio) antes de confirmar su fila en PostgreSQL, para que un corte de luz no deje registros apuntando a archivos vacíos.
+
+### Respaldo externo en Cloudflare R2
+
+El servicio `offsite` usa restic: copias cifradas e incrementales de la base y de los archivos cada 6 horas. Solo sube lo que cambió y conserva 4 recientes, 14 diarias, 8 semanales y 6 mensuales. Es opcional (perfil `offsite`) y no modifica el respaldo local.
+
+Configuración, una sola vez:
+
+1. En Cloudflare, R2 → crear el bucket `ronda-backups` sin acceso público. Restic no crea el bucket: si no existe, reintenta varios minutos y falla.
+2. R2 → Manage API tokens → token con permiso "Object Read & Write" limitado a ese bucket. Anotar Access Key ID, Secret Access Key y el endpoint `https://ACCOUNT_ID.r2.cloudflarestorage.com`.
+3. Copiar `backend/.env.offsite.example` como `backend/.env.offsite` y completarlo. Usar una ruta por despliegue dentro del bucket, por ejemplo `/ronda-backups/epayco-mkt`.
+4. Generar `RESTIC_PASSWORD` largo y guardarlo en el gestor de contraseñas del equipo antes de la primera copia. Sin esa contraseña los respaldos no se pueden restaurar.
+5. Iniciar con `docker compose --profile offsite up -d --build offsite` y revisar `docker compose logs offsite`: debe decir `created restic repository` la primera vez y `Offsite backup completed` al terminar.
+
+Verificación (recomendada una vez al mes): restaura el último volcado en una base temporal, comprueba que cada archivo registrado esté en la copia y lee el 10 % de los datos guardados. Borra solo su base temporal.
+
+```sh
+docker compose --profile offsite run --rm --entrypoint sh offsite /usr/local/bin/offsite-verify.sh
+```
+
+Restaurar después de perder el PC, en una máquina nueva con Docker y las mismas variables: `restic snapshots` lista las copias; `restic dump --tag database latest /database.dump > database.dump` recupera la base para `pg_restore`; `restic restore latest --tag files --target /` recupera `/data/files` dentro de un contenedor que monte el volumen de archivos. Restaurar con la API detenida.
+
+El plan gratuito de R2 incluye 10 GB de almacenamiento al mes. El token puede borrar objetos del bucket; si se filtra, revocarlo en Cloudflare y generar otro.
 
 La copia anterior del prototipo sigue dependiendo del perfil de navegador/origen hasta importarla. No borrar datos del navegador antes de completar la importación.
 

@@ -57,6 +57,24 @@ services:
       database:
         condition: service_healthy
 
+  offsite:
+    build: ./backend/offsite
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+      - path: ./backend/.env.offsite
+        required: false
+    environment:
+      OFFSITE_HOST: ronda-local
+    volumes:
+      - ronda-files:/data/files:ro
+    networks: [ronda-network]
+    depends_on:
+      database:
+        condition: service_healthy
+    profiles:
+      - offsite
+
   tunnel:
     image: cloudflare/cloudflared:2026.8.0
     container_name: ronda-cloudflare-tunnel

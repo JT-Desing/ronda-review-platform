@@ -44,6 +44,20 @@ services:
     depends_on:
       database:
         condition: service_healthy
+  offsite:
+    build: ./backend/offsite
+    restart: unless-stopped
+    env_file:
+      - ${RONDA_BACKEND_ENV}
+      - path: ${RONDA_OFFSITE_ENV:-./backend/.env.offsite}
+        required: false
+    environment:
+      OFFSITE_HOST: epayco-mkt
+    volumes: ["epayco-files:/data/files:ro"]
+    depends_on:
+      database:
+        condition: service_healthy
+    profiles: [offsite]
   tunnel:
     image: cloudflare/cloudflared:2026.8.0
     restart: unless-stopped
