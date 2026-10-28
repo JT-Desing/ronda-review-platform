@@ -9,7 +9,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
 
-FROM docker.io/nginxinc/nginx-unprivileged:1.29-alpine
+FROM docker.io/nginxinc/nginx-unprivileged:1.31-alpine
 
 USER root
 RUN apk upgrade --no-cache
