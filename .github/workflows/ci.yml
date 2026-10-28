@@ -80,3 +80,58 @@ jobs:
           docker run --rm --add-host api:127.0.0.1 ronda-web:ci nginx -t
       - name: Build API image
         run: docker build -t ronda-api:ci backend
+
+  stack:
+    needs: [frontend, backend, images]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Write a throwaway environment for the stack
+        run: |
+          pass=$(openssl rand -hex 24)
+          cat > backend/.env <<ENV
+          POSTGRES_USER=ronda
+          POSTGRES_DB=ronda
+          POSTGRES_PASSWORD=$pass
+          DATABASE_URL=postgres://ronda:$pass@database:5432/ronda
+          APP_ORIGIN=http://localhost:8080
+          ENV
+      - name: Start web, API and database
+        run: docker compose up -d --build --wait --wait-timeout 180 ronda api database
+      - name: Security smoke against the running stack
+        run: node scripts/production-security-smoke.mjs
+        env:
+          RONDA_ORIGIN: http://localhost:8080
+          RONDA_SMOKE_NO_REPORT: "1"
+      - uses: grafana/setup-k6-action@43b9fc21641a76002687994433dd586f56e791b1 # v1.2.2
+      - name: Load smoke (k6)
+        run: k6 run tests/load/smoke.js
+        env:
+          RONDA_ORIGIN: http://localhost:8080
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --no-color --tail 200 ronda api database
+      - if: always()
+        run: docker compose down -v
+
+  sonarcloud:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Skip when SonarCloud is not configured
+        id: gate
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: echo "enabled=$([ -n "$SONAR_TOKEN" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+      - if: steps.gate.outputs.enabled == 'true'
+        uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # v8.4.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
