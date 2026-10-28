@@ -1,0 +1,4 @@
+.feature-load-error{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:24px;color:var(--text-primary,#f4f0f8);background:var(--surface-1,#17141c);border:1px solid var(--border-subtle,#3b3344);border-radius:14px;text-align:center}
+.feature-load-error button{min-height:40px;padding:0 14px;border:1px solid var(--border-subtle,#51455e);border-radius:10px;color:inherit;background:var(--surface-2,#211c28);cursor:pointer}
+.feature-load-error button:hover{border-color:var(--accent,#c69cff)}
+.feature-load-error button:focus-visible{outline:2px solid var(--accent,#c69cff);outline-offset:2px}

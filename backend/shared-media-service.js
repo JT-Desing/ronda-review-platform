@@ -5,18 +5,31 @@ import {requireReviewAction} from './shared-review-policy.js';
 import {parseRange} from './shared-range.js';
 import {assetDto,versionDto,recordEvent} from './shared-review-dto.js';
 import {inspectLink} from './external-link.js';
-const types={'image/png':'image','image/jpeg':'image','image/webp':'image','video/mp4':'video'};
+const types={'image/png':'image','image/jpeg':'image','image/webp':'image','video/mp4':'video','application/pdf':'pdf'};
+const fileTypes={html:'text/html',htm:'text/html',css:'text/css',js:'text/plain',jsx:'text/plain',ts:'text/plain',tsx:'text/plain',json:'application/json',xml:'application/xml',md:'text/plain',txt:'text/plain',csv:'text/csv',zip:'application/zip',doc:'application/msword',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',odt:'application/vnd.oasis.opendocument.text',ppt:'application/vnd.ms-powerpoint',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',odp:'application/vnd.oasis.opendocument.presentation',xls:'application/vnd.ms-excel',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',ods:'application/vnd.oasis.opendocument.spreadsheet'};
+const fileExtensions=new Set(Object.keys(fileTypes));
+const fileMimes=new Set(['application/octet-stream','application/zip','application/x-zip-compressed','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.oasis.opendocument.text','application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation','application/vnd.oasis.opendocument.presentation','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.oasis.opendocument.spreadsheet','text/html','application/xhtml+xml','text/css','text/javascript','application/javascript','application/json','application/xml','text/xml','text/plain','text/csv']);
 const quota=2147483648;
-function uploadInput(input){
-  if(!input||typeof input.name!=='string'||!input.name.trim()||input.name.length>255||!Object.hasOwn(types,input.mime)||!Number.isInteger(input.size)||input.size<1||input.size>104857600)throw workspaceError(400,'Archivo inválido; prueba hasta 100 MB.');
+export function uploadInput(input){
+  const extension=typeof input?.name==='string'?input.name.split('.').at(-1)?.toLowerCase():'';
+  const providedMime=input?.mime?.toLowerCase();
+  const kind=types[providedMime]||(fileExtensions.has(extension)&&fileMimes.has(providedMime)?(['html','htm'].includes(extension)?'html':'file'):null);
+  if(!input||typeof input.name!=='string'||!input.name.trim()||input.name.length>255||!kind||!Number.isInteger(input.size)||input.size<1)throw workspaceError(400,'Archivo inválido o tipo no compatible.');
+  if(input.size>104857600)throw workspaceError(413,'Cada archivo debe pesar como máximo 100 MB.');
   if(!UUID_PATTERN.test(input.projectId)||input.assetId&&!UUID_PATTERN.test(input.assetId))throw workspaceError(400,'Proyecto o pieza inválidos.');
-  return {...input,name:input.name.trim(),requestId:requestId(input.requestId),kind:types[input.mime]};
+  return {...input,mime:kind==='file'&&providedMime==='application/octet-stream'?fileTypes[extension]:providedMime,name:input.name.trim(),requestId:requestId(input.requestId),kind};
 }
-function signature(bytes,mime){
+export function mediaSignature(bytes,mime){
   if(mime==='image/png')return bytes.subarray(0,8).equals(Buffer.from('89504e470d0a1a0a','hex'));
   if(mime==='image/jpeg')return bytes.length>=3&&bytes[0]===255&&bytes[1]===216&&bytes[2]===255;
   if(mime==='image/webp')return bytes.subarray(0,4).toString()==='RIFF'&&bytes.subarray(8,12).toString()==='WEBP';
-  return bytes.length>=12&&bytes.subarray(4,8).toString()==='ftyp';
+  if(mime==='application/pdf')return bytes.subarray(0,5).toString()==='%PDF-';
+  if(mime==='video/mp4')return bytes.length>=12&&bytes.subarray(4,8).toString()==='ftyp';
+  if(mime.startsWith('application/vnd.openxmlformats-officedocument.')||mime.startsWith('application/vnd.oasis.opendocument.')||mime==='application/zip'||mime==='application/x-zip-compressed')return bytes.subarray(0,2).toString()==='PK';
+  if(mime==='application/msword'||mime==='application/vnd.ms-powerpoint'||mime==='application/vnd.ms-excel')return bytes.subarray(0,8).equals(Buffer.from('d0cf11e0a1b11ae1','hex'));
+  if(mime==='application/octet-stream')return bytes.subarray(0,2).toString()==='PK'||bytes.subarray(0,5).toString()==='%PDF-';
+  if(bytes.includes(0))return false;
+  try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes.subarray(0,Math.min(bytes.length,4096)))!=='';}catch{return false;}
 }
 export function sharedMediaService(repository,storage,inspect=inspectLink){
   const file=async(db,space,id)=>{
@@ -39,7 +52,7 @@ export function sharedMediaService(repository,storage,inspect=inspectLink){
         return {asset:assetDto({...asset,active_version_id:version.id})};
       },true);
     },
-    async readVersion(space,actor,c){return repository.access(space,actor,async(db,role)=>({role,asset:assetDto(await repository.asset(db,space,c.projectId,c.assetId)),version:await versionDto(db,await repository.version(db,space,c.projectId,c.assetId,c.versionId)),members:(await db.query('SELECT u.id,u.name,m.role FROM workspace_members m JOIN users u ON u.id=m.user_id WHERE m.workspace_id=$1 ORDER BY u.name,u.id',[space])).rows}));},
+    async readVersion(space,actor,c){return repository.access(space,actor,async(db,role)=>{const asset=await repository.asset(db,space,c.projectId,c.assetId);const counts=(await db.query("SELECT count(*) FILTER(WHERE status='open')::integer AS open_comments FROM shared_version_comments WHERE version_id=$1",[asset.active_version_id])).rows[0];return {role,asset:assetDto({...asset,...counts}),version:await versionDto(db,await repository.version(db,space,c.projectId,c.assetId,c.versionId)),members:(await db.query('SELECT u.id,u.name,m.role FROM workspace_members m JOIN users u ON u.id=m.user_id WHERE m.workspace_id=$1 ORDER BY u.name,u.id',[space])).rows};});},
     async listAssets(space,actor,projectId,trashed=false){
       return repository.access(space,actor,async(db,role)=>{await repository.project(db,space,projectId);if(trashed)requireReviewAction(role,'upload');const rows=(await db.query(`SELECT a.*,v.file_id AS preview_file_id,f.size AS preview_size,v.number AS version_number,(SELECT count(*)::integer FROM shared_version_comments c WHERE c.version_id=a.active_version_id AND c.status='open') AS open_comments,(SELECT count(*)::integer FROM shared_review_decisions d WHERE d.version_id=a.active_version_id AND d.active=true) AS reviewer_count,(SELECT count(*)::integer FROM shared_review_decisions d WHERE d.version_id=a.active_version_id AND d.active=true AND d.decision='approved') AS approved_count FROM shared_assets a LEFT JOIN shared_versions v ON v.id=a.active_version_id LEFT JOIN shared_media_files f ON f.id=v.file_id WHERE a.workspace_id=$1 AND a.project_id=$2 AND a.deleted_at IS ${trashed?'NOT NULL':'NULL'} ORDER BY a.sort_order,a.created_at,a.id`,[space,projectId])).rows;return {assets:rows.map(assetDto)};});
     },
@@ -64,6 +77,20 @@ export function sharedMediaService(repository,storage,inspect=inspectLink){
         if(row.revision!==revision)throw workspaceError(409,'La pieza cambió. Actualiza antes de continuar.');
         await db.query('UPDATE shared_assets SET deleted_at=CASE WHEN $1 THEN now() ELSE NULL END,revision=revision+1 WHERE id=$2',[deleted,assetId]);
         await recordEvent(db,space,actor,deleted?'review.asset_trashed':'review.asset_restored',{projectId,assetId});return {ok:true};
+      },true);
+    },
+    async trashAssets(space,actor,projectId,{assets}){
+      if(!Array.isArray(assets)||assets.length<1||assets.length>100||assets.some(item=>!item||!UUID_PATTERN.test(item.id)||!Number.isInteger(item.revision))||new Set(assets.map(item=>item.id)).size!==assets.length)throw workspaceError(400,'La selección de piezas no es válida.');
+      return repository.access(space,actor,async(db,role)=>{
+        requireReviewAction(role,'upload');await repository.project(db,space,projectId);
+        const ids=assets.map(item=>item.id).sort();
+        const rows=(await db.query('SELECT id,revision,deleted_at FROM shared_assets WHERE workspace_id=$1 AND project_id=$2 AND id=ANY($3::uuid[]) ORDER BY id FOR UPDATE',[space,projectId,ids])).rows;
+        if(rows.length!==assets.length||rows.some(row=>row.deleted_at))throw workspaceError(404,'Una o más piezas ya no están disponibles. Actualiza la entrega.');
+        const revisions=new Map(assets.map(item=>[item.id,item.revision]));
+        if(rows.some(row=>row.revision!==revisions.get(row.id)))throw workspaceError(409,'Una o más piezas cambiaron. Actualiza antes de continuar.');
+        await db.query('UPDATE shared_assets SET deleted_at=now(),revision=revision+1 WHERE workspace_id=$1 AND project_id=$2 AND id=ANY($3::uuid[])',[space,projectId,ids]);
+        for(const assetId of ids)await recordEvent(db,space,actor,'review.asset_trashed',{projectId,assetId});
+        return {ok:true,count:ids.length};
       },true);
     },
     async listVersions(space,actor,projectId,assetId){
@@ -148,7 +175,7 @@ export function sharedMediaService(repository,storage,inspect=inspectLink){
       try{
         const received=await storage.stage({workspaceId:space,uploadId:id,stream,maxBytes:Number(upload.size)});
         if(received.size!==Number(upload.size))throw workspaceError(400,'Carga incompleta.');
-        if(!signature(await storage.prefix(key),upload.mime))throw workspaceError(415,'Contenido no compatible con el tipo declarado.');
+        if(!mediaSignature(await storage.prefix(key),upload.mime))throw workspaceError(415,'Contenido no compatible con el tipo declarado.');
         await repository.access(space,actor,async(db,role)=>{
           requireReviewAction(role,'upload');const row=await file(db,space,id);
           if(row.state!=='staging'||row.expires_at<=new Date())throw workspaceError(409,'Carga caducada.');
@@ -161,8 +188,10 @@ export function sharedMediaService(repository,storage,inspect=inspectLink){
       return repository.access(space,actor,async(db,role)=>{
         requireReviewAction(role,download?'download':'read');const row=await file(db,space,id);
         if(row.state!=='ready')throw workspaceError(404,'Archivo no disponible.');
+        // Saved media URLs obey the same trash boundary as the review room.
+        await repository.asset(db,space,row.project_id,row.asset_id);
         let bounds;try{bounds=parseRange(range,Number(row.size));}catch(error){error.size=Number(row.size);throw error;}
-        return {stream:storage.open({key:row.object_key,...bounds}),size:Number(row.size),mime:row.mime,name:row.name,range:bounds};
+        return {stream:storage.open({key:row.object_key,...bounds}),size:Number(row.size),mime:row.mime,name:row.name,kind:row.kind,range:bounds};
       });
     },
   };

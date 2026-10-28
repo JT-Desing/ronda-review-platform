@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Ronda · Anotaciones web",
+  "short_name": "Ronda",
+  "version": "1.0.0",
+  "description": "Anota sitios web en vivo desde una revisión de Ronda. El acceso se concede por sitio.",
+  "minimum_chrome_version": "127",
+  "permissions": ["scripting", "storage"],
+  "host_permissions": ["https://ronda.repolite.link/*"],
+  "optional_host_permissions": ["https://*/*"],
+  "background": { "service_worker": "service-worker.js", "type": "module" },
+  "action": { "default_title": "Conectar sitio con Ronda", "default_popup": "popup/popup.html" },
+  "content_scripts": [{
+    "matches": ["https://ronda.repolite.link/*"],
+    "js": ["content/ronda-app-bridge.js"],
+    "run_at": "document_idle"
+  }]
+}

@@ -1,0 +1,27 @@
+# Borrador de ficha — Chrome Web Store
+
+**Nombre:** Ronda — Anotaciones web  
+**Resumen (≤132 caracteres):** Revisa páginas web en vivo desde Ronda con comentarios y marcas ancladas al documento.  
+**Categoría sugerida:** Productividad  
+**Idioma:** Español
+
+## Descripción
+
+Conecta una página HTTPS de tu proyecto con Ronda para revisar su contenido en vivo. Selecciona texto o usa lápiz, flecha, rectángulo y texto; las anotaciones se guardan en coordenadas de la página y siguen su desplazamiento.
+
+La extensión no es necesaria para iniciar sesión ni para el resto de Ronda. Al conectar un proyecto, Chrome pide permiso únicamente para el origen de esa web. Puedes revocarlo cuando quieras. Si no la instalas, puedes seguir revisando capturas fijas.
+
+## Permisos — explicación para revisión
+
+- `scripting`: inyectar el puente de scroll/selección únicamente en el origen que el usuario autorizó.
+- `storage`: recordar localmente los orígenes que el usuario conectó.
+- Acceso requerido a `https://ronda.repolite.link/*`: intercambiar el origen actual del visor y el estado de conexión.
+- Acceso HTTPS opcional: se solicita en tiempo de ejecución solo para el origen exacto del proyecto abierto, tras pulsar el botón de conexión.
+
+## Pendiente antes del envío
+
+- Cuenta de desarrollador de Chrome Web Store habilitada y aceptación de su acuerdo/registro por el titular.
+- Confirmar correo de soporte; `soporte@repolite.link` en `PRIVACY.md` es un placeholder.
+- Publicar la política de privacidad en URL HTTPS y completar el cuestionario de uso de datos.
+- Icono de tienda de 128×128, capturas de ficha, validar comportamiento real en Chrome/Edge y entregar ZIP de producción.
+- Enviar a revisión, esperar aprobación, copiar el ID/listing URL y configurar `VITE_RONDA_EXTENSION_STORE_URL` en el build de Ronda.

@@ -21,9 +21,6 @@
 .app-shell .comments-panel .restored-composer .composer-input:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px #cbb4ee18}
 .app-shell .comments-panel .restored-composer textarea{display:block;width:100%;height:66px;min-height:66px;max-height:140px;padding:0;border:0;outline:0;box-shadow:none;border-radius:0;background:transparent;color:var(--text);font:inherit;font-size:13px;line-height:1.55;resize:vertical}
 .app-shell .comments-panel .restored-composer .composer-meta{display:flex;justify-content:space-between;gap:8px;margin-top:8px;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
-.app-shell .comments-panel .restored-composer .composer-bottom{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.app-shell .comments-panel .restored-composer .comment-priority{display:flex;flex-direction:row;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
-.app-shell .comments-panel .restored-composer .comment-priority select{width:auto;max-width:150px;min-height:36px;height:36px;padding:0 28px 0 10px;background:var(--surface-2);color:var(--text);border:1px solid var(--line);border-radius:7px;font:inherit;font-size:12px}
 .app-shell .comments-panel .restored-composer .send{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;min-height:40px;margin:0;padding:0;border:0;border-radius:9px;background:var(--accent);color:var(--canvas);cursor:pointer;transition:background-color 120ms ease,transform 120ms ease}
 .app-shell .comments-panel .restored-composer .send:active:not(:disabled){transform:scale(.96)}
 .app-shell .comments-panel .restored-composer .send:disabled{background:var(--surface-3);color:var(--muted);opacity:.5;cursor:default}

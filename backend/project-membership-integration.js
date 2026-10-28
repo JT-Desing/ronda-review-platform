@@ -1,0 +1,46 @@
+import assert from 'node:assert/strict';
+import http from 'node:http';
+import {randomUUID} from 'node:crypto';
+import {reviewFixture} from './shared-review-qa-fixture.js';
+import {createApp} from './app.js';
+import {digest} from './security.js';
+import {localStorage} from './storage/local.js';
+const f=await reviewFixture(),origin='http://project-members-qa.invalid';let server;
+try{
+ server=http.createServer(createApp({pool:f.pool,origin,sharedStorage:localStorage(f.root)}));await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const base=`http://127.0.0.1:${server.address().port}`,tokens={};
+ for(const actor of [f.admin,f.editor,f.reviewer,f.outsider]){tokens[actor]=randomUUID();await f.pool.query("INSERT INTO sessions VALUES($1,$2,now()+interval '1 day')",[digest(tokens[actor]),actor]);}
+ const call=(path,method='GET',body,actor=f.admin)=>fetch(base+path,{method,headers:{Origin:origin,Cookie:`ronda_session=${tokens[actor]}`,'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});
+ const json=async(path,method,body,actor)=>{const r=await call(path,method,body,actor);assert.ok(r.ok,`${r.status}: ${await r.clone().text()}`);return r.json();};
+ const gallery=`/api/workspaces/${f.space}/projects`,request={name:'Seleccionado QA',client:'Sintético',requestId:randomUUID(),members:[{userId:f.editor,role:'reviewer'}]};
+ const created=await json(gallery,'POST',request),id=created.project.id,path=gallery+'/'+id;
+ assert.equal((await json(gallery,'POST',request)).project.id,id);
+ assert.equal((await call(gallery,'POST',{...request,members:[]})).status,409);
+ assert.equal((await json(path,'GET',undefined,f.editor)).workspace.role,'reviewer');
+ assert.equal((await call(path,'GET',undefined,f.reviewer)).status,404);
+ assert.equal((await call(path,'GET',undefined,f.outsider)).status,404);
+ assert.ok(!(await json(gallery,'GET',undefined,f.reviewer)).projects.some(p=>p.id===id));
+ assert.ok((await json(gallery,'GET',undefined,f.reviewer)).projects.some(p=>p.id===f.project),'legacy project still visible');
+ assert.equal((await call(path,'PATCH',{name:'No',revision:0},f.editor)).status,403);
+ assert.equal((await call(path+'/comments','POST',{text:'Comentario permitido',requestId:randomUUID()},f.editor)).status,201);
+ assert.equal((await call(path+'/members','PUT',{members:[],revision:0},f.editor)).status,403);
+ assert.equal((await call(path+'/members','PUT',{members:[{userId:f.outsider,role:'reviewer'}],revision:0})).status,400);
+ assert.equal((await call(path+'/members','PUT',{members:[{userId:f.reviewer,role:'editor'}],revision:0})).status,400);
+ const png=Buffer.from('89504e470d0a1a0a00000000','hex');
+ const upload=await json(path+'/uploads','POST',{name:'qa.png',mime:'image/png',size:png.length,requestId:randomUUID()});
+ const uploadPath=`/api/workspaces/${f.space}/uploads/${upload.uploadId}`;
+ assert.equal((await call(uploadPath+'/complete','POST',{},f.reviewer)).status,404);
+ const bytes=await fetch(base+uploadPath+'/content',{method:'PUT',headers:{Origin:origin,Cookie:`ronda_session=${tokens[f.admin]}`,'Content-Type':'image/png'},body:png});assert.equal(bytes.status,200);
+ const complete=await json(uploadPath+'/complete','POST',{}),media=`/api/workspaces/${f.space}/media/${complete.version.fileId}`;
+ assert.equal((await call(media,'GET',undefined,f.editor)).status,200);
+ assert.equal((await call(media,'GET',undefined,f.reviewer)).status,404);
+ assert.equal((await call(path+'/uploads','POST',{name:'no.png',mime:'image/png',size:12,requestId:randomUUID()},f.editor)).status,403);
+ await json(path+'/members','PUT',{revision:0,members:[]});
+ assert.equal((await call(media,'GET',undefined,f.editor)).status,404,'revoked participant cannot read file directly');
+ assert.equal((await call(path+'/assets','GET',undefined,f.editor)).status,404);
+ assert.equal((await call(path+'/members','PUT',{revision:0,members:[]})).status,409);
+ await json(path+'/members','PUT',{revision:1});
+ assert.equal((await call(path,'GET',undefined,f.reviewer)).status,200,'explicit team visibility restores team access');
+ assert.equal((await json(path)).comments.length,1,'membership changes preserve comments');
+ console.log('PASS project membership HTTP isolation, per-project roles, media, revocation, legacy access and idempotency');
+}finally{if(server)await new Promise(r=>server.close(r));await f.close();}

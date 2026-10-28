@@ -3,16 +3,16 @@ import { createReadStream, createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import { Transform } from 'node:stream';
 import { randomUUID } from 'node:crypto';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import { reply } from '../http.js';
 import { servedFileType, decodeFileName } from '../file-policy.js';
 import { syncDirectories } from '../storage/durable.js';
-export async function handleFiles({ req, res, path, account, pool }) {
+export async function handleFiles({ req, res, path, account, pool, fileRoot='/data/files' }) {
   const fileMatch = path?.match(/^\/api\/files\/([0-9a-f-]{36})$/);
   if (fileMatch) {
     if (!account) return reply(res, 401, { error: 'Inicia sesión.' });
     const id = fileMatch[1];
-    const dir = `/data/files/${account.id}`;
+    const dir = join(fileRoot,account.id);
     const location = `${dir}/${id}`;
     if (req.method === 'PUT') {
       const size = Number(req.headers['content-length']);

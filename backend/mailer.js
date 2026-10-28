@@ -9,9 +9,9 @@ export function createMailer(env=process.env,transportFactory=nodemailer.createT
   return {
     enabled:true,
     verify:()=>transport.verify(),
-    send:async({to,subject,text,html})=>{
+    send:async({to,subject,text,html,attachments})=>{
       if(typeof to!=='string'||!/^\S+@\S+\.\S+$/.test(to)||/[\r\n]/.test(to)||typeof subject!=='string'||/[\r\n]/.test(subject)||!text)throw new Error('Mensaje inválido');
-      return transport.sendMail({from,to,subject,text,...(html?{html}:{})});
+      return transport.sendMail({from,to,subject,text,...(html?{html}:{}),...(Array.isArray(attachments)?{attachments}:{})});
     },
     close:()=>transport.close(),
   };

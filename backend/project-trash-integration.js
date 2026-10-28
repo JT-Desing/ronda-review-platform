@@ -22,5 +22,15 @@ try{
  await service.trash(f.space,f.admin,f.project,{...input,revision:deleted.revision},true);
  assert.equal((await service.read(f.space,f.admin,f.project)).comments[0].text,'Retained comment');
  assert.equal((await f.pool.query("SELECT count(*)::integer AS n FROM workspace_events WHERE action IN ('project.trashed','project.restored')")).rows[0].n,2);
- console.log('PASS project trash: admin, confirmation, CAS, hidden access, restore and retained comments.');
+ const restored=(await service.read(f.space,f.admin,f.project)).project;
+ await service.trash(f.space,f.admin,f.project,{revision:restored.revision,confirmName:restored.name});
+ const trashed=(await service.list(f.space,f.admin)).deletedProjects.find(item=>item.id===f.project);
+ await assert.rejects(service.deletePermanently(f.space,f.editor,f.project,{revision:trashed.revision,confirmName:trashed.name,permanent:true}),{status:403});
+ await assert.rejects(service.deletePermanently(f.space,f.admin,f.project,{revision:trashed.revision,confirmName:'wrong',permanent:true}),{status:409});
+ await assert.rejects(service.deletePermanently(f.space,f.admin,f.project,{revision:trashed.revision,confirmName:trashed.name,permanent:false}),{status:400});
+ await service.deletePermanently(f.space,f.admin,f.project,{revision:trashed.revision,confirmName:trashed.name,permanent:true},{discardUncommitted:async()=>{}});
+ await assert.rejects(service.read(f.space,f.admin,f.project),{status:404});
+ assert.equal((await f.pool.query("SELECT count(*)::integer AS n FROM shared_project_comments WHERE project_id=$1",[f.project])).rows[0].n,0);
+ assert.equal((await f.pool.query("SELECT count(*)::integer AS n FROM workspace_events WHERE action='project.permanently_deleted'")).rows[0].n,1);
+ console.log('PASS project trash: admin, confirmation, CAS, hidden access, restore, permanent delete and audit event.');
 }finally{await f.close();}

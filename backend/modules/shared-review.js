@@ -11,14 +11,17 @@ export const isSharedReviewPath=path=>/^\/api\/workspaces\/[^/]+\/(?:media|uploa
 export async function handleSharedReview({req,res,path,account,pool,sharedStorage}){
   if(!account)return reply(res,401,{error:'Inicia sesión.'});
   const parts=path.split('/').filter(Boolean),space=parts[2];
-  const repository=sharedReviewRepository(pool),media=sharedMediaService(repository,sharedStorage||localStorage());
+  let scopedProjectId=parts[3]==='projects'&&UUID_PATTERN.test(parts[4]||'')?parts[4]:undefined;
+  if(UUID_PATTERN.test(space||'')&&['media','uploads'].includes(parts[3])&&UUID_PATTERN.test(parts[4]||''))scopedProjectId=(await pool.query('SELECT project_id FROM shared_media_files WHERE workspace_id=$1 AND id=$2',[space,parts[4]])).rows[0]?.project_id;
+  const repository=sharedReviewRepository(pool,{projectId:scopedProjectId}),media=sharedMediaService(repository,sharedStorage||localStorage());
   const input=async(max=262144)=>{const data=await body(req,max);if(!data||typeof data!=='object'||Array.isArray(data))throw workspaceError(400,'Se requiere un objeto JSON.');return data;};
   const uuid=value=>{if(!UUID_PATTERN.test(value||''))throw workspaceError(404,'Recurso no disponible.');return value;};uuid(space);
   if(parts[3]==='media'&&parts.length===5){
     uuid(parts[4]);if(req.method!=='GET')return reply(res,405,{error:'Método no permitido.'});
     const download=new URL(req.url,'http://local').searchParams.get('download')==='1';
     let file;try{file=await media.readFile(space,account.id,parts[4],{download,range:req.headers.range});}catch(error){if(error.status===416){res.setHeader('Accept-Ranges','bytes');res.setHeader('Content-Range',`bytes */${error.size}`);}throw error;}
-    const range=file.range,headers={'Content-Type':file.mime,'Content-Length':range?range.end-range.start+1:file.size,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Accept-Ranges':'bytes','Content-Disposition':`${download?'attachment':'inline'}; filename*=UTF-8''${encodeURIComponent(file.name)}`};
+    const attachment=download||['file','html'].includes(file.kind),range=file.range,headers={'Content-Type':file.mime,'Content-Length':range?range.end-range.start+1:file.size,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Accept-Ranges':'bytes','Content-Disposition':`${attachment?'attachment':'inline'}; filename*=UTF-8''${encodeURIComponent(file.name)}`};
+    if(file.kind==='html')headers['Content-Security-Policy']="default-src 'none'; sandbox";
     if(range)headers['Content-Range']=`bytes ${range.start}-${range.end}/${file.size}`;
     res.writeHead(range?206:200,headers);await pipeline(file.stream,res);return;
   }
@@ -31,6 +34,7 @@ export async function handleSharedReview({req,res,path,account,pool,sharedStorag
   if(parts[3]!=='projects')return reply(res,404,{error:'Ruta no disponible.'});
   const projectId=uuid(parts[4]);
   if(parts[5]==='assets'&&parts[6]==='order'&&parts.length===7&&req.method==='PUT')return reply(res,200,await media.orderAssets(space,account.id,projectId,await input()));
+  if(parts[5]==='assets'&&parts[6]==='trash'&&parts.length===7&&req.method==='POST')return reply(res,200,await media.trashAssets(space,account.id,projectId,await input()));
   if(parts[5]==='assets'&&parts[6]==='trash'&&parts.length===7&&req.method==='GET')return reply(res,200,await media.listAssets(space,account.id,projectId,true));
   if(parts[5]==='assets'&&parts.length===6&&req.method==='POST')return reply(res,201,await media.addLink(space,account.id,{...await input(),projectId}));
   if(parts[5]==='uploads'&&parts.length===6&&req.method==='POST')return reply(res,201,await media.reserve(space,account.id,{...await input(),projectId}));

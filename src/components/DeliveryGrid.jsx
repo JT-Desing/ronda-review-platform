@@ -2,6 +2,7 @@ import {BrandLoader} from './BrandLoader.jsx';
 import React, { useEffect, useState } from 'react';
 import { useRonda } from '../state/RondaContext.jsx';
 import {resolveAssetVersion} from '../domain/asset-versions.js';
+import {duplicateAssetNamePositions} from '../domain/duplicate-asset-names.js';
 import {demoSession} from '../state/demoSession.js';
 import './delivery-grid-polish.css';
 import {DeliveryPositionPicker} from './DeliveryPositionPicker.js';
@@ -27,9 +28,10 @@ export function fileKind(file){const extension=file.name.split('.').at(-1).toLow
 export function AssetPreview({asset}){
   const [url,setUrl]=useState(null);const [error,setError]=useState(false);
   useEffect(()=>{let active=true;let preview;setError(false);setUrl(null);if(asset.externalUrl||!['image','video'].includes(asset.type))return;fileStore(asset.fileId||asset.id).then(file=>{if(!active)return;if(!file){setError(true);return}preview=URL.createObjectURL(file);setUrl(preview)}).catch(()=>{if(active)setError(true)});return()=>{active=false;if(preview)URL.revokeObjectURL(preview)}},[asset.id,asset.fileId,asset.type,asset.externalUrl]);
-  if(asset.externalUrl)return <span className="preview-placeholder">↗ {{image:'Imagen por enlace',video:'Video por enlace',web:'Artefacto web'}[asset.type]||'Enlace'}</span>;
-  if(url)return asset.type==='image'?<img src={url} alt={asset.name} draggable={false} onError={()=>setError(true)}/>:<video src={url} muted preload="metadata" onLoadedMetadata={e=>{if(e.currentTarget.duration>0)e.currentTarget.currentTime=Math.min(.1,e.currentTarget.duration)}}/>;
-  return <span className="preview-placeholder">{error?'Archivo no disponible':asset.type==='image'||asset.type==='video'?<BrandLoader size="compact" label="Cargando vista previa…"/>:asset.type.toUpperCase()}</span>;
+  const duplicateLabel=asset.duplicateName&&<small className="asset-name-disambiguator">Nombre repetido · pieza {asset.duplicateName.index} de {asset.duplicateName.count}</small>;
+  if(asset.externalUrl)return <><span className="preview-placeholder">↗ {{image:'Imagen por enlace',video:'Video por enlace',web:'Artefacto web'}[asset.type]||'Enlace'}</span>{duplicateLabel}</>;
+  if(url)return <>{asset.type==='image'?<img src={url} alt={asset.name} draggable={false} onError={()=>setError(true)}/>:<video src={url} muted preload="metadata" onLoadedMetadata={e=>{if(e.currentTarget.duration>0)e.currentTarget.currentTime=Math.min(.1,e.currentTarget.duration)}}/>}{duplicateLabel}</>;
+  return <><span className="preview-placeholder">{error?'Archivo no disponible':asset.type==='image'||asset.type==='video'?<BrandLoader size="compact" label="Cargando vista previa…"/>:asset.type.toUpperCase()}</span>{duplicateLabel}</>;
 }
 
 import {assetsForProject,projectAssetOrder} from '../domain/project-assets.js';
@@ -38,6 +40,8 @@ export function DeliveryGrid({onSelect,onNotify,onRemove,projectId='project-amar
   const [mode,setMode]=useState('organize');const [selected,setSelected]=useState(null);const [dropTarget,setDropTarget]=useState(null);
   const [removing,setRemoving]=useState(null);
   const assets=assetsForProject(state.assets||[],projectId).map(asset=>resolveAssetVersion(state,asset));
+  const duplicateNames=duplicateAssetNamePositions(assets);
+  for(const asset of assets)asset.duplicateName=duplicateNames.get(asset.id);
   const upload=async event=>{const files=Array.from(event.target.files||[]);event.target.value='';setBusy(true);let added=0;try{for(const file of files){const id=crypto.randomUUID();await fileStore(id,file);act('asset/add',{id,name:file.name,type:fileKind(file),mime:file.type,size:file.size,extension:file.name.includes('.')?file.name.split('.').at(-1).toUpperCase():'SIN EXT.',projectId});added++}}catch{onNotify('No se pudo guardar un archivo. Revisa tu conexión y el espacio del servidor.')}finally{setBusy(false);if(added)onNotify(`${added} archivos guardados en el servidor`)}};
   const select=async asset=>{try{onSelect({...asset,identity:asset.identity||asset.id,url:await assetReviewUrl(asset),duration:asset.type==='image'||asset.type==='web'?1:0})}catch{onNotify('No se pudo abrir la pieza o enlace')}};
   const move=(id,offset)=>{const from=assets.findIndex(a=>a.id===id);const to=Math.max(0,Math.min(assets.length-1,from+offset));const order=assets.map(a=>a.id);order.splice(to,0,...order.splice(from,1));act('asset/order',{order:projectAssetOrder(state.assets||[],projectId,order)})};

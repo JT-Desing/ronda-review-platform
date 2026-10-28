@@ -4,10 +4,11 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import pg from 'pg';
 import {migrate} from './migration-runner.js';
+import {validateQaDatabaseTarget} from './qa-db-target.js';
 export async function reviewFixture(){
   const url=process.env.RONDA_QA_DATABASE_URL;
-  if(!url||!/^ronda_qa_[a-z0-9_]+$/.test(new URL(url).pathname.slice(1)))throw new Error('Dedicated QA database required');
-  const pool=new pg.Pool({connectionString:url});
+  const target=validateQaDatabaseTarget(url,process.env.RONDA_QA_CONTAINER);
+  const pool=new pg.Pool({connectionString:target.toString()});
   if((await pool.query("SELECT to_regclass('public.users') AS name")).rows[0].name)throw new Error('QA database must be empty');
   await migrate(pool);
   const users=[];

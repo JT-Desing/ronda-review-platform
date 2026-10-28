@@ -1,0 +1,6 @@
+# Explicit production owner authorized by the operator. This identifier is not a credential.
+# Authentication still requires the account's valid server session.
+services:
+  api:
+    environment:
+      RONDA_SUPERADMIN_IDS: 4f9b0993-c11d-43af-8edf-f52c0803d08a

@@ -21,7 +21,7 @@ export default function LensNavigation({children,className='',label='Espacio',cu
     {React.Children.map(children,(child,index)=>{
       if(!React.isValidElement(child))return child;
       const title=React.Children.toArray(child.props.children).find(item=>React.isValidElement(item)&&item.type==='span')?.props.children;
-      return React.cloneElement(child,{'data-lens-id':String(index),'data-lens-focused':target===String(index)?'true':'false','aria-current':child.props.className==='active'?'page':undefined,'aria-label':typeof title==='string'?title:child.props['aria-label']});
+      return React.cloneElement(child,{'data-lens-id':String(index),'data-lens-focused':target===String(index)?'true':'false','aria-current':child.props.className==='active'?'page':undefined,'aria-label':typeof title==='string'?title:child.props['aria-label'],title:collapsed&&typeof title==='string'?title:undefined});
     })}
     {frame&&<span className="lens-frame" aria-hidden="true" style={{width:frame.width,height:frame.height,transform:`translate(${frame.left}px,${frame.top}px)`}}><i/><i/><i/><i/></span>}
   </nav>;

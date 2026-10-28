@@ -1,11 +1,16 @@
 import { token, digest } from './security.js';
 import { validateRole, protectLastAdmin, workspaceError, WORKSPACE_SEAT_LIMIT } from './workspace-policy.js';
 import {reviewSummary} from './shared-decision-service.js';
+import {requestId} from './project-policy.js';
 async function event(client, workspaceId, actorId, action, details) {
   await client.query('INSERT INTO workspace_events(workspace_id,actor_id,action,details) VALUES($1,$2,$3,$4)', [workspaceId, actorId, action, details]);
 }
 export function workspaceService(repository) {
   return {
+    async createTeam(actorId,input){
+      if(typeof input?.name!=='string'||!input.name.trim()||input.name.trim().length>80)throw workspaceError(400,'Escribe un nombre de equipo de 1 a 80 caracteres.');
+      return repository.createTeam(actorId,{name:input.name.trim(),requestId:requestId(input.requestId)});
+    },
     async invite(workspaceId, actorId, input) {
       validateRole(input.role);
       const email = typeof input.email === 'string' ? input.email.trim().toLowerCase() : '';
@@ -32,6 +37,8 @@ export function workspaceService(repository) {
         const invitation = (await client.query('SELECT id,email,role FROM workspace_invitations WHERE token_hash=$1 AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at>now() FOR UPDATE', [hash])).rows[0];
         if (!invitation) throw workspaceError(404, 'Invitación vencida, revocada o ya utilizada.');
         if (invitation.email !== account.email.toLowerCase()) throw workspaceError(403, 'Inicia sesión con el correo al que se dirigió esta invitación.');
+        const existingMember=await client.query('SELECT 1 FROM workspace_members WHERE workspace_id=$1 AND user_id=$2',[workspaceId,account.id]);
+        if(existingMember.rows.length)throw workspaceError(409,'Ya perteneces a este equipo.');
         await client.query('INSERT INTO workspace_members(workspace_id,user_id,role) VALUES($1,$2,$3) ON CONFLICT DO NOTHING', [workspaceId, account.id, invitation.role]);
         await client.query('UPDATE workspace_invitations SET accepted_at=now() WHERE id=$1', [invitation.id]);
         await event(client, workspaceId, account.id, 'invitation.accepted', { userId: account.id });

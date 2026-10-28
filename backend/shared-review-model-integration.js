@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import { readFile, readdir } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import pg from 'pg';
+import { migrate } from './migration-runner.js';
 
 // A dedicated QA PostgreSQL URL is mandatory. Never fall back to backend/.env.
 const url=process.env.RONDA_QA_DATABASE_URL;
@@ -10,13 +10,11 @@ const pool=new pg.Pool({connectionString:url});
 try {
   const existing=await pool.query("SELECT to_regclass('public.users') AS table_name");
   assert.equal(existing.rows[0].table_name,null,'QA database must be empty');
-  const dir=new URL('./migrations/',import.meta.url);
-  for(const name of (await readdir(dir)).filter(n=>/^000[1-3]_.*\.sql$/.test(n)).sort()) await pool.query(await readFile(new URL(name,dir),'utf8'));
+  await migrate(pool);
   const user=(await pool.query("INSERT INTO users(email,name,password_hash) VALUES('model@example.invalid','QA','not-a-login') RETURNING id")).rows[0].id;
   await pool.query('INSERT INTO account_data(user_id,data) VALUES($1,$2)',[user,{private:'preserve'}]);
-  await pool.query(await readFile(new URL('0004_shared_review.sql',dir),'utf8'));
   const spaces=[];
-  for(let i=0;i<2;i++)spaces.push((await pool.query("INSERT INTO workspaces(name) VALUES('QA') RETURNING id")).rows[0].id);
+  for(let i=0;i<2;i++)spaces.push((await pool.query("INSERT INTO workspaces(name,kind) VALUES('QA','team') RETURNING id")).rows[0].id);
   const projects=[];
   for(const space of spaces) projects.push((await pool.query("INSERT INTO shared_projects(workspace_id,name,created_by,request_id) VALUES($1,'QA',$2,$3) RETURNING id",[space,user,randomUUID()])).rows[0].id);
   await assert.rejects(pool.query("INSERT INTO shared_assets(workspace_id,project_id,name,kind,created_by,request_id) VALUES($1,$2,'bad','image',$3,$4)",[spaces[0],projects[1],user,randomUUID()]),{code:'23503'});
