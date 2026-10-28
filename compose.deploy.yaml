@@ -1,0 +1,18 @@
+# Server override: run the images CI published to GHCR instead of building.
+#   docker compose -f compose.yaml -f compose.deploy.yaml pull
+#   docker compose -f compose.yaml -f compose.deploy.yaml up -d
+# RONDA_CHANNEL=edge follows feature/shared-review, stable follows main.
+# Pin RONDA_CHANNEL=sha-<12 chars> to roll back to an exact build.
+services:
+  ronda:
+    build: !reset null
+    image: ghcr.io/jt-desing/ronda-web:${RONDA_CHANNEL:-stable}
+    pull_policy: always
+  api:
+    build: !reset null
+    image: ghcr.io/jt-desing/ronda-api:${RONDA_CHANNEL:-stable}
+    pull_policy: always
+  offsite:
+    build: !reset null
+    image: ghcr.io/jt-desing/ronda-offsite:${RONDA_CHANNEL:-stable}
+    pull_policy: always
