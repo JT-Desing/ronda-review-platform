@@ -19,6 +19,8 @@ try {
   for(const space of spaces) projects.push((await pool.query("INSERT INTO shared_projects(workspace_id,name,created_by,request_id) VALUES($1,'QA',$2,$3) RETURNING id",[space,user,randomUUID()])).rows[0].id);
   await assert.rejects(pool.query("INSERT INTO shared_assets(workspace_id,project_id,name,kind,created_by,request_id) VALUES($1,$2,'bad','image',$3,$4)",[spaces[0],projects[1],user,randomUUID()]),{code:'23503'});
   assert.deepEqual((await pool.query('SELECT data FROM account_data WHERE user_id=$1',[user])).rows[0].data,{private:'preserve'});
+  // The repository targets the current schema; apply the migrations added after 0004.
+  for(const name of (await readdir(dir)).filter(n=>/^\d{4}_.*\.sql$/.test(n)&&n>='0005').sort()) await pool.query(await readFile(new URL(name,dir),'utf8'));
   const {sharedReviewRepository}=await import('./repositories/shared-review.js');
   const repository=sharedReviewRepository(pool);
   await pool.query("INSERT INTO workspace_members VALUES($1,$2,'admin')",[spaces[0],user]);
