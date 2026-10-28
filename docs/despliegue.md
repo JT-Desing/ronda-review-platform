@@ -23,7 +23,7 @@ Dependabot abre PR semanales contra `feature/shared-review` para npm, imágenes 
 
 ## Publicación de imágenes
 
-`release.yml` corre cuando CI termina bien en un push a `main` o `feature/shared-review`. Por cada imagen (`ronda-web`, `ronda-api`, `ronda-offsite`):
+El job `publish` de `ci.yml` corre en cada push a `main` o `feature/shared-review`, solo después de que pasen `frontend`, `backend`, `images` y `stack`. Por cada imagen (`ronda-web`, `ronda-api`, `ronda-offsite`):
 
 1. La construye y la escanea con Trivy. Si hay una vulnerabilidad HIGH o CRITICAL con parche disponible, no se publica.
 2. La sube a `ghcr.io/jt-desing/<imagen>` con SBOM y provenance.
