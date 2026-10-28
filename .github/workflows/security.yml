@@ -42,8 +42,10 @@ jobs:
       - name: Scan full history for leaked secrets
         run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 git /repo --redact --no-banner
 
+  # Needs Settings -> Code security -> Dependency graph (repo admin), then the
+  # repository variable DEPENDENCY_REVIEW=true.
   dependency-review:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && vars.DEPENDENCY_REVIEW == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:

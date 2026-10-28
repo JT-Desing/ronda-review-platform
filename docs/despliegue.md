@@ -57,4 +57,5 @@ cosign verify ghcr.io/jt-desing/ronda-api:stable \
 
 1. **Paquetes públicos.** GHCR crea los paquetes como privados en el primer push. Pasarlos a públicos en Packages → Package settings, o hacer `docker login ghcr.io` en el servidor con un token de solo lectura.
 2. **SonarCloud.** Entrar en sonarcloud.io con GitHub, importar el repo (organización `jt-desing`), desactivar el análisis automático y guardar el token como secreto `SONAR_TOKEN`. Si la clave del proyecto u organización es otra, ajustar `sonar-project.properties`.
-3. **Protección de rama.** En `feature/shared-review` y `main`, exigir que pasen `frontend`, `backend`, `images`, `stack`, `codeql`, `secrets` y `config` antes del merge.
+3. **Dependency graph.** Activarlo en Settings → Code security y crear la variable del repo `DEPENDENCY_REVIEW=true`. Hasta entonces el job de revisión de dependencias no corre.
+4. **Protección de rama.** En `feature/shared-review` y `main`, exigir que pasen `frontend`, `backend`, `images`, `stack`, `codeql`, `secrets` y `config` antes del merge.
