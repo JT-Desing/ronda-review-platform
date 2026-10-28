@@ -35,15 +35,54 @@ Etiquetas: `sha-<12 caracteres>` siempre, más `edge` para `feature/shared-revie
 
 El servidor jala las imágenes. CI no tiene SSH ni secretos del servidor.
 
+`compose.deploy.yaml` es un override: se suma al compose del stack que ya corre y cambia `build:` por las imágenes de GHCR de `ronda`, `api` y `offsite`. La base, los volúmenes y los archivos de entorno siguen siendo los del stack.
+
+### Producción (piloto ePayco, PC de Julian)
+
+Producción corre con `compose.epayco.yaml` (proyecto `ronda-epayco-mkt`, volúmenes `epayco-database` y `epayco-files`) y archivos de entorno privados fuera del repo. Ver `EPAYCO-PILOT.md`.
+
+**No usar `compose.yaml` en ese PC.** Tiene otros volúmenes (`ronda-database`, `ronda-files`), así que arrancaría con una base vacía.
+
+En PowerShell, desde la carpeta del repo:
+
+```powershell
+$env:RONDA_BACKEND_ENV='RUTA_PRIVADA/backend/.env'
+$env:RONDA_CHANNEL='edge'
+docker compose --env-file 'RUTA_PRIVADA/.env' -f compose.epayco.yaml -f compose.deploy.yaml pull
+docker compose --env-file 'RUTA_PRIVADA/.env' -f compose.epayco.yaml -f compose.deploy.yaml up -d
+```
+
+`RONDA_CHANNEL` es obligatorio mientras no exista `stable`: el override usa `stable` por defecto, y esa etiqueta recién aparece con el primer merge a `main`.
+
+Comprobar que todo quedó bien:
+
+1. `docker compose ... ps` muestra imágenes `ghcr.io/jt-desing/ronda-...:edge` y servicios `healthy`.
+2. https://ronda.repolite.link/api/health responde `"status":"ok"`.
+3. En la app aparecen los proyectos de siempre (confirma que la base es la correcta).
+
+Antes de cada actualización, hacer un respaldo:
+
+```powershell
+docker compose --env-file 'RUTA_PRIVADA/.env' -f compose.epayco.yaml exec database pg_dump -U ronda ronda > .backups/antes-de-actualizar.sql
+```
+
+Para volver a compilar desde el código como antes, quitar `-f compose.deploy.yaml` y agregar `--build` al `up`.
+
+### Desarrollo local o servidor nuevo
+
+Con `compose.yaml` (volúmenes propios, `backend/.env` en el repo):
+
 ```sh
 export RONDA_CHANNEL=edge   # o stable
 docker compose -f compose.yaml -f compose.deploy.yaml pull
 docker compose -f compose.yaml -f compose.deploy.yaml up -d
 ```
 
-Con Arcane, crear el stack con esos dos archivos y activar la actualización automática de imágenes.
+Con Arcane, crear el stack con el compose que corresponda más `compose.deploy.yaml`, y activar la actualización automática de imágenes.
 
-Para volver a una versión anterior, fijar `RONDA_CHANNEL=sha-<commit>` y repetir `up -d`. Las migraciones corren al arrancar la API, así que antes de bajar de versión hay que revisar si la versión nueva cambió el esquema.
+### Volver a una versión anterior
+
+Fijar `RONDA_CHANNEL=sha-<commit>` y repetir `up -d`. Las migraciones corren al arrancar la API, así que antes de bajar de versión hay que revisar si la versión nueva cambió el esquema.
 
 Verificar la firma antes de desplegar a mano:
 

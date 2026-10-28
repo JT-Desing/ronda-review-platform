@@ -1,6 +1,8 @@
 # Server override: run the images CI published to GHCR instead of building.
-#   docker compose -f compose.yaml -f compose.deploy.yaml pull
-#   docker compose -f compose.yaml -f compose.deploy.yaml up -d
+# Stack it on the compose file the server already runs, never on another one:
+# production uses compose.epayco.yaml (see docs/despliegue.md). compose.yaml has
+# different volumes and would start with an empty database.
+#   docker compose -f compose.epayco.yaml -f compose.deploy.yaml up -d
 # RONDA_CHANNEL=edge follows feature/shared-review, stable follows main.
 # Pin RONDA_CHANNEL=sha-<12 chars> to roll back to an exact build.
 services:

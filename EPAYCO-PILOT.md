@@ -29,6 +29,10 @@ $env:RONDA_BACKEND_ENV='C:/Users/Julian T/Documents/Codex/2026-10-07/necesi-6/ou
 docker compose --env-file 'C:/Users/Julian T/Documents/Codex/2026-10-07/necesi-6/outputs/ronda-prototype/.env' -f compose.epayco.yaml up -d --build
 ```
 
+Para correr las imágenes que publica el CI en vez de compilar, agregar
+`-f compose.deploy.yaml`, definir `$env:RONDA_CHANNEL='edge'` y quitar `--build`.
+El detalle está en `docs/despliegue.md`, sección "Producción".
+
 La web se publica localmente solo en `127.0.0.1:8082`; el túnel existente
 conecta el dominio al servicio interno `http://ronda:8080`. No iniciar a la vez
 el túnel antiguo contra otro despliegue con el mismo token.
