@@ -40,11 +40,21 @@ export function sharedMediaService(repository,storage,inspect=inspectLink){
     async addLink(space,actor,input){
       if(typeof input.name!=='string'||!input.name.trim()||input.name.length>255)throw workspaceError(400,'Indica un nombre de hasta 255 caracteres.');
       const key=requestId(input.requestId);
-      return repository.access(space,actor,async(db,role)=>{
+      // Authorize and dedupe before any network call, then inspect the URL with
+      // no transaction open: a slow host (up to 4 redirects x 8 s) must not hold
+      // the workspace lock or a pool connection. The write re-checks both.
+      const authorizeAndFind=async(db,role)=>{
         requireReviewAction(role,'upload');await repository.project(db,space,input.projectId);
         const existing=(await db.query('SELECT * FROM shared_assets WHERE workspace_id=$1 AND created_by=$2 AND request_id=$3',[space,actor,key])).rows[0];
-        if(existing){if(existing.project_id!==input.projectId)throw workspaceError(409,'Solicitud ya usada en otro proyecto.');return {asset:assetDto(existing)};}
-        const link=await inspect(input.url);
+        if(existing&&existing.project_id!==input.projectId)throw workspaceError(409,'Solicitud ya usada en otro proyecto.');
+        return existing&&{asset:assetDto(existing)};
+      };
+      const prior=await repository.access(space,actor,authorizeAndFind);
+      if(prior)return prior;
+      const link=await inspect(input.url);
+      return repository.access(space,actor,async(db,role)=>{
+        const existing=await authorizeAndFind(db,role);
+        if(existing)return existing;
         const asset=(await db.query('INSERT INTO shared_assets(workspace_id,project_id,name,kind,created_by,request_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING *',[space,input.projectId,input.name.trim(),link.type,actor,key])).rows[0];
         const version=(await db.query('INSERT INTO shared_versions(workspace_id,project_id,asset_id,number,external_url,external_mime) VALUES($1,$2,$3,1,$4,$5) RETURNING id',[space,input.projectId,asset.id,link.url,link.mime])).rows[0];
         await db.query('UPDATE shared_assets SET active_version_id=$1 WHERE id=$2',[version.id,asset.id]);
