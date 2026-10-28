@@ -8,3 +8,11 @@ ui-fixture.js
 social-ui-fixture.js
 shared-review-qa-runner.js
 shared-review-ui-qa.js
+# Tests and integration/QA scripts run from CI or the QA runner, never in the image.
+*.test.js
+*-integration.js
+integration.js
+integration-suite.js
+usability-*.js
+qa-*.js
+shared-review-qa-fixture.js
