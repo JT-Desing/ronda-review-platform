@@ -10,7 +10,7 @@ Todo corre en GitHub Actions con herramientas gratuitas para repos públicos.
 - Backend: pruebas unitarias, integración contra un Postgres desechable y `npm audit`.
 - Imágenes: build de web y API, más `nginx -t`.
 - Stack: levanta web, API y Postgres con `docker compose`, corre el smoke de seguridad (`scripts/production-security-smoke.mjs`) y una carga corta con k6 (`tests/load/smoke.js`, 10 usuarios por 30 s, p95 < 500 ms y menos de 1 % de errores).
-- SonarCloud: corre solo si existe el secreto `SONAR_TOKEN`.
+- SonarCloud: corre solo en push a `main`. El proyecto es privado en el plan Free, que solo guarda análisis de la rama principal; los PR y `feature/shared-review` no se analizan.
 
 `security.yml` (también los lunes por la mañana):
 
@@ -56,6 +56,6 @@ cosign verify ghcr.io/jt-desing/ronda-api:stable \
 ## Configuración pendiente en GitHub
 
 1. **Paquetes públicos.** GHCR crea los paquetes como privados en el primer push. Pasarlos a públicos en Packages → Package settings, o hacer `docker login ghcr.io` en el servidor con un token de solo lectura.
-2. **SonarCloud.** Organización manual `ronda-review` (plan Free) con el proyecto privado `ronda-review_ronda-review-platform`. No está vinculada a la app de GitHub, así que no comenta en los PR: los resultados se ven en sonarcloud.io y en el job `sonarcloud`. El token va en el secreto `SONAR_TOKEN`.
+2. **SonarCloud.** Organización manual `ronda-review` (plan Free) con el proyecto privado `ronda-review_ronda-review-platform`. Solo analiza `main` (limitación del plan Free con proyecto privado). El token va en el secreto `SONAR_TOKEN`.
 3. **Dependency graph.** Activarlo en Settings → Code security y crear la variable del repo `DEPENDENCY_REVIEW=true`. Hasta entonces el job de revisión de dependencias no corre.
 4. **Protección de rama.** En `feature/shared-review` y `main`, exigir que pasen `frontend`, `backend`, `images`, `stack`, `codeql`, `secrets` y `config` antes del merge.
