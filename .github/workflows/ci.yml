@@ -123,8 +123,9 @@ jobs:
       - if: always()
         run: docker compose down -v
 
+  # Free plan + private project: SonarCloud only keeps main-branch analyses.
   sonarcloud:
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
