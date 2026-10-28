@@ -1,6 +1,6 @@
 // Low-volume, unauthenticated probes only. No credentials, destructive writes or load tests.
 import {writeFile} from 'node:fs/promises';
-const origin='https://ronda.repolite.link';
+const origin=process.env.RONDA_ORIGIN||'https://ronda.repolite.link';
 const results=[];
 async function probe(name,path,options,check){
  const started=Date.now();
@@ -18,6 +18,6 @@ await probe('invalid_json_handled','/api/auth/login',{method:'POST',headers:{Ori
 for(const path of ['/.env','/.git/config'])await probe('no_sensitive_file_'+path,path,{},(r,b)=>({passed:r.status===404||(r.headers.get('content-type')?.includes('text/html')&&b.includes('<div id="root">')&&!/DATABASE_URL=|SMTP_PASS=|\[core\]/.test(b)),spaFallback:r.status===200}));
 const report={checkedAt:new Date().toISOString(),origin,scope:'Unauthenticated non-destructive production smoke; not a penetration-test certification',results,passed:results.every(r=>r.passed)};
 const runId=report.checkedAt.replace(/[:.]/g,'-');
-await writeFile(new URL(`../docs/qa/production-security-smoke-${runId}.json`,import.meta.url),JSON.stringify(report,null,2)+'\n');
+if(!process.env.RONDA_SMOKE_NO_REPORT)await writeFile(new URL(`../docs/qa/production-security-smoke-${runId}.json`,import.meta.url),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify(report,null,2));
 process.exitCode=report.passed?0:1;

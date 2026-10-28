@@ -1,0 +1,23 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    target-branch: feature/shared-review
+  - package-ecosystem: npm
+    directory: /backend
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    target-branch: feature/shared-review
+  - package-ecosystem: docker
+    directories: [/, /backend, /backend/offsite]
+    schedule: { interval: weekly }
+    target-branch: feature/shared-review
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    target-branch: feature/shared-review
+    groups:
+      actions:
+        patterns: ["*"]
