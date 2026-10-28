@@ -13,9 +13,17 @@ test('409 retains draft and historical version does not jump on refresh',()=>{
   assert.equal(m.pickVersion([{id:'v2'},{id:'v1'}],'v1','v2'),'v1');
   assert.equal(m.pickVersion([{id:'v2'}],'missing','v2'),'v2');
 });
+test('expired authentication preserves review and draft while revoked access clears review',()=>{
+  const state={room:{id:'visible-review'},draft:{text:'Keep this',requestId:'same-key'}};
+  assert.equal(m.applyRoomError(state,{status:401,message:'Expired'}).room,state.room);
+  assert.equal(m.applyRoomError(state,{status:401,message:'Expired'}).draft,state.draft);
+  for(const status of [403,404])assert.equal(m.applyRoomError(state,{status,message:'Denied'}).room,null);
+});
 test('shared annotation preserves endpoints and excludes private mark metadata',()=>{
   assert.equal(typeof m.sharedAnnotation,'function');
   assert.deepEqual(m.sharedAnnotation({id:'private',tool:'arrow',color:'#ffffff',timeSeconds:10,points:[{x:0,y:0},{x:0.5,y:0.5},{x:1,y:1}]}),{tool:'arrow',color:'#ffffff',points:[{x:0,y:0},{x:1,y:1}]});
+  assert.equal(m.sharedAnnotation({tool:'arrow',color:'#ffffff',coordinateSpace:'document',points:[{x:0,y:0},{x:1,y:1}]}).coordinateSpace,'document');
+  assert.deepEqual(m.sharedAnnotation({tool:'selection',color:'#f2bd5c',coordinateSpace:'document',documentSize:{width:1200,height:4000},textQuote:'Hello',selectionRects:[{x:.1,y:.2,width:.2,height:.01}],points:[{x:.2,y:.3}]}),{tool:'selection',color:'#f2bd5c',points:[{x:.2,y:.3}],coordinateSpace:'document',documentSize:{width:1200,height:4000},textQuote:'Hello',selectionRects:[{x:.1,y:.2,width:.2,height:.01}]});
 });
 test('refresh guard reads latest dirty/busy state and rejects stale pagination',()=>{
   assert.equal(typeof m.createReviewGuard,'function');

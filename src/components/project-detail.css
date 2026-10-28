@@ -1,0 +1,37 @@
+.studio-library .project-detail-panel{max-width:none;margin-top:24px;padding:24px 28px;border-radius:18px}
+.project-detail-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.project-detail-heading h2{margin:8px 0 4px;overflow-wrap:anywhere}
+.project-detail-heading p{margin:0}
+.studio-library .project-detail-panel button.project-detail-close{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;min-height:44px;padding:0;border-radius:12px;background:transparent;color:var(--muted);font-size:26px;line-height:1}
+.project-detail-description{margin:20px 0 18px;max-width:75ch}
+.project-detail-actions{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.project-detail-panel .project-detail-actions button{min-height:44px;border-radius:12px}
+.studio-library .project-detail-panel button.project-detail-open{display:inline-flex;align-items:center;justify-content:center;gap:10px;background:var(--accent);border-color:var(--accent);color:var(--canvas);font-weight:650;border-radius:12px}
+.project-detail-actions>.link-import{flex:1 1 260px;min-width:0;margin:0}
+.project-detail-actions .link-import>button{margin:0}
+.project-detail-actions .link-import form{max-width:660px;margin-top:16px}
+.project-detail-recovery:has(details){margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.project-detail-recovery summary{min-height:44px;align-content:center;cursor:pointer;font-size:13px;color:var(--muted)}
+.project-detail-panel button:focus-visible,.project-detail-recovery summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+@media(max-width:600px){.studio-library .project-detail-panel{padding:20px;margin-top:20px}.project-detail-actions>button,.project-detail-actions>.link-import,.project-detail-actions .link-import>button{width:100%}.project-detail-actions>.link-import{flex-basis:100%}}
+dialog.project-delete-dialog{margin:auto;color:var(--text)}
+dialog.project-delete-dialog::backdrop{background:#060705b8}
+dialog.project-delete-dialog h2{font-size:20px;overflow-wrap:anywhere}
+dialog.project-delete-dialog p{font-size:13px;line-height:1.6;color:var(--muted)}
+dialog.project-delete-dialog input{width:100%;min-height:44px;margin-top:8px;padding:10px 12px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--text)}
+dialog.project-delete-dialog button,.project-trash button{min-height:44px;padding:8px 14px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--text);cursor:pointer}
+dialog.project-delete-dialog button:disabled{opacity:.4;cursor:default}
+.studio-library>.project-trash,.studio-home .project-trash{margin:20px 0;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface-1)}
+.project-trash summary{cursor:pointer;min-height:40px;align-content:center;font-size:13px;color:var(--muted)}
+.project-trash>div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.project-trash .project-trash-row{min-height:64px}
+.project-trash .project-trash-row>strong{min-width:0;overflow-wrap:anywhere}
+.project-trash-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.project-trash .project-trash-actions .project-trash-icon{display:grid;place-items:center;width:44px;height:44px;min-height:44px;padding:0;background:transparent;color:var(--muted);transition:color 150ms ease,border-color 150ms ease,background-color 150ms ease}
+.project-trash .project-trash-actions .project-trash-icon:hover{color:var(--text);background:var(--surface-2);border-color:var(--line-strong)}
+.project-trash .project-trash-actions .project-trash-icon-danger{color:#f08c89}
+.project-trash .project-trash-actions .project-trash-icon-danger:hover{color:#ffb0ad;background:color-mix(in srgb,#f06464 12%,transparent);border-color:#a95f65}
+.project-trash .project-trash-icon:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.project-permanent-delete-dialog .project-delete-confirm{background:#8a353a;color:#fff;border-color:#a95f65}
+.studio-project .project-delete-trigger{width:40px;height:40px;min-height:40px}
+@media(pointer:coarse){.studio-project .project-delete-trigger{width:44px;height:44px;min-height:44px}}

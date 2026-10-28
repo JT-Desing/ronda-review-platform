@@ -1,0 +1,9 @@
+@media (max-width: 780px) {
+  .professional-pauta .pauta-commandbar .pauta-creation details[open] > form {
+    position: static;
+    inset: auto;
+    width: 100%;
+    margin: 8px 0 0;
+    box-sizing: border-box;
+  }
+}

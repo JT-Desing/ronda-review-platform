@@ -3,7 +3,21 @@ import { reply, body } from '../http.js';
 import { authService } from '../auth-service.js';
 import { userRepository } from '../repositories/users.js';
 import { clientAddress, rateLimiter } from '../rate-limit.js';
-export async function handleAuth({ req, res, path, sessionToken, pool, cookie }) {
+import {withPlatformRole} from '../platform-access.js';
+import { requestPasswordReset, deliverPasswordReset, completePasswordReset } from '../password-reset.js';
+export async function handleAuth({ req, res, path, sessionToken, pool, cookie, mailer, origin }) {
+  if (req.method === 'POST' && path === '/api/auth/password-reset/request') {
+    const input = await body(req);
+    if (!mailer?.enabled) return reply(res, 503, { error: 'La recuperación de contraseña no está disponible en este momento.' });
+    const result = await requestPasswordReset({ pool, origin, email: input?.email, requestAddress: clientAddress(req) });
+    if (result.delivery) setImmediate(() => { void deliverPasswordReset({ pool, mailer, delivery: result.delivery }); });
+    return reply(res, 202, { accepted: true });
+  }
+  if (req.method === 'POST' && path === '/api/auth/password-reset/complete') {
+    const input = await body(req);
+    const result = await completePasswordReset({ pool, value: input?.token, password: input?.password });
+    return reply(res, 200, result);
+  }
   if (req.method === 'POST' && path === '/api/auth/logout') {
     if (sessionToken) await pool.query('DELETE FROM sessions WHERE token_hash=$1', [digest(sessionToken)]);
     return reply(res, 200, { ok: true }, { 'Set-Cookie': cookie('', 0) });
@@ -25,7 +39,7 @@ export async function handleAuth({ req, res, path, sessionToken, pool, cookie })
       : await service.login({ email, password });
     const value = token();
     await pool.query("INSERT INTO sessions VALUES($1,$2,now()+interval '7 days')", [digest(value), user.id]);
-    return reply(res, 200, { user }, { 'Set-Cookie': cookie(value, 604800) });
+    return reply(res, 200, { user: withPlatformRole(user) }, { 'Set-Cookie': cookie(value, 604800) });
   }
   return reply(res, 404, { error: 'Ruta no disponible.' });
 }

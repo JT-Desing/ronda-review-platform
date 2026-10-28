@@ -1,6 +1,7 @@
 import React,{useRef,useState,useId} from 'react';
 import {useRonda} from '../state/RondaContext.jsx';
 export default function MentionInput({value='',onChange,onKeyDown,...props}){
+ if(props['aria-label']==='Escribir comentario')props={...props,placeholder:'Escribe un mensaje…',rows:1};
  const {state}=useRonda();const ref=useRef(null),id=useId();const [cursor,setCursor]=useState(0),[active,setActive]=useState(0),[dismissed,setDismissed]=useState(false);
  const match=value.slice(0,cursor).match(/(?:^|\s)@([^@\n]*)$/);const query=match?.[1]||'';
  const people=Object.values(state.members).filter(m=>m.name.toLocaleLowerCase().includes(query.toLocaleLowerCase())).slice(0,6);

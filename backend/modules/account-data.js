@@ -9,7 +9,7 @@ export async function handleAccountData({ req, res, path, account, pool }) {
     }
     if (req.method === 'PUT') {
       const input = await body(req, 20 * 1024 * 1024);
-      const allowed = ['ronda-state:v1', 'ronda-pauta:v1', 'ronda-activity-read'];
+      const allowed = ['ronda-state:v1', 'ronda-pauta:v1', 'ronda-activity-read', 'ronda-onboarding:v1'];
       if (!Number.isInteger(input.revision) || !input.data || Array.isArray(input.data) || typeof input.data !== 'object' || Object.entries(input.data).some(([key, value]) => !allowed.includes(key) || typeof value !== 'string')) return reply(res, 400, { error: 'Datos inválidos.' });
       for (const value of Object.values(input.data)) { try { JSON.parse(value); } catch { return reply(res, 400, { error: 'Contenido inválido.' }); } }
       const result = await pool.query('UPDATE account_data SET data=$1, revision=revision+1, updated_at=now() WHERE user_id=$2 AND revision=$3 RETURNING revision', [input.data, account.id, input.revision]);

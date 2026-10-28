@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Ronda · Comentarios web</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <span class="eyebrow">RONDA · REVISIÓN WEB</span>
+      <h1>Conectar esta revisión</h1>
+      <p id="description">La extensión detectará la web abierta dentro de Ronda y pedirá permiso únicamente para ese dominio.</p>
+      <label for="site">Web detectada</label>
+      <select id="site" aria-label="Elegir web externa"></select>
+      <button id="connect" type="button">Autorizar dominio y conectar</button>
+      <p id="status" role="status" aria-live="polite"></p>
+      <small>Solo transmite selección y desplazamiento cuando Ronda inicia una revisión de esta página. El permiso queda limitado al dominio HTTPS que autorizaste.</small>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

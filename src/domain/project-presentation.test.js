@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { presentProject, projectOverview } from './project-presentation.js';
+import { presentProject, projectOverview, projectDetailMessage } from './project-presentation.js';
+
+test('project details update their empty/piece message from the current project state', () => {
+  assert.match(projectDetailMessage({assets:[]}), /aún no tiene piezas/);
+  assert.match(projectDetailMessage({assets:[{id:'one'}]}), /ya tiene 1 pieza\. Abre la parrilla para organizarla/);
+  assert.match(projectDetailMessage({assets:[{id:'one'},{id:'two'}]}), /ya tiene 2 piezas\. Abre la parrilla para organizarlas/);
+});
 test('project presentation uses only its own assets and comments without inventing approvals', () => {
   const state = { projects: { a: {id:'a',name:'A',activeVersionId:'v'} }, assets:[{id:'1',projectId:'a'},{id:'2',projectId:'b'}], versions:{v:{id:'v',projectId:'a',reviewerIds:['u'],decisions:{}}, other:{id:'other',projectId:'b'}}, comments:{one:{versionId:'v',status:'open'},two:{versionId:'other',status:'open'}} };
   const project = presentProject(state,state.projects.a);

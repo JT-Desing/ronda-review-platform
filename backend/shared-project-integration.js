@@ -27,7 +27,11 @@ try {
     users.push({ ...(await response.json()).user, cookie: response.headers.get('set-cookie').split(';')[0] });
   }
   const [owner, editor, reviewer, outsider] = users;
-  const workspace = (await (await call('/api/workspaces', 'GET', undefined, owner)).json()).workspaces[0];
+  // The owner exercises the reserved workspace-management routes as the configured platform superadmin.
+  process.env.RONDA_SUPERADMIN_IDS = owner.id;
+  const workspaceResponse = await call('/api/workspaces', 'POST', { name: 'Shared project QA team', requestId: randomUUID() }, owner);
+  assert.equal(workspaceResponse.status, 201);
+  const workspace = (await workspaceResponse.json()).workspace;
   const workspacePath = `/api/workspaces/${workspace.id}`;
   for (const [member, role] of [[editor, 'editor'], [reviewer, 'reviewer']]) {
     const invite = await (await call(workspacePath + '/invitations', 'POST', { email: member.email, role }, owner)).json();

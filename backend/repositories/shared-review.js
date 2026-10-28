@@ -1,7 +1,7 @@
 import {sharedProjectRepository} from './shared-projects.js';
 import {workspaceError} from '../workspace-policy.js';
-export function sharedReviewRepository(pool){
-  const projects=sharedProjectRepository(pool);
+export function sharedReviewRepository(pool,options){
+  const projects=sharedProjectRepository(pool,options);
   return {...projects,
     failUpload(space,actor,id,cleaned){return pool.query("UPDATE shared_media_files SET state='failed',object_key=CASE WHEN $4 THEN NULL ELSE object_key END WHERE workspace_id=$1 AND created_by=$2 AND id=$3 AND state='staging'",[space,actor,id,cleaned]);},
     async expiredUploads(limit){return (await pool.query("SELECT id,workspace_id FROM shared_media_files f WHERE expires_at<=now() AND (state IN ('staging','received') OR (state='failed' AND object_key IS NOT NULL)) AND NOT EXISTS(SELECT 1 FROM shared_versions v WHERE v.file_id=f.id) ORDER BY expires_at,id LIMIT $1",[limit])).rows;},

@@ -31,6 +31,7 @@
 .shared-projects .shared-toolbar input,.shared-projects .shared-toolbar select{height:44px;border-color:var(--line);background:var(--surface-1);border-radius:10px}
 .shared-projects select option{background:var(--surface-2);color:var(--text)}
 .shared-projects .shared-toolbar .primary-action{min-height:44px;padding:10px 18px;font-size:12px;white-space:normal}
+.app-shell .shared-projects .shared-toolbar button.shared-create-project{min-height:52px;padding:14px 24px;border:0;border-radius:999px;background:transparent;color:#201c29;font-size:13px;white-space:nowrap}
 .shared-projects .shared-layout{grid-template-columns:minmax(240px,300px) minmax(0,1fr);gap:28px}
 .shared-projects .shared-list{border:0;border-radius:0;background:transparent;overflow:visible}
 .shared-list-heading{display:flex;justify-content:space-between;align-items:center;padding:0 12px 12px;color:var(--muted);font-size:11px;letter-spacing:.04em}
@@ -51,6 +52,25 @@
 .shared-welcome-features{display:flex;justify-content:center;flex-wrap:wrap;gap:16px;color:var(--muted);font-size:11px}
 .shared-welcome-features span{display:inline-flex;align-items:center;gap:6px}
 .shared-projects .shared-conversation{border:0;border-left:1px solid var(--line);border-radius:0;background:transparent;padding:0 0 0 28px}
-@media(max-width:1000px){.shared-projects .shared-toolbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.shared-projects .shared-toolbar .primary-action{justify-self:start}.shared-projects .shared-layout{grid-template-columns:minmax(220px,260px) minmax(0,1fr)}}
-@media(max-width:780px){.shared-projects .shared-layout{grid-template-columns:1fr;gap:20px}.shared-projects .shared-toolbar{grid-template-columns:1fr}.shared-projects .shared-toolbar .primary-action{justify-self:stretch}.shared-projects .shared-conversation,.shared-project-welcome{border-left:0;border-top:1px solid var(--line);padding:24px 0 0}.shared-projects .shared-scope-help summary small{display:block;font-size:11px}.shared-projects .shared-project-welcome{min-height:240px}.shared-projects .dashboard-header{flex-wrap:wrap}}
+@media(max-width:1000px){.shared-projects .shared-toolbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.shared-projects .shared-toolbar .shared-create-project{justify-self:start}.shared-projects .shared-layout{grid-template-columns:minmax(220px,260px) minmax(0,1fr)}}
+@media(max-width:780px){.shared-projects .shared-layout{grid-template-columns:1fr;gap:20px}.shared-projects .shared-toolbar{grid-template-columns:1fr}.shared-projects .shared-toolbar .shared-create-project{justify-self:stretch}.shared-projects .shared-conversation,.shared-project-welcome{border-left:0;border-top:1px solid var(--line);padding:24px 0 0}.shared-projects .shared-scope-help summary small{display:block;font-size:11px}.shared-projects .shared-project-welcome{min-height:240px}.shared-projects .dashboard-header{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){.shared-projects .shared-project-row,.shared-scope-help summary>.icon:last-child{transition:none}}
+.project-invitations{margin:12px 0;border:1px solid var(--line);border-radius:12px;padding:12px 16px;background:var(--surface-1)}
+.project-invitations summary{cursor:pointer;font-size:13px;min-height:32px;align-content:center}
+.project-invitations form{display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px;padding-top:12px}
+.project-invitations form>p{flex-basis:100%;font-size:12px;color:var(--muted);margin:0}
+.project-invitations label{display:flex;flex-direction:column;gap:6px;font-size:12px;flex:1 1 180px}
+.project-invitations input,.project-invitations select,.project-invitations button{min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);padding:8px 12px;font:inherit}
+.project-member-picker{margin:18px 0;padding:16px;border:1px solid var(--line);border-radius:12px;min-width:0}
+.project-member-picker legend{padding:0 6px;font-size:13px;font-weight:600}
+.project-member-picker p{font-size:12px;line-height:1.5;color:var(--muted)}
+.project-member-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.project-member-row>label{display:flex!important;flex-direction:row!important;align-items:center;gap:10px;margin:0!important}
+.project-member-row input[type=checkbox]{width:18px!important;min-height:18px!important;margin:0}
+.project-member-row span{display:flex;flex-direction:column;gap:3px}.project-member-row small{font-size:10px;color:var(--muted)}
+.project-member-row select{width:auto;max-width:130px;min-height:40px}
+.project-access-panel{border:1px solid var(--line);border-radius:12px;padding:14px;margin:16px 0;background:var(--surface-1)}
+.project-access-panel summary{cursor:pointer;font-size:13px}
+.project-share-channels{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.project-share-channels a{display:flex;align-items:center;justify-content:center;flex:1 1 150px;min-height:44px;padding:10px 12px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--text);text-decoration:none;font-size:12px}
+.project-share-channels a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
