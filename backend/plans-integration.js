@@ -49,6 +49,10 @@ try {
   const listed = (await json(await call('/api/platform/workspaces', 'GET', undefined, platform))).body.workspaces.find(space => space.id === team);
   assert.equal(listed.plan, 'estudio'); assert.equal(listed.status, 'pending'); assert.deepEqual(listed.admins, [companyAdmin.email]);
 
+  // Team admins read their own plan and usage; other accounts cannot.
+  const own = await json(await call(`/api/workspaces/${team}/plan`, 'GET', undefined, companyAdmin));
+  assert.equal(own.status, 200); assert.equal(own.body.status, 'pending'); assert.deepEqual(own.body.usage, { seats: 1, storageBytes: 0 });
+  assert.equal((await call(`/api/workspaces/${team}/plan`, 'GET', undefined, people[0])).status, 404);
   // Estudio active: 5 people counting the admin and pending invitations.
   assert.equal((await call(`/api/platform/workspaces/${team}`, 'PATCH', { status: 'active' }, platform)).status, 200);
   for (const person of people.slice(0, 4)) assert.equal((await invite(person.email)).status, 201);

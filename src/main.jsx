@@ -27,6 +27,7 @@ import { annotationVisibleAt, finalizeAnnotation, toNormalizedPoint } from './do
 import { readDraftForContext, saveSessionDraft } from './state/migration.js';
 import { ProjectActions, TeamActions, SettingsActions, ReviewSummary } from './components/WorkspaceActions.jsx';
 import { PlatformPlans } from './components/PlatformPlans.jsx';
+import { PlanUsage } from './components/PlanUsage.jsx';
 import { TimelineMarkers } from './components/TimelineMarkers.jsx';
 import { DeliveryGrid, fileStore, fileKind } from './components/DeliveryGrid.jsx';
 import {assetReviewUrl} from './components/DeliveryGrid.jsx';
@@ -409,7 +410,7 @@ function App({demo=false,onExitDemo}) {
       {currentView==='home' && <StudioHome onNavigate={setCurrentView} onOpen={openProject}/>}
       {persistenceError&&<div className="persistence-alert" role="alert"><Icon name="alert" size={16}/><span><strong>Los cambios están solo en este dispositivo</strong><small>{persistenceError==='quota'?'El almacenamiento del navegador está lleno. Quita algunas referencias pesadas o libera espacio.':'El navegador bloqueó el almacenamiento local.'}</small></span><button onClick={retryPersistence}>Reintentar</button></div>}
       {currentView==='projects' && <ProjectActions key={sharedLinkKey} onOpen={openProject} onNotify={setToast} onDirtyChange={setSharedDirty}/>}
-      {currentView==='personal' && <ProjectLibrary onOpen={openProject} onNotify={setToast}/>}
+      {currentView==='personal' && <><PlanUsage/><ProjectLibrary onOpen={openProject} onNotify={setToast}/></>}
       {currentView==='activity' && <ActivityView onNavigate={setCurrentView} onOpenProject={openProject} onOpenComment={openPlanningComment}/>}
       {currentView==='planning' && <RetryableFeature load={loadPlanning} retryView="planning" message="No se pudo cargar Planificación. Comprueba tu conexión e inténtalo de nuevo." loadingLabel="Cargando planificación…" allowDemo={canUseCompanyDemo} onOpen={openPlanningComment}/>}
       {currentView==='team' && <TeamActions onNotify={setToast}/>}

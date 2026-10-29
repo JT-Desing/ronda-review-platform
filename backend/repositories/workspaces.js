@@ -77,6 +77,13 @@ export function workspaceRepository(pool) {
       } catch (error) { await client.query('ROLLBACK'); throw error; }
       finally { client.release(); }
     },
+    // Read-only plan and usage for the team's own administrators.
+    async planUsage(workspaceId, userId) {
+      return this.transaction(workspaceId, userId, async client => {
+        const { plan, status, extraPacks, limits } = await workspacePlan(client, workspaceId);
+        return { plan, status, extraPacks, limits, usage: { seats: await workspaceSeatsUsed(client, workspaceId), storageBytes: await workspaceStorageUsed(client, workspaceId) } };
+      });
+    },
     async locateInvitation(hash) {
       return (await pool.query('SELECT workspace_id FROM workspace_invitations WHERE token_hash=$1', [hash])).rows[0]?.workspace_id;
     },
