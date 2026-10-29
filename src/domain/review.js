@@ -12,11 +12,12 @@ export function validateReviewDecision(state, {versionId, reviewerId, decision})
   return {allowed:true,reason:null};
 }
 
+// Local-state seats only; the server enforces plans from backend/plans.js.
 export const PLAN_LIMITS = Object.freeze({
   free: { seats: 1, reviewers: 2, versions: 2, historyDays: 7 },
-  creator: { seats: 2, reviewers: 10, versions: 10, historyDays: 90 },
+  creator: { seats: 1, reviewers: 10, versions: 10, historyDays: 90 },
   studio: { seats: 5, reviewers: Infinity, versions: Infinity, historyDays: Infinity },
-  agency: { seats: 20, reviewers: Infinity, versions: Infinity, historyDays: Infinity },
+  agency: { seats: 15, reviewers: Infinity, versions: Infinity, historyDays: Infinity },
   enterprise: { seats: Infinity, reviewers: Infinity, versions: Infinity, historyDays: Infinity },
 });
 
