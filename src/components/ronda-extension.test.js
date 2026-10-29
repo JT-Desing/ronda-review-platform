@@ -24,7 +24,8 @@ test('extension keeps the live review iframe sandboxed and coordinates with its 
   const pageBridge=await read('content/live-page-bridge.js');
   const appBridge=await read('content/ronda-app-bridge.js');
   const app=await readFile(new URL('./ExternalWeb.jsx',import.meta.url),'utf8');
-  assert.match(pageBridge,/event\.origin !== 'null'/);
+  assert.match(pageBridge,/event\.origin !== RONDA_ORIGIN/);
+  assert.doesNotMatch(pageBridge,/event\.origin !== 'null'/);
   assert.match(pageBridge,/ronda:web-review:init/);
   assert.match(pageBridge,/selectionchange/);
   assert.match(pageBridge,/addEventListener\('scroll'/);
