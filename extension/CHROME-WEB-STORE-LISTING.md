@@ -11,10 +11,14 @@ Conecta una página HTTPS de tu proyecto con Ronda para revisar su contenido en 
 
 La extensión no es necesaria para iniciar sesión ni para el resto de Ronda. Al conectar un proyecto, Chrome pide permiso únicamente para el origen de esa web. Puedes revocarlo cuando quieras. Si no la instalas, puedes seguir revisando capturas fijas.
 
+Si la web del proyecto está protegida con usuario y contraseña (por ejemplo, una versión en revisión antes de publicarla), guardas el acceso en la extensión una vez y sirve para todas las páginas de ese sitio. El acceso se queda en tu navegador.
+
 ## Permisos — explicación para revisión
 
 - `scripting`: inyectar el puente de scroll/selección únicamente en el origen que el usuario autorizó.
-- `storage`: recordar localmente los orígenes que el usuario conectó.
+- `storage`: recordar localmente los orígenes que el usuario conectó y, si el usuario lo guarda, el usuario y la contraseña de un sitio protegido. No salen del navegador.
+- `declarativeNetRequestWithHostAccess`: quitar `X-Frame-Options` y `Content-Security-Policy` solo en los marcos que la página de Ronda abre hacia un sitio conectado, para que se pueda revisar dentro del visor. Solo aplica a orígenes con permiso concedido; el sitio no cambia fuera de Ronda.
+- `webRequest` y `webRequestAuthProvider`: responder el aviso de autenticación HTTP (Basic) de un sitio conectado con el acceso que el usuario guardó para ese sitio.
 - Acceso requerido a `https://ronda.repolite.link/*`: intercambiar el origen actual del visor y el estado de conexión.
 - Acceso HTTPS opcional: se solicita en tiempo de ejecución solo para el origen exacto del proyecto abierto, tras pulsar el botón de conexión.
 

@@ -54,7 +54,7 @@ Cuando agregas un enlace a una revisión, el servidor de Ronda consulta esa dire
 
 ### 3.6 Extensión "Ronda · Anotaciones web"
 
-La extensión es opcional. En los sitios HTTPS que tú autorizas uno por uno, lee las dimensiones y el desplazamiento de la página y el texto que seleccionas para comentar, y se lo envía a la pestaña de Ronda que tienes abierta. Guarda en tu navegador qué sitios conectaste. No lee tu historial, no envía el contenido de las páginas a otros servidores y no se usa para publicidad.
+La extensión es opcional. En los sitios HTTPS que tú autorizas uno por uno, lee las dimensiones y el desplazamiento de la página y el texto que seleccionas para comentar, y se lo envía a la pestaña de Ronda que tienes abierta. Guarda en tu navegador qué sitios conectaste. Si un sitio pide usuario y contraseña y decides guardarlos en la extensión, se guardan solo en tu navegador y se usan únicamente para responder el inicio de sesión de ese sitio; Ronda no los recibe. Para mostrar el sitio dentro del visor, la extensión quita las cabeceras que impiden insertarlo, solo en las páginas de ese sitio que abre Ronda. No lee tu historial, no envía el contenido de las páginas a otros servidores y no se usa para publicidad.
 
 ### 3.7 Datos sensibles y de menores
 
