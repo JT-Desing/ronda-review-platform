@@ -249,4 +249,11 @@ jobs:
         env:
           DIGEST: ${{ steps.push.outputs.digest }}
           IMAGE: ${{ steps.meta.outputs.image }}
-        run: cosign sign --yes "$IMAGE@$DIGEST"
+        # An unchanged image keeps its digest; Rekor then answers 409 because that
+        # digest is already signed, which is not a failure.
+        run: |
+          if ! out=$(cosign sign --yes "$IMAGE@$DIGEST" 2>&1); then
+            echo "$out"
+            echo "$out" | grep -q 'an equivalent entry already exists in the transparency log' || exit 1
+            echo "Already signed: $IMAGE@$DIGEST"
+          fi
