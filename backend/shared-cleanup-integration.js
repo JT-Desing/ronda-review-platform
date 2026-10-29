@@ -15,6 +15,7 @@ try{
   // Simulate SQL rollback after promotion: complete must recover without another original.
   const recovered=await media.completeUpload(f.space,f.admin,lost);assert.equal(recovered.version.number,1);
   await f.pool.query("UPDATE shared_media_files SET expires_at=now()-interval '1 hour' WHERE id=$1",[expired]);
+  await f.pool.query("UPDATE workspaces SET plan='a-medida',custom_storage_gb=2 WHERE id=$1",[f.space]); // 2 GB contract, as the quota math below assumes.
   await f.pool.query('UPDATE shared_media_files SET size=104857600 WHERE id=$1',[expired]);
   for(let i=0;i<19;i++)await media.reserve(f.space,f.admin,{...input,size:104857600,requestId:randomUUID()});
   await assert.rejects(media.reserve(f.space,f.admin,{...input,size:62914560,requestId:randomUUID()}),{status:413},'Stored expired bytes still count until actually cleaned');

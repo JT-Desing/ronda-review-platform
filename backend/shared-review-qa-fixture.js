@@ -13,7 +13,7 @@ export async function reviewFixture(){
   await migrate(pool);
   const users=[];
   for(let i=0;i<4;i++)users.push((await pool.query('INSERT INTO users(email,name,password_hash) VALUES($1,$2,$3) RETURNING id',[`review-${i}@example.invalid`,`QA ${i}`,'not-a-login'])).rows[0].id);
-  const space=(await pool.query("INSERT INTO workspaces(name,kind) VALUES('QA','team') RETURNING id")).rows[0].id;
+  const space=(await pool.query("INSERT INTO workspaces(name,kind,plan,plan_status) VALUES('QA','team','agencia','active') RETURNING id")).rows[0].id;
   for(let i=0;i<3;i++)await pool.query('INSERT INTO workspace_members VALUES($1,$2,$3)',[space,users[i],['admin','editor','reviewer'][i]]);
   const project=(await pool.query("INSERT INTO shared_projects(workspace_id,name,created_by,request_id) VALUES($1,'QA',$2,$3) RETURNING id",[space,users[0],randomUUID()])).rows[0].id;
   const root=await mkdtemp(join(tmpdir(),'ronda-review-qa-'));

@@ -7,6 +7,7 @@ import { dirname, join } from 'node:path';
 import { reply } from '../http.js';
 import { servedFileType, decodeFileName } from '../file-policy.js';
 import { syncDirectories } from '../storage/durable.js';
+import { accountPlan, accountStorageUsed } from '../repositories/plans.js';
 export async function handleFiles({ req, res, path, account, pool, fileRoot='/data/files' }) {
   const fileMatch = path?.match(/^\/api\/files\/([0-9a-f-]{36})$/);
   if (fileMatch) {
@@ -19,11 +20,11 @@ export async function handleFiles({ req, res, path, account, pool, fileRoot='/da
       if (!Number.isInteger(size) || size < 1 || size > 100 * 1024 * 1024) return reply(res, 413, { error: 'Máximo 100 MB por archivo.' });
       const owner = await pool.query('SELECT user_id FROM files WHERE id=$1 AND user_id=$2', [id, account.id]);
       if (owner.rows.length) { req.resume(); return reply(res, 200, { id }); }
-      const quota = 2 * 1024 * 1024 * 1024;
-      const used = async db => Number((await db.query('SELECT COALESCE(sum(size),0) AS size FROM files WHERE user_id=$1', [account.id])).rows[0].size);
-      const overQuota = () => Object.assign(new Error('Límite inicial: 2 GB por cuenta.'), { status: 413 });
+      const quota = async db => (await accountPlan(db, account.id)).limits.storageBytes;
+      const used = db => accountStorageUsed(db, account.id);
+      const overQuota = () => Object.assign(new Error('Tu plan no tiene espacio para este archivo. Libera espacio o amplía el plan.'), { status: 413 });
       // Early rejection without locks; the authoritative check runs below.
-      if (await used(pool) + size > quota) { req.resume(); throw overQuota(); }
+      if (await used(pool) + size > await quota(pool)) { req.resume(); throw overQuota(); }
       const temporary = `${location}.${randomUUID()}.part`;
       let moved = false;
       let client;
@@ -41,7 +42,7 @@ export async function handleFiles({ req, res, path, account, pool, fileRoot='/da
         client = await pool.connect();
         await client.query('BEGIN');
         await client.query('SELECT id FROM users WHERE id=$1 FOR UPDATE', [account.id]);
-        if (await used(client) + size > quota) throw overQuota();
+        if (await used(client) + size > await quota(client)) throw overQuota();
         await client.query('INSERT INTO files(id,user_id,name,mime,size) VALUES($1,$2,$3,$4,$5)', [id, account.id, name, mime, size]);
         await rename(temporary, location); moved = true;
         // The row must not commit before the file and its directory entry are on disk.

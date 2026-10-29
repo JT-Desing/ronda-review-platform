@@ -1,4 +1,5 @@
-import { requireWorkspaceAdmin, requireWorkspaceMember, workspaceError, WORKSPACE_SEAT_LIMIT } from '../workspace-policy.js';
+import { requireWorkspaceAdmin, requireWorkspaceMember, workspaceError } from '../workspace-policy.js';
+import { workspacePlan, workspaceSeatsUsed, workspaceStorageUsed } from './plans.js';
 export function workspaceRepository(pool) {
   return {
     async createTeam(actorId,input){
@@ -14,9 +15,9 @@ export function workspaceRepository(pool) {
         }
         const count=Number((await client.query("SELECT count(*) FROM workspaces WHERE created_by=$1 AND kind='team'",[actorId])).rows[0].count);
         if(count>=20)throw workspaceError(409,'Límite inicial: 20 equipos creados por cuenta.');
-        const workspace=(await client.query("INSERT INTO workspaces(name,kind,created_by,request_id) VALUES($1,'team',$2,$3) RETURNING id,name,kind",[input.name,actorId,input.requestId])).rows[0];
+        const workspace=(await client.query("INSERT INTO workspaces(name,kind,created_by,request_id,plan,plan_status) VALUES($1,'team',$2,$3,$4,'pending') RETURNING id,name,kind",[input.name,actorId,input.requestId,input.plan])).rows[0];
         await client.query("INSERT INTO workspace_members(workspace_id,user_id,role) VALUES($1,$2,'admin')",[workspace.id,actorId]);
-        await client.query("INSERT INTO workspace_events(workspace_id,actor_id,action,details) VALUES($1,$2,'workspace.created',$3)",[workspace.id,actorId,{name:input.name}]);
+        await client.query("INSERT INTO workspace_events(workspace_id,actor_id,action,details) VALUES($1,$2,'workspace.created',$3)",[workspace.id,actorId,{name:input.name,plan:input.plan}]);
         await client.query('COMMIT');return {workspace:{...workspace,role:'admin'}};
       }catch(error){await client.query('ROLLBACK');throw error;}finally{client.release();}
     },
@@ -35,8 +36,10 @@ export function workspaceRepository(pool) {
         const members = (await client.query('SELECT u.id,u.name,u.email,m.role FROM workspace_members m JOIN users u ON u.id=m.user_id WHERE m.workspace_id=$1 ORDER BY u.name,u.id', [workspaceId])).rows;
         const invitations = role === 'admin' ? (await client.query('SELECT id,email,role,expires_at FROM workspace_invitations WHERE workspace_id=$1 AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at>now() ORDER BY created_at', [workspaceId])).rows : [];
         const events = (await client.query('SELECT e.id,e.action,e.details,e.created_at,u.name AS actor FROM workspace_events e LEFT JOIN users u ON u.id=e.actor_id WHERE e.workspace_id=$1 ORDER BY e.created_at DESC,e.id LIMIT 30', [workspaceId])).rows;
+        const { plan, status, extraPacks, limits } = await workspacePlan(client, workspaceId);
+        const usage = { seats: await workspaceSeatsUsed(client, workspaceId), storageBytes: await workspaceStorageUsed(client, workspaceId) };
         await client.query('COMMIT');
-        return { workspace: { ...space, role }, members, invitations, events, seatLimit: WORKSPACE_SEAT_LIMIT };
+        return { workspace: { ...space, role }, members, invitations, events, seatLimit: limits.members, plan: { plan, status, extraPacks, limits, usage } };
       } catch (error) { await client.query('ROLLBACK'); throw error; }
       finally { client.release(); }
     },

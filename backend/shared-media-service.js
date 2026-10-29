@@ -5,11 +5,12 @@ import {requireReviewAction} from './shared-review-policy.js';
 import {parseRange} from './shared-range.js';
 import {assetDto,versionDto,recordEvent} from './shared-review-dto.js';
 import {inspectLink} from './external-link.js';
+import {workspacePlan} from './repositories/plans.js';
 const types={'image/png':'image','image/jpeg':'image','image/webp':'image','video/mp4':'video','application/pdf':'pdf'};
 const fileTypes={html:'text/html',htm:'text/html',css:'text/css',js:'text/plain',jsx:'text/plain',ts:'text/plain',tsx:'text/plain',json:'application/json',xml:'application/xml',md:'text/plain',txt:'text/plain',csv:'text/csv',zip:'application/zip',doc:'application/msword',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',odt:'application/vnd.oasis.opendocument.text',ppt:'application/vnd.ms-powerpoint',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',odp:'application/vnd.oasis.opendocument.presentation',xls:'application/vnd.ms-excel',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',ods:'application/vnd.oasis.opendocument.spreadsheet'};
 const fileExtensions=new Set(Object.keys(fileTypes));
 const fileMimes=new Set(['application/octet-stream','application/zip','application/x-zip-compressed','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.oasis.opendocument.text','application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation','application/vnd.oasis.opendocument.presentation','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.oasis.opendocument.spreadsheet','text/html','application/xhtml+xml','text/css','text/javascript','application/javascript','application/json','application/xml','text/xml','text/plain','text/csv']);
-const quota=2147483648;
+const overQuota=()=>workspaceError(413,'El plan del equipo no tiene espacio para este archivo. Libera espacio o amplía el plan.');
 export function uploadInput(input){
   const extension=typeof input?.name==='string'?input.name.split('.').at(-1)?.toLowerCase():'';
   const providedMime=input?.mime?.toLowerCase();
@@ -160,13 +161,13 @@ export function sharedMediaService(repository,storage,inspect=inspectLink){
           if(prior.state==='ready'||prior.expires_at>new Date()&&prior.state!=='failed')return {uploadId:prior.id};
           if(prior.state==='failed'&&!prior.object_key){
             const occupied=Number((await db.query("SELECT COALESCE(sum(size),0) AS size FROM shared_media_files WHERE workspace_id=$1 AND (state='ready' OR object_key IS NOT NULL OR (state IN ('staging','received') AND expires_at>now()))",[space])).rows[0].size);
-            if(occupied+value.size>quota)throw workspaceError(413,'Límite del prototipo: 2 GB por espacio.');
+            if(occupied+value.size>(await workspacePlan(db,space)).limits.storageBytes)throw overQuota();
             await db.query("UPDATE shared_media_files SET state='staging',expires_at=now()+interval '1 hour' WHERE id=$1",[prior.id]);return {uploadId:prior.id};
           }
           throw workspaceError(409,'La carga caducó o falló. Inicia otra carga.');
         }
         const used=Number((await db.query("SELECT COALESCE(sum(size),0) AS size FROM shared_media_files WHERE workspace_id=$1 AND (state='ready' OR object_key IS NOT NULL OR (state IN ('staging','received') AND expires_at>now()))",[space])).rows[0].size);
-        if(used+value.size>quota)throw workspaceError(413,'Límite del prototipo: 2 GB por espacio.');
+        if(used+value.size>(await workspacePlan(db,space)).limits.storageBytes)throw overQuota();
         const row=(await db.query('INSERT INTO shared_media_files(workspace_id,project_id,asset_id,created_by,request_id,name,mime,size,kind) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id',[space,value.projectId,value.assetId||null,actor,value.requestId,value.name,value.mime,value.size,value.kind])).rows[0];
         return {uploadId:row.id};
       },true);
