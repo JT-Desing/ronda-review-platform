@@ -1,7 +1,11 @@
+import { notifyFromEvent } from './notifications.js';
 import { projectInput, commentInput, requestId, requireProjectEditor } from './project-policy.js';
 import { workspaceError } from './workspace-policy.js';
 import {validateProjectMembers,replaceProjectMembers} from './project-membership.js';
-const event = (db, space, actor, action, details) => db.query('INSERT INTO workspace_events(workspace_id,actor_id,action,details) VALUES($1,$2,$3,$4)', [space, actor, action, details]);
+const event = async (db, space, actor, action, details) => {
+  await db.query('INSERT INTO workspace_events(workspace_id,actor_id,action,details) VALUES($1,$2,$3,$4)', [space, actor, action, details]);
+  await notifyFromEvent(db, space, actor, action, details);
+};
 export function sharedProjectService(repository) {
   return {
     list(space, actor) {
