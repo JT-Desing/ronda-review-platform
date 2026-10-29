@@ -7,7 +7,7 @@ const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 test('team upload chooser includes website source, React, PDF, office and ZIP files',async()=>{
   const media=await read('./SharedProjectMedia.jsx');
   for(const extension of ['.html','.jsx','.tsx','.pdf','.docx','.pptx','.zip'])assert.ok(media.includes(extension),`${extension} is selectable`);
-  assert.match(media,/type="file" hidden accept=/);
+  assert.match(media,/type="file" hidden multiple accept=/);
 });
 
 test('uploaded HTML has a sandboxed review surface while code remains inert and downloadable',async()=>{
@@ -64,5 +64,5 @@ test('uploading a new team asset preserves the selected unsaved review instead o
   const media=await read('./SharedProjectMedia.jsx');
   assert.match(media,/allowDirty=false,preserveSelection=false,preserveDirtyState=false/);
   assert.match(media,/allowDirty:keepReview,preserveSelection:keepReview,preserveDirtyState:keepReview/);
-  assert.match(media,/if\(!keepReview\)setSelected\(result\.asset\.id\)/);
+  assert.match(media,/if\(!abort\.current\.signal\.aborted&&!keepReview\)setSelected\(result\.asset\.id\)/);
 });
