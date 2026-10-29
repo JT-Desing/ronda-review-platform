@@ -47,12 +47,12 @@ export default function Sidebar({ collapsed, setCollapsed, currentView, onNaviga
       <span className="brand-mark" aria-hidden="true">{state.workspace.branding?.logo?<img src={state.workspace.branding.logo} alt=""/>:<img src={rondaLogo} alt=""/>}</span><span className="brand-name">{state.workspace.branding?.name||'Ronda'}</span><span className="sidebar-collapse-indicator" aria-hidden="true"><Icon name="chevron" size={15}/></span>
     </button>
     <LensNavigation className="side-nav" label="Principal" currentView={currentView} collapsed={collapsed}>
-      <button className={currentView==='home'?'active':''} onClick={()=>onNavigate('home')}><Icon name="home"/><span>Inicio</span></button>
+      <button data-tour="home" className={currentView==='home'?'active':''} onClick={()=>onNavigate('home')}><Icon name="home"/><span>Inicio</span></button>
       <button className={currentView==='pauta'?'active':''} onClick={()=>onNavigate('pauta')}><Icon name="campaign"/><span>Pauta</span></button>
-      <button className={currentView==='projects'?'active':''} onClick={()=>onNavigate('projects')}><Icon name="grid"/><span>Proyectos</span></button>
-      <button className={currentView==='activity'?'active':''} onClick={()=>onNavigate('activity')}><Icon name="clock"/><span>Actividad</span></button>
-      <button className={currentView==='planning'?'active':''} onClick={()=>onNavigate('planning')}><Icon name="calendar"/><span>Planificación</span></button>
-{canAccessStudioView(user,'team')&&<button className={currentView==='team'?'active':''} onClick={()=>onNavigate('team')}><Icon name="users"/><span>Equipo</span></button>}
+      <button data-tour="projects" className={currentView==='projects'?'active':''} onClick={()=>onNavigate('projects')}><Icon name="grid"/><span>Proyectos</span></button>
+      <button data-tour="activity" className={currentView==='activity'?'active':''} onClick={()=>onNavigate('activity')}><Icon name="clock"/><span>Actividad</span></button>
+      <button data-tour="planning" className={currentView==='planning'?'active':''} onClick={()=>onNavigate('planning')}><Icon name="calendar"/><span>Planificación</span></button>
+{canAccessStudioView(user,'team')&&<button data-tour="team" className={currentView==='team'?'active':''} onClick={()=>onNavigate('team')}><Icon name="users"/><span>Equipo</span></button>}
     </LensNavigation>
     <div className="side-label">ESPACIO</div>
     <LensNavigation className="side-nav lower" label="Espacio" currentView={currentView} collapsed={collapsed}>
