@@ -48,7 +48,7 @@ import BrandSettings from './components/BrandSettings.jsx';
 import './brand-settings.css';
 import DrawingTrail from './components/DrawingTrail.jsx';
 import {createCompanyDemo} from './data/company-demo.js';
-import {beginDemoSession,endDemoSession} from './state/demoSession.js';
+import {beginDemoSession,endDemoSession,demoSession} from './state/demoSession.js';
 import './company-demo.css';
 import './typography.css';
 import './studio-art.css';
@@ -73,6 +73,7 @@ import ShareReviewDialog from './components/ShareReviewDialog.jsx';
 import {RetryableFeature} from './components/FeatureLoadBoundary.jsx';
 import {consumeFeatureRetry} from './domain/feature-retry.js';
 import {GuidedTour} from './components/GuidedTour.jsx';
+import {TeamNotificationCenter} from './components/TeamNotificationCenter.jsx';
 import {revealReviewStage} from './components/reveal-review-stage.js';
 const loadPauta=()=>import('./components/Pauta.jsx');
 const loadPlanning=()=>import('./components/Planning.jsx');
@@ -224,6 +225,10 @@ function ActivityView({onNavigate,onOpenProject,onOpenComment}) {
 }
 
 function NotificationCenter({onNavigate}) {
+  if(!demoSession())return <TeamNotificationCenter/>;
+  return <DemoNotificationCenter onNavigate={onNavigate}/>;
+}
+function DemoNotificationCenter({onNavigate}) {
   const {state,act}=useRonda(); const [open,setOpen]=useState(false);
   const unread=selectUnreadNotifications(state);
   return <div className="notification-center"><button className="notification-trigger" aria-label={`${unread.length} notificaciones sin leer`} aria-expanded={open} onClick={()=>setOpen(!open)}><Icon name="bell" size={17}/>{unread.length>0&&<b>{unread.length}</b>}</button>{open&&<div className="notification-popover"><header><strong>Notificaciones</strong><button onClick={()=>act('notification/readAll',{})}>Marcar leídas</button></header>{unread.length===0?<p>Estás al día.</p>:unread.map(item=><button key={item.id} onClick={()=>{act('notification/read',{id:item.id});onNavigate('review');setOpen(false)}}><strong>Nueva actividad asignada</strong><span>Campaña Amara · abrir revisión</span></button>)}</div>}</div>;

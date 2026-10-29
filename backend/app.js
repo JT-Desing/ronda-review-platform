@@ -10,6 +10,7 @@ import { handleSharedProjects } from './modules/shared-projects.js';
 import {handleSharedReview,isSharedReviewPath} from './modules/shared-review.js';
 import {handlePlatform,isPlatformPath} from './modules/platform.js';
 import {handleInvitationEntry,isInvitationEntryPath} from './modules/invitation-entry.js';
+import {handleNotifications,isNotificationsPath} from './modules/notifications.js';
 import {accountPlan,accountStorageUsed} from './repositories/plans.js';
 import {withPrivacy,requirePrivacyAcceptance,recordPrivacyAcceptance} from './privacy.js';
 import {inspectLink} from './external-link.js';
@@ -40,6 +41,7 @@ export function createApp({ pool, origin, mailer, sharedStorage, fileRoot }) {
       }
       const context = { req, res, path, account, sessionToken, pool, cookie, sharedStorage, fileRoot, mailer, origin };
       if(isInvitationEntryPath(path))return await handleInvitationEntry(context);
+      if(isNotificationsPath(path))return await handleNotifications(context);
       if(isPlatformPath(path))return await handlePlatform(context);
       if(req.method==='GET'&&path==='/api/account/plan'){
         if(!account)return reply(res,401,{error:'Inicia sesión.'});

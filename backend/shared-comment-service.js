@@ -6,6 +6,13 @@ import {recordEvent} from './shared-review-dto.js';
 import {isDeepStrictEqual} from 'node:util';
 import {validCommentCursorTime} from './comment-cursor.js';
 const dto=row=>({id:row.id,versionId:row.version_id,authorId:row.author_id,author:row.author,text:row.text,priority:row.priority,status:row.status,anchor:row.anchor,annotation:row.annotation,revision:row.revision,createdAt:row.created_at});
+// People tagged with @ in a comment. Membership is checked when the notification is created.
+const MENTION_UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function mentionIds(value){
+  if(value===undefined)return [];
+  if(!Array.isArray(value)||value.length>20||value.some(id=>typeof id!=='string'||!MENTION_UUID.test(id)))throw workspaceError(400,'Menciones inválidas.');
+  return [...new Set(value)];
+}
 export function sharedCommentService(repository){
   const version=(db,space,c,lock)=>repository.version(db,space,c.projectId,c.assetId,c.versionId,lock);
   const editable=v=>{if(v.status!=='reviewing')throw workspaceError(409,'La versión aprobada es de solo lectura.');};
@@ -37,7 +44,7 @@ export function sharedCommentService(repository){
         if(audio.length){const used=Number((await db.query('SELECT COALESCE(sum(octet_length(a.bytes)),0) AS size FROM shared_comment_audio a JOIN shared_version_comments c ON c.id=a.comment_id WHERE c.workspace_id=$1',[space])).rows[0].size);if(used+audio.reduce((sum,a)=>sum+a.bytes.length,0)>268435456)throw workspaceError(409,'Se alcanzó el límite de 256 MB de audios de comentarios de este espacio.');}
         const row=(await db.query('INSERT INTO shared_version_comments(workspace_id,project_id,asset_id,version_id,author_id,text,priority,anchor,annotation,request_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *',[space,c.projectId,c.assetId,c.versionId,actor,text,priority,anchor,annotation,key])).rows[0];
         for(const [ordinal,a] of audio.entries())await db.query('INSERT INTO shared_comment_audio(comment_id,name,mime,bytes,digest,ordinal) VALUES($1,$2,$3,$4,$5,$6)',[row.id,a.name,a.mime,a.bytes,a.digest,ordinal]);
-        await recordEvent(db,space,actor,'review.comment_created',{...c,commentId:row.id});return {comment:dto(row)};
+        await recordEvent(db,space,actor,'review.comment_created',{...c,commentId:row.id,mentionIds:mentionIds(input.mentionIds)});return {comment:dto(row)};
       },true);
     },
     async readAudio(space,actor,c,commentId,audioId){
@@ -74,7 +81,7 @@ export function sharedCommentService(repository){
         if(prior){if(prior.text!==text)throw workspaceError(409,'Solicitud usada con otra respuesta.');return {id:prior.id};}
         editable(v);
         const row=(await db.query('INSERT INTO shared_comment_replies(version_id,comment_id,author_id,text,request_id) VALUES($1,$2,$3,$4,$5) RETURNING id',[c.versionId,id,actor,text,key])).rows[0];
-        await recordEvent(db,space,actor,'review.reply_created',{...c,commentId:id,replyId:row.id});return row;
+        await recordEvent(db,space,actor,'review.reply_created',{...c,commentId:id,replyId:row.id,mentionIds:mentionIds(input.mentionIds)});return row;
       },true);
     },
   };
