@@ -28,6 +28,12 @@ async function insert(db,space,actor,kind,userIds,details){
 // Turns a team event into notifications for the people it concerns. Runs inside the
 // event's transaction, so a rolled-back action leaves no notification behind.
 export async function notifyFromEvent(db,space,actor,action,details){
+  if(action==='project.created'&&details?.projectId){
+    const project=(await db.query('SELECT name FROM shared_projects WHERE id=$1 AND workspace_id=$2',[details.projectId,space])).rows[0];
+    if(!project)return;
+    const everyone=(await db.query('SELECT user_id FROM workspace_members WHERE workspace_id=$1',[space])).rows.map(row=>row.user_id);
+    return insert(db,space,actor,'project',await members(db,space,actor,everyone,details.projectId),{projectId:details.projectId,projectName:project.name});
+  }
   if(!details?.versionId)return;
   const handled=['review.version_created','review.link_created','review.comment_created','review.reply_created','review.decision'];
   if(!handled.includes(action))return;
@@ -78,6 +84,7 @@ const DECISIONS={approved:'aprobó',changes_requested:'pidió cambios en',pendin
 export function notificationLine(item){
   const who=item.actorName||'Alguien',d=item.details||{},piece=`"${d.assetName||'una pieza'}"`;
   switch(item.kind){
+    case 'project':return `${who} creó el proyecto "${d.projectName||'sin nombre'}"`;
     case 'asset':return `${who} subió ${piece} para revisión`;
     case 'version':return `${who} subió la versión ${d.versionNumber} de ${piece}`;
     case 'mention':return `${who} te mencionó en ${piece}`;

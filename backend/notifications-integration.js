@@ -7,6 +7,8 @@ import {localStorage} from './storage/local.js';
 import {sharedMediaService} from './shared-media-service.js';
 import {sharedCommentService} from './shared-comment-service.js';
 import {sharedDecisionService} from './shared-decision-service.js';
+import {sharedProjectService} from './shared-project-service.js';
+import {sharedProjectRepository} from './repositories/shared-projects.js';
 import {listNotifications,markNotificationsRead,sendNotificationDigests} from './notifications.js';
 const f=await reviewFixture();
 try{
@@ -69,6 +71,16 @@ try{
   await comments.addComment(f.space,f.admin,{projectId:hidden,assetId:secret.asset.id,versionId:secret.version.id},{text:'@QA 2 mira',mentionIds:[f.reviewer],requestId:randomUUID()});
   assert.equal((await kinds(f.reviewer)).length,before.reviewer,'no access, no notification');
   assert.equal((await kinds(f.editor)).length,before.editor+1,'a selected member is notified');
+
+  // A new project reaches the team; a restricted one only its selected members (and admins).
+  const projects=sharedProjectService(sharedProjectRepository(f.pool));
+  const count=async user=>(await kinds(user)).filter(kind=>kind==='project').length;
+  await projects.create(f.space,f.editor,{name:'Campaña nueva',client:'',requestId:randomUUID()});
+  assert.equal(await count(f.admin),1);assert.equal(await count(f.reviewer),1);assert.equal(await count(f.editor),0);
+  const opened=(await listNotifications(f.pool,f.admin)).items.find(item=>item.kind==='project');
+  assert.equal(opened.line,'QA 1 creó el proyecto "Campaña nueva"');
+  await projects.create(f.space,f.admin,{name:'Solo editor',client:'',requestId:randomUUID(),members:[{userId:f.editor,role:'editor'}]});
+  assert.equal(await count(f.editor),1);assert.equal(await count(f.reviewer),1,'a restricted project is not announced to people outside it');
 
   // Leaving the space hides its notifications.
   await f.pool.query('DELETE FROM workspace_members WHERE workspace_id=$1 AND user_id=$2',[f.space,f.reviewer]);
