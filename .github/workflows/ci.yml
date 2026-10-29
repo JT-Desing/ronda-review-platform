@@ -156,10 +156,25 @@ jobs:
           node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/frontend.lcov 'src/**/*.test.js'
           (cd backend && node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=../coverage/backend.lcov)
           sed -i 's#^SF:#SF:backend/#' coverage/backend.lcov
+      # Each merge to main is its own Sonar version, so "new code" (Previous version)
+      # is exactly what that PR changed: package version plus the PR number from the
+      # merge commit, or the short SHA for a direct push.
+      - name: Sonar version for this merge
+        id: version
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          base=$(node -p "require('./package.json').version")
+          pr=$(printf '%s\n' "$COMMIT_MESSAGE" | head -1 | grep -oE '#[0-9]+' | tail -1 | tr -d '#')
+          if [ -n "$pr" ]; then suffix="pr${pr}"; else suffix="${GITHUB_SHA::7}"; fi
+          echo "value=${base}+${suffix}" >> "$GITHUB_OUTPUT"
       - if: steps.gate.outputs.enabled == 'true'
         uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # v8.4.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: -Dsonar.projectVersion=${{ steps.version.outputs.value }}
 
   publish:
     # Publishes only after every test job passed on a push. The server pulls these
