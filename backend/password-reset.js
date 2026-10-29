@@ -13,7 +13,10 @@ async function rateLimit(pool, key, interval, maxAttempts, message) {
   if (result.rows[0].attempts > maxAttempts) throw invalid(message, 429);
 }
 
-export async function requestPasswordReset({ pool, origin, email, requestAddress = 'unknown', minimumDelay = true }) {
+// purpose 'welcome' is the first password of an account created from an invitation:
+// same single-use token, a longer life and its own wording.
+export async function requestPasswordReset({ pool, origin, email, requestAddress = 'unknown', minimumDelay = true, purpose = 'reset' }) {
+  const welcome = purpose === 'welcome';
   const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
   if (!validEmail(normalizedEmail)) throw invalid('Usa un correo válido.');
   await rateLimit(pool, `password-reset-ip:${digest(String(requestAddress))}`, '1 hour', 100, 'Has hecho muchas solicitudes desde esta conexión. Espera antes de volver a intentarlo.');
@@ -33,7 +36,7 @@ export async function requestPasswordReset({ pool, origin, email, requestAddress
     value = token();
     tokenHash = digest(value);
     await client.query('UPDATE password_reset_tokens SET used_at=now() WHERE user_id=$1 AND used_at IS NULL', [user?.id ?? null]);
-    await client.query("INSERT INTO password_reset_tokens(token_hash,user_id,expires_at,used_at) VALUES($1,$2,now()+interval '30 minutes',CASE WHEN $2::uuid IS NULL THEN now() ELSE NULL END)", [tokenHash, user?.id ?? null]);
+    await client.query("INSERT INTO password_reset_tokens(token_hash,user_id,expires_at,used_at) VALUES($1,$2,now()+$3::interval,CASE WHEN $2::uuid IS NULL THEN now() ELSE NULL END)", [tokenHash, user?.id ?? null, welcome ? '3 days' : '30 minutes']);
     await client.query('COMMIT');
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
@@ -47,7 +50,19 @@ export async function requestPasswordReset({ pool, origin, email, requestAddress
   const resetUrl = new URL('/', origin);
   resetUrl.hash = new URLSearchParams({ reset: value }).toString();
   const resetLink=resetUrl.href;
-  return { accepted: true, delivery: { tokenHash, message: {
+  const message = welcome ? {
+    to: normalizedEmail,
+    subject: 'Crea tu contraseña de Ronda',
+    text: `Ya entraste a Ronda desde tu invitación. Para volver a entrar después, crea tu contraseña con este enlace (vence en 3 días):\n${resetLink}`,
+    html:transactionalEmail({
+      preheader:'Elige una contraseña para tus próximos ingresos.',
+      eyebrow:'Bienvenida a Ronda',title:'Crea tu contraseña',
+      paragraphs:['Ya entraste a Ronda desde tu invitación. Para volver a entrar desde otro equipo o cuando se cierre la sesión, elige una contraseña.'],
+      actionLabel:'Crear contraseña',actionUrl:resetLink,
+      details:['El enlace vence en 3 días y solo puede utilizarse una vez.','Si vence, usa "Olvidé mi contraseña" en la pantalla de inicio.'],
+    }),
+    attachments:[rondaEmailLogoAttachment],
+  } : {
     to: normalizedEmail,
     subject: 'Restablece tu contraseña de Ronda',
     text: `Recibimos una solicitud para cambiar la contraseña de tu cuenta de Ronda.\n\nAbre este enlace en los próximos 30 minutos:\n${resetLink}\n\nSi no solicitaste este cambio, ignora este mensaje.`,
@@ -59,7 +74,8 @@ export async function requestPasswordReset({ pool, origin, email, requestAddress
       details:['El enlace vence en 30 minutos y solo puede utilizarse una vez.','Si no solicitaste este cambio, ignora este mensaje. Tu contraseña actual seguirá funcionando.'],
     }),
     attachments:[rondaEmailLogoAttachment],
-  } } };
+  };
+  return { accepted: true, delivery: { tokenHash, message } };
 }
 
 export async function deliverPasswordReset({ pool, mailer, delivery }) {

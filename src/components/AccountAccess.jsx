@@ -76,16 +76,20 @@ function PrivacyConsent({user,onAccepted,onLogout}){
 }
 function InvitationEntryCard({invitation,busy,error,onEnter,onManual}){
   const [accepted,setAccepted]=useState(false);
-  return <section className="account-invitation-entry" aria-labelledby="invitation-entry-title">
+  const [name,setName]=useState('');
+  const needsName=!invitation.name;
+  const firstName=(invitation.name||'').split(' ')[0];
+  return <form className="account-invitation-entry" aria-labelledby="invitation-entry-title" onSubmit={event=>{event.preventDefault();onEnter(needsName?name.trim():undefined);}}>
     <span className="account-invitation-eyebrow">Invitación a {invitation.workspaceName}</span>
-    <h1 id="invitation-entry-title">Hola, {invitation.name.split(' ')[0]}.</h1>
-    <p>Te invitaron como {ROLE_LABELS[invitation.role]}. Entra para revisar y comentar las piezas del equipo. No necesitas contraseña.</p>
+    <h1 id="invitation-entry-title">{firstName?`Hola, ${firstName}.`:'Te están esperando.'}</h1>
+    <p>El equipo <strong>{invitation.workspaceName}</strong> te invita como {ROLE_LABELS[invitation.role]} para comentar y aprobar sus piezas. Entras ahora sin contraseña y te enviamos un correo para que la crees para la próxima vez.</p>
     <dl><dt>Correo</dt><dd>{invitation.email}</dd><dt>Equipo</dt><dd>{invitation.workspaceName}</dd></dl>
+    {needsName&&<label>Tu nombre<input autoFocus required maxLength={100} autoComplete="name" disabled={busy} value={name} onChange={event=>setName(event.target.value)}/></label>}
     {error&&<p role="alert" className="account-error">{error}</p>}
     <PrivacyCheckbox checked={accepted} onChange={setAccepted}/>
-    <button className="account-primary" type="button" disabled={busy||!accepted} onClick={onEnter}>{busy?<BrandLoader size="inline" label="Entrando…"/>:`Entrar a ${invitation.workspaceName}`}</button>
+    <button className="account-primary" type="submit" disabled={busy||!accepted||(needsName&&!name.trim())}>{busy?<BrandLoader size="inline" label="Entrando…"/>:`Entrar a ${invitation.workspaceName}`}</button>
     <button className="account-text-button" type="button" disabled={busy} onClick={onManual}>Prefiero crear la cuenta con contraseña</button>
-  </section>;
+  </form>;
 }
 export default function AccountAccess({ children }) {
   const invitationCode=readInvitationCode(location.hash);
@@ -116,18 +120,22 @@ export default function AccountAccess({ children }) {
     if(!invitationCode)return;
     api('/api/workspace-invitations/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:invitationCode})}).then(value=>{setInvitation(value);setEmail(value.email);setMode(value.accountExists?'login':'register');}).catch(failure=>setError(failure.message));
   },[]);
-  async function enterByInvitation(){
+  async function enterByInvitation(name){
     if(busy)return;setBusy(true);setError('');
-    try{const result=await api('/api/workspace-invitations/enter',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:invitationCode,acceptPrivacy:true})});location.hash=`#team/${result.workspaceId}`;await enter(result.user,{signupChoice:'join'});}
-    catch(failure){setError(failure.message);setInvitation(current=>current&&{...current,oneClick:false});}
+    try{const result=await api('/api/workspace-invitations/enter',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:invitationCode,acceptPrivacy:true,...(name?{name}:{})})});location.hash=`#team/${result.workspaceId}`;await enter(result.user,{signupChoice:'join'});}
+    catch(failure){setError(failure.message);}
     finally{setBusy(false);}
   }
   async function enter(account,{onboardingRecovery=false,signupChoice=''}={}) {
     const snapshot = await api('/api/data');
     await initializeSignupCompletion({initialize:initializeAccount,account,snapshot,choice:signupChoice,storage:accountStorage,flush:retryAccount});
     const {workspaces}=await api('/api/workspaces');
-    const invitationOnboarding=Boolean(invitationCode&&!signupChoice);
-    if(invitationOnboarding)setOnboardingDraft(current=>current||{choice:'join',name:'',code:invitationCode});
+    let invitationOnboarding=Boolean(invitationCode&&!signupChoice);
+    // An existing account that signs in from the link joins the team directly; the picker only shows if that fails.
+    if(invitationOnboarding){
+      try{const accepted=await api('/api/workspace-invitations/accept',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:invitationCode})});location.hash=`#team/${accepted.workspaceId}`;invitationOnboarding=false;}
+      catch(failure){setOnboardingDraft(current=>current||{choice:'join',name:'',code:invitationCode,error:failure.message});}
+    }
     setOnboarding(invitationOnboarding||showWorkspaceOnboarding(workspaces,hasPersonalWorkspaceChoice(accountStorage.getItem('ronda-onboarding:v1')),onboardingRecovery));
     const copy = pendingAccountCopy(); setPending(copy);
     if (!snapshot.data[STORAGE_KEY] && !copy) accountStorage.setItem(STORAGE_KEY, JSON.stringify(freshState(account)));

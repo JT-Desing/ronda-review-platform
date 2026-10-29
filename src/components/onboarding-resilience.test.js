@@ -38,7 +38,8 @@ test('new-account onboarding offers separate company, invite-code and personal p
   const access=readFileSync(new URL('./AccountAccess.jsx',import.meta.url),'utf8');
   const onboarding=readFileSync(new URL('./WorkspaceOnboarding.jsx',import.meta.url),'utf8');
   assert.match(access,/setOnboarding\(invitationOnboarding\|\|showWorkspaceOnboarding\(workspaces,hasPersonalWorkspaceChoice/);
-  assert.match(access,/setOnboardingDraft\(current=>current\|\|\{choice:'join',name:'',code:invitationCode\}\)/);
+  assert.match(access,/workspace-invitations\/accept/);
+  assert.match(access,/setOnboardingDraft\(current=>current\|\|\{choice:'join',name:'',code:invitationCode,error:failure.message\}\)/);
   assert.match(access,/useState\(\(\)=>invitationCode\?'register':'login'\)/);
   assert.match(access,/choice:'join',name:'',code:invitationCode/);
   assert.match(access,/name="workspaceChoice" value="personal"/);
