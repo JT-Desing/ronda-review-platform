@@ -201,7 +201,7 @@ function ActivityView({onNavigate,onOpenProject,onOpenComment}) {
         const teams=workspaces.filter(space=>space.kind==='team');
         const batches=await Promise.all(teams.map(async space=>{
           try{
-            const data=await reviewRequest(`/api/workspaces/${space.id}/review-activity`);
+            const data=await reviewRequest(`/api/workspaces/${encodeURIComponent(space.id)}/review-activity`);
             return data.events.map(event=>({id:`team-${space.id}-${event.id}`,who:event.actor||'Cuenta retirada',initials:(event.actor||'CR').split(/\s+/).map(part=>part[0]).slice(0,2).join('').toUpperCase(),color:'#67a9d4',action:workspaceEventAction(event.action,event.details).toLowerCase(),where:`${space.name} · Actividad del equipo`,project:space.name,projectId:event.details?.projectId,workspaceId:space.id,commentId:event.details?.commentId,detail:event.details?.commentText||'Comentario sin texto guardado',occurredAt:event.created_at,time:new Date(event.created_at).toLocaleString('es-CO'),type:event.details?.status==='resolved'?'resolved':'comment'}));
           }catch{return [];}
         }));

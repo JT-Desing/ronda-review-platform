@@ -4,4 +4,6 @@ RUN apk upgrade --no-cache && apk add --no-cache restic && rm -f /usr/local/bin/
 COPY offsite-backup.sh offsite-verify.sh /usr/local/bin/
 # Same uid as the API's "node" user: uploaded files are mode 0600.
 USER 1000:1000
+# A one-shot backup job: it runs and exits, so there is nothing to probe.
+HEALTHCHECK NONE
 ENTRYPOINT ["sh", "/usr/local/bin/offsite-backup.sh"]

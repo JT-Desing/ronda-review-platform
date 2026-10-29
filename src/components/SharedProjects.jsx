@@ -56,9 +56,9 @@ export function SharedProjects({ onNotify, onDirtyChange }) {
       const savedIsValid=teams.some(item=>item.id===savedSpace);
       if(savedSpace&&!savedIsValid)forgetPreferredTeam(preferenceStorage,currentAccountId());
       const currentSpace = preferredWorkspace(teams,requestedIsValid?requestedSpace:savedIsValid?savedSpace:'');
-      const listing = currentSpace ? await api(`/api/workspaces/${currentSpace}/projects`) : null;
+      const listing = currentSpace ? await api(`/api/workspaces/${encodeURIComponent(currentSpace)}/projects`) : null;
       const currentProject = listing?.projects.some(item => item.id === selected) ? selected : '';
-      const projectDetail = currentProject ? await api(`/api/workspaces/${currentSpace}/projects/${currentProject}`) : null;
+      const projectDetail = currentProject ? await api(`/api/workspaces/${encodeURIComponent(currentSpace)}/projects/${encodeURIComponent(currentProject)}`) : null;
       if (active) {
         setSpaces(teams); setProjects(listing?.projects ?? []);setDeletedProjects(listing?.deletedProjects??[]); setRole(projectDetail?.workspace.role??listing?.workspace.role ?? ''); setDetail(projectDetail);
         setSpace(currentSpace||'');
@@ -86,7 +86,7 @@ export function SharedProjects({ onNotify, onDirtyChange }) {
     catch (reason) { setError(reason.message); }
     finally { setBusy(false); }
   }
-  const path = `/api/workspaces/${space}/projects`;
+  const path = `/api/workspaces/${encodeURIComponent(space)}/projects`;
   const filtered = projects.filter(project => `${project.name} ${project.client}`.toLowerCase().includes(query.toLowerCase()));
   if(loading&&!space&&!error)return <div className="dashboard-page shared-projects shared-projects-loading" data-mode="gallery" aria-busy="true"><BrandLoader size="stage" label="Cargando proyectos del equipo…"/></div>;
   return <div className="dashboard-page shared-projects" data-mode={selected?'project':'gallery'} aria-busy={loading}>
