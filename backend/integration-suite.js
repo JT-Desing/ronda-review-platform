@@ -12,6 +12,7 @@ const FIXTURE_SCRIPTS = [
   'shared-decision-integration.js', 'shared-version-integration.js', 'shared-review-flow-integration.js',
   'shared-review-model-integration.js', 'shared-cleanup-integration.js',
   'comment-audio-integration.js', 'team-management-integration.js', 'project-trash-integration.js',
+  'notifications-integration.js',
 ];
 const SELF_MANAGED_SCRIPTS = ['migration-integration.js', 'workspace-integration.js', 'shared-project-integration.js', 'plans-integration.js', 'invitation-entry-integration.js', 'privacy-integration.js'];
 

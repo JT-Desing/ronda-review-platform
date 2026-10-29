@@ -1,0 +1,12 @@
+.team-notifications .notification-popover{width:min(360px,calc(100vw - 20px));max-height:min(70vh,520px);display:flex;flex-direction:column;padding:6px}
+.team-notifications .notification-popover header button{font-size:11px}
+.team-notifications-list{overflow-y:auto;overscroll-behavior:contain}
+.team-notifications-list>button{width:100%;border:0;border-top:1px solid var(--line);background:transparent;color:var(--text);padding:11px 10px;display:flex;flex-direction:column;gap:4px;text-align:left;cursor:pointer;border-radius:8px}
+.team-notifications-list>button:hover,.team-notifications-list>button:focus-visible{background:var(--surface-3)}
+.team-notifications-list>button.unread{background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.team-notifications-list>button.unread strong::before{content:"";display:inline-block;width:7px;height:7px;margin-right:7px;border-radius:50%;background:var(--accent);vertical-align:1px}
+.team-notifications-list strong{font-size:12.5px;font-weight:600;line-height:1.4}
+.team-notifications-list q{font-size:12px;color:var(--muted);line-height:1.45;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.team-notifications-list span{font-size:11px;color:var(--muted)}
+.team-notifications-empty,.team-notifications-error{margin:6px 10px 12px;font-size:12px;line-height:1.5;color:var(--muted)}
+.team-notifications-error{color:var(--danger,#ff8a80)}

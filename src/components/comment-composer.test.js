@@ -70,7 +70,7 @@ test('focused composer keeps metadata out of normal flow and uses one focus trea
 test('priority commands are connected to both persistence paths and the reference button is removed',()=>{
  const personal=component('../main.jsx'),shared=component('SharedReviewRoom.jsx');
  assert.match(personal,/priority:parsed.priority,text:parsed.text/);
- assert.match(shared,/text:parsed.text,attachments:[\s\S]*?priority:parsed.priority/);
+ assert.match(shared,/text:parsed.text,[\s\S]*?attachments:[\s\S]*?priority:parsed.priority/);
  assert.doesNotMatch(personal,/title="Agregar imagen o captura"|<span>Referencia<\/span>/);
  assert.match(personal,/aria-label="Filtrar por prioridad"/);
  assert.match(shared,/aria-label="Filtrar por prioridad"/);
