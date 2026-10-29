@@ -24,3 +24,8 @@ test('the card goes beside a side-menu item and above a bottom-menu item, inside
   assert.ok(below.left >= 12 && below.left + card.width <= phone.width - 12 + 0.01);
   assert.deepEqual(cardPosition(null, card, desktop), { left: 560, top: 360 });
 });
+
+test('a step that opens another view stays even before its target exists', () => {
+  const steps = visibleSteps(TOUR_STEPS, () => false);
+  assert.ok(steps.some(step => step.view === 'projects' && step.target === 'project-card'));
+});

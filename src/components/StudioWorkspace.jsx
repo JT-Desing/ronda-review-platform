@@ -50,7 +50,7 @@ export function ProjectTile({ project, onOpen, onRename, onDelete, canRename=tru
   // The API currently serves originals, not thumbnails. Avoid downloading large media just for a card.
   const media = project.assets.find(asset => ['image','video'].includes(asset.type));
   const preview = media && media.size > 0 && media.size <= 8 * 1024 * 1024 ? media : null;
-  return <article className={`studio-project folder-project palette-${project.palette} ${preview ? 'with-preview' : ''}`}>
+  return <article data-tour="project-card" className={`studio-project folder-project palette-${project.palette} ${preview ? 'with-preview' : ''}`}>
     <button type="button" className="project-open-hitarea" onClick={() => onOpen(project)} aria-label={`Abrir proyecto ${project.name}`} />
     <div className="studio-project-cover">{preview ? <StudioPreview asset={preview}/> : <CoverArt palette={project.palette}/>}</div>
     <span className="folder-project-tab" aria-hidden="true"><Icon name="folder" size={20}/></span>

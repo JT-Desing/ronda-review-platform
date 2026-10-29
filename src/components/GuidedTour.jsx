@@ -6,12 +6,15 @@ import './guided-tour.css';
 const PADDING = 6;
 const targetElement = id => [...document.querySelectorAll(`[data-tour="${id}"]`)].find(element => element.getClientRects().length > 0);
 
-export function GuidedTour() {
+export function GuidedTour({ onNavigate }) {
   const [open, setOpen] = useState(() => tourPending(accountStorage.getItem(TOUR_KEY)));
   const [steps, setSteps] = useState([]);
   const [index, setIndex] = useState(0);
   const [layout, setLayout] = useState(null);
   const card = useRef(null);
+  // The app hands a new navigate function on every render; the ref keeps the step effect from re-running.
+  const navigate = useRef(onNavigate);
+  navigate.current = onNavigate;
   const step = steps[index];
 
   const finish = () => { accountStorage.setItem(TOUR_KEY, TOUR_DONE); setOpen(false); };
@@ -28,9 +31,12 @@ export function GuidedTour() {
       const size = card.current?.getBoundingClientRect() || { width: 320, height: 180 };
       setLayout({ rect, position: cardPosition(rect, size, { width: innerWidth, height: innerHeight }) });
     };
-    measure();
+    // A step tied to another view opens it and waits a moment for its target to render.
+    let frame = 0, tries = 0;
+    const wait = () => { const found = targetElement(step.target); if (found) { found.scrollIntoView({ block: 'center' }); measure(); } else if (tries++ > 90) measure(); else frame = requestAnimationFrame(wait); };
+    if (step.view) { navigate.current?.(step.view); setLayout(null); frame = requestAnimationFrame(wait); } else measure();
     addEventListener('resize', measure);
-    return () => removeEventListener('resize', measure);
+    return () => { cancelAnimationFrame(frame); removeEventListener('resize', measure); };
   }, [open, step]);
 
   useEffect(() => { if (open) card.current?.focus(); }, [open, index]);
