@@ -47,12 +47,16 @@ try {
   assert.equal((await call('/api/workspace-invitations/enter', 'POST', { token: full.token, acceptPrivacy: true })).status, 404);
   assert.equal((await preview(full.token)).status, 404);
 
-  // Email only: no one-click entry; the person registers with that address and accepts.
+  // Email only: the person types the name on the invitation card and enters the same way.
   const emailOnly = await invite({ email: 'solo-correo@example.invalid', role: 'editor' });
-  assert.equal((await preview(emailOnly.token)).body.oneClick, false);
-  assert.equal((await call('/api/workspace-invitations/enter', 'POST', { token: emailOnly.token, acceptPrivacy: true })).status, 409);
-  const registered = await register('solo-correo@example.invalid', 'Solo Correo');
-  assert.equal((await call('/api/workspace-invitations/accept', 'POST', { token: emailOnly.token }, registered.cookie)).status, 200);
+  assert.equal((await preview(emailOnly.token)).body.oneClick, true);
+  assert.equal((await call('/api/workspace-invitations/enter', 'POST', { token: emailOnly.token, acceptPrivacy: true })).status, 400);
+  assert.equal((await call('/api/workspace-invitations/enter', 'POST', { token: emailOnly.token, acceptPrivacy: true, name: 'n'.repeat(101) })).status, 400);
+  const typed = await json(await call('/api/workspace-invitations/enter', 'POST', { token: emailOnly.token, acceptPrivacy: true, name: '  Solo Correo ' }));
+  assert.equal(typed.status, 200); assert.equal(typed.body.user.name, 'Solo Correo'); assert.equal(typed.body.workspaceId, team);
+  const otherEmailOnly = await invite({ email: 'registra@example.invalid', role: 'editor' });
+  const registered = await register('registra@example.invalid', 'Registra');
+  assert.equal((await call('/api/workspace-invitations/accept', 'POST', { token: otherEmailOnly.token }, registered.cookie)).status, 200);
 
   // A name never signs in to an account that already exists.
   const taken = await invite({ email: 'ya-existe@example.invalid', name: 'Suplantación', role: 'admin' });
@@ -66,7 +70,7 @@ try {
   assert.equal((await preview('corto')).status, 400);
   assert.equal((await call(`/api/workspace-invitations/preview?token=${full.token}`)).status, 405);
   assert.equal((await call(`/api/workspaces/${team}/invitations`, 'POST', { email: 'largo@example.invalid', name: 'n'.repeat(101), role: 'reviewer' }, owner.cookie)).status, 400);
-  console.log('PASS invitation entry: one-click account with session, email-only registration, existing accounts protected, single use.');
+  console.log('PASS invitation entry: one-click account with session, email-only entry with typed name, existing accounts protected, single use.');
 } finally {
   await new Promise(resolve => server ? server.close(resolve) : resolve());
   await pool?.end();

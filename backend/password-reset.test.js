@@ -49,8 +49,18 @@ test('known accounts get a random fragment link while only its digest is stored'
   assert.equal(delivery.message.attachments[0].cid,'ronda-mark@ronda');
   assert.equal(pool.calls[6][1][0], digest(value));
   assert.notEqual(pool.calls[6][1][0], value);
-  assert.match(pool.calls[6][0], /now\(\)\+interval '30 minutes'/);
+  assert.match(pool.calls[6][0], /now\(\)\+\$3::interval/);
+  assert.equal(pool.calls[6][1][2], '30 minutes');
   assert.ok(pool.calls.some(([sql]) => sql.includes('WHERE user_id=$1 AND used_at IS NULL')));
+});
+
+test('accounts created from an invitation get a welcome link that lasts three days', async () => {
+  const pool = requestPool();
+  const { delivery } = await requestPasswordReset({ pool, origin: 'https://ronda.test', email: 'nueva@example.invalid', minimumDelay: false, purpose: 'welcome' });
+  assert.equal(delivery.message.subject, 'Crea tu contraseña de Ronda');
+  assert.match(delivery.message.html, /3 días/);
+  assert.match(delivery.message.text, /https:\/\/ronda\.test\/#reset=/);
+  assert.equal(pool.calls[6][1][2], '3 days');
 });
 
 test('rate limits are applied before account lookup without a low global lockout threshold', async () => {

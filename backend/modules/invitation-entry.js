@@ -4,6 +4,7 @@ import { clientAddress, rateLimiter } from '../rate-limit.js';
 import { withPlatformRole } from '../platform-access.js';
 import { workspaceError } from '../workspace-policy.js';
 import { requirePrivacyAcceptance, withPrivacy, PRIVACY_POLICY_VERSION } from '../privacy.js';
+import { requestPasswordReset, deliverPasswordReset } from '../password-reset.js';
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 const pending = 'accepted_at IS NULL AND revoked_at IS NULL AND expires_at>now()';
 
@@ -21,7 +22,8 @@ async function preview(pool, value) {
       EXISTS(SELECT 1 FROM users u WHERE u.email=i.email) AS "accountExists"
     FROM workspace_invitations i JOIN workspaces w ON w.id=i.workspace_id WHERE i.token_hash=$1 AND ${pending.replace(/(accepted_at|revoked_at|expires_at)/g, 'i.$1')}`, [readToken(value)])).rows[0];
   if (!row) throw workspaceError(404, 'Invitación vencida, revocada o ya utilizada.');
-  return { ...row, oneClick: Boolean(row.name) && !row.accountExists };
+  // Without a name from the admin, the person types it on the same card.
+  return { ...row, oneClick: !row.accountExists };
 }
 
 // One-click entry: creates the invited account and its session in one step. It never
@@ -34,7 +36,10 @@ async function enter(pool, input) {
     await client.query('BEGIN');
     const invitation = (await client.query(`SELECT id,workspace_id,email,role,invitee_name AS name FROM workspace_invitations WHERE token_hash=$1 AND ${pending} FOR UPDATE`, [hash])).rows[0];
     if (!invitation) throw workspaceError(404, 'Invitación vencida, revocada o ya utilizada.');
-    if (!invitation.name) throw workspaceError(409, 'Esta invitación necesita que completes tus datos para crear la cuenta.');
+    const typed = typeof input?.name === 'string' ? input.name.trim() : '';
+    if (typed.length > 100) throw workspaceError(400, 'El nombre puede tener hasta 100 caracteres.');
+    invitation.name ||= typed;
+    if (!invitation.name) throw workspaceError(400, 'Escribe tu nombre para entrar.');
     if ((await client.query('SELECT 1 FROM users WHERE email=$1', [invitation.email])).rows.length) throw workspaceError(409, 'Ya tienes una cuenta en Ronda. Inicia sesión con ella para aceptar la invitación.');
     // No password: like Google accounts, a random hash; the person can set one with password reset.
     const user = (await client.query('INSERT INTO users(email,name,password_hash,privacy_version,privacy_accepted_at) VALUES($1,$2,$3,$4,now()) RETURNING id,email,name,privacy_version', [invitation.email, invitation.name, await hashPassword(token()), PRIVACY_POLICY_VERSION])).rows[0];
@@ -51,12 +56,20 @@ async function enter(pool, input) {
   finally { client.release(); }
 }
 
-export async function handleInvitationEntry({ req, res, path, pool, cookie }) {
+// The account starts without a password; this email lets the person choose one for the next sign-in.
+async function sendPasswordSetup({ pool, mailer, origin, user }) {
+  if (!mailer?.enabled) return;
+  const result = await requestPasswordReset({ pool, origin, email: user.email, minimumDelay: false, purpose: 'welcome' });
+  if (result.delivery) await deliverPasswordReset({ pool, mailer, delivery: result.delivery });
+}
+
+export async function handleInvitationEntry({ req, res, path, pool, cookie, mailer, origin }) {
   if (!await rateLimiter(pool)(`invitation-entry:${digest(clientAddress(req))}`, 30, 300)) return reply(res, 429, { error: 'Demasiados intentos desde esta conexión. Espera 5 minutos.' }, { 'Retry-After': '300' });
   // POST keeps the code out of URLs and access logs.
   if (path === '/api/workspace-invitations/preview' && req.method === 'POST') return reply(res, 200, await preview(pool, (await body(req))?.token));
   if (path === '/api/workspace-invitations/enter' && req.method === 'POST') {
     const { user, workspaceId, session } = await enter(pool, await body(req));
+    setImmediate(() => { void sendPasswordSetup({ pool, mailer, origin, user }).catch(() => {}); });
     return reply(res, 200, { user: withPlatformRole(withPrivacy(user)), workspaceId }, { 'Set-Cookie': cookie(session, 604800) });
   }
   return reply(res, 405, { error: 'Método no permitido.' });
