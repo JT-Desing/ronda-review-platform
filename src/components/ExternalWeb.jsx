@@ -47,7 +47,7 @@ export function ExternalWeb({url,name,activeTool='',setActiveTool=()=>{},activeC
       if(event.data?.type==='ronda:web-review:selection'&&textSelectionMode&&!readonly){
         const metrics=normalizeWebReviewMetrics(event.data.metrics)||webMetrics;
         const mark=selectionToDocumentMark(event.data,metrics,activeColor);
-        if(mark){setTextSelectionMode(false);setMarks([...viewportMarks,documentMarkToViewport(mark,metrics)]);openComment(mark,`“${mark.textQuote}”\n\n`);}
+        if(mark){setTextSelectionMode(false);setMarks(current=>[...current,mark]);openComment(mark,`“${mark.textQuote}”\n\n`);}
       }
     };
     window.addEventListener('message',receive);return()=>window.removeEventListener('message',receive);
