@@ -158,3 +158,10 @@
 .shared-projects .shared-piece-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;height:100%;background:radial-gradient(ellipse at top left,#3c2f52,#14111c 75%);color:#d1bde9}
 @media(max-width:680px){.shared-projects .shared-delivery-grid{grid-template-columns:1fr}.shared-projects[data-mode="gallery"]>.shared-layout>.shared-list.studio-project-grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.shared-projects .shared-piece-card{transition:none}}
+.shared-link-change{display:grid;gap:8px;margin:0 0 12px;padding:12px 14px;border:1px solid #3a3342;border-radius:12px;background:#1a1620;color:#e9e4f0}
+.shared-link-change label{display:grid;gap:6px;font-size:12px;color:#c9c2d3}
+.shared-link-change input{min-height:38px;padding:0 10px;border:1px solid #4a4255;border-radius:9px;background:#120f16;color:#f5f2f9;font:inherit;font-size:13px}
+.shared-link-change small{color:#a9a1b4;font-size:11px}
+.shared-link-change>div{display:flex;justify-content:flex-end;gap:8px}
+.shared-link-change button{min-height:34px;padding:0 14px;border-radius:9px;border:1px solid #c7a9f3;background:#c7a9f3;color:#17121c;font-weight:600}
+.shared-link-change button.secondary{background:transparent;color:#e1d6f0;border-color:#4a4255}

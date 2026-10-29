@@ -31,5 +31,13 @@ try{
   assert.equal(project.open_review_comments,1);
   await assert.rejects(sharedCommentService(repo).addComment(f.space,f.reviewer,context,{text:'Tiempo ficticio',requestId:randomUUID(),anchor:{timeSeconds:5}}),{status:400});
   assert.equal((await service.listVersions(f.space,f.admin,f.project,added.asset.id)).versions[0].externalUrl,input.url);
-  console.log('PASS shared links: migration, authorization before network, idempotency, persistence, version listing and web comments.');
+  // Changing a dead link adds version 2 and keeps the comments on version 1.
+  const asset=(await service.listAssets(f.space,f.admin,f.project)).assets[0];
+  await assert.rejects(service.addLinkVersion(f.space,f.reviewer,f.project,asset.id,{url:'https://example.org/',revision:asset.revision}),{status:403});
+  await assert.rejects(service.addLinkVersion(f.space,f.admin,f.project,asset.id,{url:'https://example.org/',revision:asset.revision+1}),{status:409});
+  const changed=await service.addLinkVersion(f.space,f.admin,f.project,asset.id,{url:'https://example.org/',revision:asset.revision});
+  assert.equal(changed.version.number,2);assert.equal(changed.version.externalUrl,'https://example.org/');
+  assert.equal(changed.asset.activeVersionId,changed.version.id);
+  assert.equal((await sharedCommentService(repo).listComments(f.space,f.admin,context)).comments.length,1);
+  console.log('PASS shared links: migration, authorization before network, idempotency, persistence, version listing and web comments, link change as a new version.');
 }finally{await f.close();}
