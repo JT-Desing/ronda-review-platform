@@ -51,7 +51,8 @@ async function enter(pool, value) {
 
 export async function handleInvitationEntry({ req, res, path, pool, cookie }) {
   if (!await rateLimiter(pool)(`invitation-entry:${digest(clientAddress(req))}`, 30, 300)) return reply(res, 429, { error: 'Demasiados intentos desde esta conexión. Espera 5 minutos.' }, { 'Retry-After': '300' });
-  if (path === '/api/workspace-invitations/preview' && req.method === 'GET') return reply(res, 200, await preview(pool, new URL(req.url, 'http://ronda.invalid').searchParams.get('token')));
+  // POST keeps the code out of URLs and access logs.
+  if (path === '/api/workspace-invitations/preview' && req.method === 'POST') return reply(res, 200, await preview(pool, (await body(req))?.token));
   if (path === '/api/workspace-invitations/enter' && req.method === 'POST') {
     const { user, workspaceId, session } = await enter(pool, (await body(req))?.token);
     return reply(res, 200, { user: withPlatformRole(user), workspaceId }, { 'Set-Cookie': cookie(session, 604800) });

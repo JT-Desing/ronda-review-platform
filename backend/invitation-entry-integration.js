@@ -23,7 +23,7 @@ try {
   const team = (await json(await call('/api/workspaces', 'POST', { name: 'Equipo Invitaciones', requestId: randomUUID(), plan: 'agencia' }, owner.cookie))).body.workspace.id;
   await pool.query("UPDATE workspaces SET plan_status='active' WHERE id=$1", [team]);
   const invite = async input => (await json(await call(`/api/workspaces/${team}/invitations`, 'POST', input, owner.cookie))).body;
-  const preview = async value => json(await call(`/api/workspace-invitations/preview?token=${value}`));
+  const preview = async value => json(await call('/api/workspace-invitations/preview', 'POST', { token: value }));
 
   // Name filled by the admin: one click creates the account, joins the team and signs in.
   const full = await invite({ email: 'Nueva@Example.invalid', name: '  Ana Revisora ', role: 'reviewer' });
@@ -58,6 +58,7 @@ try {
 
   assert.equal((await preview('x'.repeat(43))).status, 404);
   assert.equal((await preview('corto')).status, 400);
+  assert.equal((await call(`/api/workspace-invitations/preview?token=${full.token}`)).status, 405);
   assert.equal((await call(`/api/workspaces/${team}/invitations`, 'POST', { email: 'largo@example.invalid', name: 'n'.repeat(101), role: 'reviewer' }, owner.cookie)).status, 400);
   console.log('PASS invitation entry: one-click account with session, email-only registration, existing accounts protected, single use.');
 } finally {

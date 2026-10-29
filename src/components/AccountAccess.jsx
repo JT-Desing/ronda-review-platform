@@ -97,7 +97,7 @@ export default function AccountAccess({ children }) {
   const [invitation,setInvitation]=useState(null);
   useEffect(()=>{
     if(!invitationCode)return;
-    api(`/api/workspace-invitations/preview?token=${invitationCode}`).then(value=>{setInvitation(value);setEmail(value.email);setMode(value.accountExists?'login':'register');}).catch(failure=>setError(failure.message));
+    api('/api/workspace-invitations/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:invitationCode})}).then(value=>{setInvitation(value);setEmail(value.email);setMode(value.accountExists?'login':'register');}).catch(failure=>setError(failure.message));
   },[]);
   async function enterByInvitation(){
     if(busy)return;setBusy(true);setError('');
