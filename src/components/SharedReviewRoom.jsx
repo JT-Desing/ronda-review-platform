@@ -117,11 +117,12 @@ export function SharedReviewRoom({workspaceId,projectId,assetId,onBack,onNotify,
       const reusable=reusableReviewMedia(cachedMedia.current,data);
       if(reusable){commit(data,reusable);return;}
       if(data.version.externalUrl){commit(data,{url:data.version.externalUrl,kind:data.asset.kind,name:data.version.name,external:true});return;}
-      if(data.asset.kind==='html'){commit(data,{url:`/api/workspaces/${encodeURIComponent(workspaceId)}/media/${encodeURIComponent(data.version.fileId)}`,kind:'html',name:data.version.name});return;}
-      if(data.asset.kind==='file'){commit(data,{url:`/api/workspaces/${encodeURIComponent(workspaceId)}/media/${encodeURIComponent(data.version.fileId)}?download=1`,kind:'file',name:data.version.name});return;}
+      const mediaUrl=`/api/workspaces/${encodeURIComponent(workspaceId)}/media/${encodeURIComponent(data.version.fileId)}`;
+      if(data.asset.kind==='html'){commit(data,{url:mediaUrl,kind:'html',name:data.version.name});return;}
+      if(data.asset.kind==='file'){commit(data,{url:`${mediaUrl}?download=1`,kind:'file',name:data.version.name});return;}
       // Keep authenticated HTTP Range streaming: never wait for an entire video blob.
-      if(data.asset.kind==='video'){commit(data,{url:`/api/workspaces/${encodeURIComponent(workspaceId)}/media/${encodeURIComponent(data.version.fileId)}`,kind:'video',name:data.version.name});return;}
-      const response=await measurePhase('review.preview-fetch',()=>fetch(`/api/workspaces/${encodeURIComponent(workspaceId)}/media/${encodeURIComponent(data.version.fileId)}`,{credentials:'same-origin',signal:controller.current.signal}));
+      if(data.asset.kind==='video'){commit(data,{url:mediaUrl,kind:'video',name:data.version.name});return;}
+      const response=await measurePhase('review.preview-fetch',()=>fetch(mediaUrl,{credentials:'same-origin',signal:controller.current.signal}));
       if(!response.ok)throw Object.assign(new Error('No tienes acceso al medio o el archivo no está disponible.'),{status:response.status});
       const blob=await measurePhase('review.preview-buffer',()=>response.blob());if(!active)return;url=URL.createObjectURL(blob);if(data.asset.kind==='image'){const image=new Image();image.src=url;await measurePhase('review.image-decode',()=>image.decode());if(!active)return;}commit(data,{url,kind:data.asset.kind,name:data.version.name});
     })().catch(e=>{if(active&&e.name!=='AbortError'){setError(e.message);if([403,404].includes(e.status))setRoom(null);}}).finally(()=>{if(active)setLoading(false);});
