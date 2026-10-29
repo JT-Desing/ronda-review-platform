@@ -2,6 +2,7 @@ import React,{useEffect,useRef,useState} from 'react';
 import {ReviewLoading} from './ReviewLoading.jsx';
 import {projectPath,reviewRequest,reviewSend,uploadFile} from '../state/sharedReviewApi.js';
 import {SharedReviewRoom} from './SharedReviewRoom.jsx';
+import {revealReviewStage} from './reveal-review-stage.js';
 import {SharedDeliveryGrid} from './SharedDeliveryGrid.jsx';
 import {mergeActiveAssetSummary} from '../state/sharedReviewState.js';
 import {measurePhase} from '../state/performanceTelemetry.js';
@@ -36,7 +37,7 @@ export function SharedProjectMedia({workspaceId,projectId,role,onRoleUpdate,perm
   const addWebCapture=async(file,intent={})=>{if(!file)return;await mutate(async()=>{const result=await uploadFile(context,file,crypto.randomUUID(),setProgress);setCaptureIntent({assetId:result.asset.id,tool:intent.tool||'',color:intent.color||'#b89be8'});setSelected(result.asset.id);},'Captura web guardada como pieza del proyecto');};
   useEffect(()=>{const capture=event=>addWebCapture(event.detail?.file,event.detail);window.addEventListener('ronda:web-capture',capture);return()=>window.removeEventListener('ronda:web-capture',capture);},[workspaceId,projectId]);
   const deliveryGrid=<><SharedDeliveryGrid assets={assets} trash={trash} workspaceId={workspaceId} projectName={projectName} role={role} selected={selected} busy={busy} refreshing={refreshingAssets} error={error} progress={progress}
-    onSelect={id=>{if(id!==selected&&(!reviewDirty.current||window.confirm('Hay cambios sin publicar. ¿Descartarlos?')))setSelected(id);}}
+    onSelect={id=>{if(id===selected){revealReviewStage({remount:false});return;}if((!reviewDirty.current||window.confirm('Hay cambios sin publicar. ¿Descartarlos?'))){setSelected(id);revealReviewStage();}}}
     onOrder={order=>mutate(()=>reviewSend(path+'/assets/order','PUT',{order,previousOrder:assets.map(a=>a.id)}),'Orden guardado para el equipo')}
     onTrash={items=>mutate(()=>reviewSend(path+'/assets/trash','POST',{assets:items.map(asset=>({id:asset.id,revision:asset.revision}))}),items.length===1?'Pieza movida a la papelera':`${items.length} piezas movidas a la papelera`)}
     onRestore={asset=>mutate(()=>reviewSend(path+'/assets/'+asset.id+'/restore','POST',{revision:asset.revision}),'Pieza restaurada')}
