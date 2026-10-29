@@ -13,6 +13,11 @@ async function objectBody(req) {
 export async function handleWorkspaces({ req, res, path, account, pool, mailer, origin }) {
   if (!account) return reply(res, 401, { error: 'Inicia sesión.' });
   const repository = workspaceRepository(pool), service = workspaceService(repository);
+  if(path==='/api/notifications'&&req.method==='GET')return reply(res,200,await repository.notifications(account.id));
+  if(path==='/api/notifications/read-all'&&req.method==='POST')return reply(res,200,await repository.markAllNotificationsRead(account.id));
+  const notificationRead=path.match(new RegExp(`^/api/notifications/(${uuid})/read$`));
+  if(notificationRead&&req.method==='POST')return reply(res,200,await repository.markNotificationRead(account.id,notificationRead[1]));
+  if(path==='/api/notifications'||path==='/api/notifications/read-all'||path.startsWith('/api/notifications/'))return reply(res,405,{error:'Método no permitido.'});
   const reviewActivity=path.match(new RegExp(`^/api/workspaces/(${uuid})/review-activity$`));
   if(reviewActivity&&req.method==='GET')return reply(res,200,await repository.reviewActivity(reviewActivity[1],account.id));
   const planUsage=path.match(new RegExp(`^/api/workspaces/(${uuid})/plan$`));

@@ -61,6 +61,70 @@ export function workspaceRepository(pool) {
       } catch (error) { await client.query('ROLLBACK'); throw error; }
       finally { client.release(); }
     },
+    async notifications(userId) {
+      const rows = (await pool.query(`
+        SELECT e.id AS "eventId",e.workspace_id AS "workspaceId",w.name AS "workspaceName",
+          e.action,e.details,e.created_at AS "createdAt",actor.name AS "actor",
+          p.id AS "projectId",p.name AS "projectName",a.name AS "assetName",r.read_at AS "readAt"
+        FROM workspace_events e
+        JOIN workspaces w ON w.id=e.workspace_id AND w.kind='team'
+        JOIN workspace_event_recipients recipient ON recipient.event_id=e.id AND recipient.user_id=$1
+        JOIN workspace_members member ON member.workspace_id=e.workspace_id AND member.user_id=$1
+        LEFT JOIN users actor ON actor.id=e.actor_id
+        LEFT JOIN shared_projects p ON p.id=(e.details->>'projectId')::uuid AND p.workspace_id=e.workspace_id
+        LEFT JOIN shared_assets a ON a.id=(e.details->>'assetId')::uuid AND a.workspace_id=e.workspace_id
+        LEFT JOIN workspace_event_reads r ON r.event_id=e.id AND r.user_id=$1
+        WHERE e.action IN ('project.created','review.version_created')
+          AND p.id IS NOT NULL AND p.deleted_at IS NULL
+          AND (member.role='admin' OR NOT p.restricted OR p.created_by=$1 OR EXISTS(
+            SELECT 1 FROM shared_project_members pm WHERE pm.workspace_id=e.workspace_id AND pm.project_id=p.id AND pm.user_id=$1
+          ))
+        ORDER BY e.created_at DESC,e.id DESC LIMIT 50`, [userId])).rows;
+      const unreadCount = Number((await pool.query(`
+        SELECT count(*)::integer AS count
+        FROM workspace_events e
+        JOIN workspaces w ON w.id=e.workspace_id AND w.kind='team'
+        JOIN workspace_event_recipients recipient ON recipient.event_id=e.id AND recipient.user_id=$1
+        JOIN workspace_members member ON member.workspace_id=e.workspace_id AND member.user_id=$1
+        JOIN shared_projects p ON p.id=(e.details->>'projectId')::uuid AND p.workspace_id=e.workspace_id AND p.deleted_at IS NULL
+        LEFT JOIN workspace_event_reads r ON r.event_id=e.id AND r.user_id=$1
+        WHERE e.action IN ('project.created','review.version_created') AND r.event_id IS NULL
+          AND (member.role='admin' OR NOT p.restricted OR p.created_by=$1 OR EXISTS(
+            SELECT 1 FROM shared_project_members pm WHERE pm.workspace_id=e.workspace_id AND pm.project_id=p.id AND pm.user_id=$1
+          ))`, [userId])).rows[0].count);
+      return { notifications: rows, unreadCount };
+    },
+    async markNotificationRead(userId, eventId) {
+      const result = await pool.query(`
+        INSERT INTO workspace_event_reads(event_id,user_id)
+        SELECT e.id,$2 FROM workspace_events e
+        JOIN workspace_event_recipients recipient ON recipient.event_id=e.id AND recipient.user_id=$2
+        JOIN workspace_members member ON member.workspace_id=e.workspace_id AND member.user_id=$2
+        JOIN workspaces w ON w.id=e.workspace_id AND w.kind='team'
+        JOIN shared_projects p ON p.id=(e.details->>'projectId')::uuid AND p.workspace_id=e.workspace_id AND p.deleted_at IS NULL
+        WHERE e.id=$1 AND e.action IN ('project.created','review.version_created')
+          AND (member.role='admin' OR NOT p.restricted OR p.created_by=$2 OR EXISTS(
+            SELECT 1 FROM shared_project_members pm WHERE pm.workspace_id=e.workspace_id AND pm.project_id=p.id AND pm.user_id=$2
+          ))
+        ON CONFLICT(event_id,user_id) DO UPDATE SET read_at=workspace_event_reads.read_at RETURNING event_id`, [eventId,userId]);
+      if (!result.rowCount) throw workspaceError(404,'Notificación no disponible.');
+      return { ok: true };
+    },
+    async markAllNotificationsRead(userId) {
+      await pool.query(`
+        INSERT INTO workspace_event_reads(event_id,user_id)
+        SELECT e.id,$1 FROM workspace_events e
+        JOIN workspace_event_recipients recipient ON recipient.event_id=e.id AND recipient.user_id=$1
+        JOIN workspaces w ON w.id=e.workspace_id AND w.kind='team'
+        JOIN workspace_members member ON member.workspace_id=e.workspace_id AND member.user_id=$1
+        JOIN shared_projects p ON p.id=(e.details->>'projectId')::uuid AND p.workspace_id=e.workspace_id AND p.deleted_at IS NULL
+        WHERE e.action IN ('project.created','review.version_created')
+          AND (member.role='admin' OR NOT p.restricted OR p.created_by=$1 OR EXISTS(
+            SELECT 1 FROM shared_project_members pm WHERE pm.workspace_id=e.workspace_id AND pm.project_id=p.id AND pm.user_id=$1
+          ))
+        ON CONFLICT(event_id,user_id) DO NOTHING`, [userId]);
+      return { ok: true };
+    },
     async transaction(workspaceId, actorId, operation, admin = true) {
       const client = await pool.connect();
       try {

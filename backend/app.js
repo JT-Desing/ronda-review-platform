@@ -48,7 +48,7 @@ export function createApp({ pool, origin, mailer, sharedStorage, fileRoot }) {
       }
       if(isSharedReviewPath(path))return await handleSharedReview(context);
       if (/^\/api\/workspaces\/[^/]+\/projects(?:\/|$)/.test(path)) return await handleSharedProjects(context);
-      if (path === '/api/workspaces' || path?.startsWith('/api/workspaces/') || path === '/api/workspace-invitations/accept') return await handleWorkspaces(context);
+      if (path === '/api/workspaces' || path?.startsWith('/api/workspaces/') || path === '/api/workspace-invitations/accept' || path === '/api/notifications' || path?.startsWith('/api/notifications/')) return await handleWorkspaces(context);
       if (req.method === 'GET' && path === '/api/auth/session') return reply(res, 200, { user: withPlatformRole(withPrivacy(account)) });
       if (req.method === 'POST' && path === '/api/account/privacy') {
         if (!account) return reply(res, 401, { error: 'Inicia sesión.' });

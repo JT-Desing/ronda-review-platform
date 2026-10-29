@@ -1,7 +1,16 @@
 import { projectInput, commentInput, requestId, requireProjectEditor } from './project-policy.js';
 import { workspaceError } from './workspace-policy.js';
 import {validateProjectMembers,replaceProjectMembers} from './project-membership.js';
-const event = (db, space, actor, action, details) => db.query('INSERT INTO workspace_events(workspace_id,actor_id,action,details) VALUES($1,$2,$3,$4)', [space, actor, action, details]);
+const event = (db, space, actor, action, details) => ['project.created','review.version_created'].includes(action)
+  ? db.query(`WITH created AS (
+      INSERT INTO workspace_events(workspace_id,actor_id,action,details) VALUES($1,$2,$3,$4) RETURNING id
+    ) INSERT INTO workspace_event_recipients(event_id,user_id)
+      SELECT created.id,m.user_id FROM created CROSS JOIN workspace_members m
+      LEFT JOIN shared_projects p ON p.workspace_id=$1 AND p.id=($4::jsonb->>'projectId')::uuid
+      WHERE m.workspace_id=$1 AND (m.role='admin' OR NOT p.restricted OR p.created_by=m.user_id OR EXISTS(
+        SELECT 1 FROM shared_project_members pm WHERE pm.workspace_id=$1 AND pm.project_id=p.id AND pm.user_id=m.user_id
+      ))`, [space, actor, action, details])
+  : db.query('INSERT INTO workspace_events(workspace_id,actor_id,action,details) VALUES($1,$2,$3,$4)', [space, actor, action, details]);
 export function sharedProjectService(repository) {
   return {
     list(space, actor) {
