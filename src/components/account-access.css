@@ -115,3 +115,5 @@
 .account-consent{display:flex!important;align-items:flex-start;gap:10px;font-weight:400!important;font-size:13px!important;line-height:1.5;color:var(--muted)}
 .account-consent input{width:auto!important;min-height:0!important;margin-top:3px;accent-color:var(--accent)}
 .account-consent a{color:var(--accent)}
+/* #root is locked to the viewport for the app shell; full-page account views scroll on their own. */
+#root>.account-access{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}
