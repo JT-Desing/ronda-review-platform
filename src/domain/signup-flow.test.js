@@ -29,7 +29,7 @@ test('team creation API receives the trimmed name',async()=>{
   let body;
   const result=await applySignupWorkspace({api:async(_path,options)=>{body=JSON.parse(options.body);return {workspace:{id:'team-qa'}};},setup:{choice:'create',name:' Equipo QA ',requestId:'qa-request'}});
   assert.deepEqual(result,{workspaceId:'team-qa',onboardingDraft:null});
-  assert.deepEqual(body,{name:'Equipo QA',requestId:'qa-request'});
+  assert.deepEqual(body,{name:'Equipo QA',requestId:'qa-request',plan:'estudio'});
 });
 
 test('invalid team name never calls workspace creation from resumed onboarding',async()=>{
@@ -64,7 +64,7 @@ test('invalid invitation code is retained for correction without calling accepta
 test('new team creation retains its stable request ID if the endpoint fails',async()=>{
   const setup={choice:'create',name:'Equipo QA',code:'',requestId:'same-request'};let request;
   const result=await applySignupWorkspace({api:async(path,options)=>{request=[path,JSON.parse(options.body)];throw Object.assign(new Error('DB offline'),{status:503});},setup});
-  assert.deepEqual(request,['/api/workspaces',{name:'Equipo QA',requestId:'same-request'}]);
+  assert.deepEqual(request,['/api/workspaces',{name:'Equipo QA',requestId:'same-request',plan:'estudio'}]);
   assert.deepEqual(result,{workspaceId:null,onboardingDraft:{...setup,error:'DB offline'}});
 });
 

@@ -1,5 +1,4 @@
 export const WORKSPACE_ROLES = ['admin', 'editor', 'reviewer'];
-export const WORKSPACE_SEAT_LIMIT = 20; // Operational cap, not a paid-plan entitlement.
 export const workspaceError = (status, message) => Object.assign(new Error(message), { status });
 export function requireWorkspaceMember(role) {
   if (!WORKSPACE_ROLES.includes(role)) throw workspaceError(404, 'Espacio no disponible.');

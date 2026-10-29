@@ -8,6 +8,8 @@ import { handleFiles } from './modules/files.js';
 import { handleWorkspaces } from './modules/workspaces.js';
 import { handleSharedProjects } from './modules/shared-projects.js';
 import {handleSharedReview,isSharedReviewPath} from './modules/shared-review.js';
+import {handlePlatform,isPlatformPath} from './modules/platform.js';
+import {accountPlan,accountStorageUsed} from './repositories/plans.js';
 import {inspectLink} from './external-link.js';
 import {body} from './http.js';
 import {rateLimiter} from './rate-limit.js';
@@ -35,6 +37,12 @@ export function createApp({ pool, origin, mailer, sharedStorage, fileRoot }) {
         if(path==='/api/links/inspect')return reply(res,200,await inspectLink((await body(req))?.url));
       }
       const context = { req, res, path, account, sessionToken, pool, cookie, sharedStorage, fileRoot, mailer, origin };
+      if(isPlatformPath(path))return await handlePlatform(context);
+      if(req.method==='GET'&&path==='/api/account/plan'){
+        if(!account)return reply(res,401,{error:'Inicia sesión.'});
+        const {plan,status,extraPacks,limits}=await accountPlan(pool,account.id);
+        return reply(res,200,{plan,status,extraPacks,limits,usage:{storageBytes:await accountStorageUsed(pool,account.id)}});
+      }
       if(isSharedReviewPath(path))return await handleSharedReview(context);
       if (/^\/api\/workspaces\/[^/]+\/projects(?:\/|$)/.test(path)) return await handleSharedProjects(context);
       if (path === '/api/workspaces' || path?.startsWith('/api/workspaces/') || path === '/api/workspace-invitations/accept') return await handleWorkspaces(context);

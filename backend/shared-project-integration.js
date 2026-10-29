@@ -29,10 +29,14 @@ try {
   const [owner, editor, reviewer, outsider] = users;
   // The owner exercises the reserved workspace-management routes as the configured platform superadmin.
   process.env.RONDA_SUPERADMIN_IDS = owner.id;
-  const workspaceResponse = await call('/api/workspaces', 'POST', { name: 'Shared project QA team', requestId: randomUUID() }, owner);
+  assert.equal((await call('/api/workspaces', 'POST', { name: 'Shared project QA team', requestId: randomUUID() }, owner)).status, 400);
+  const workspaceResponse = await call('/api/workspaces', 'POST', { name: 'Shared project QA team', requestId: randomUUID(), plan: 'estudio' }, owner);
   assert.equal(workspaceResponse.status, 201);
   const workspace = (await workspaceResponse.json()).workspace;
   const workspacePath = `/api/workspaces/${workspace.id}`;
+  // A self-service team waits for the platform owner before it can invite.
+  assert.equal((await call(workspacePath + '/invitations', 'POST', { email: editor.email, role: 'editor' }, owner)).status, 409);
+  assert.equal((await call(`/api/platform/workspaces/${workspace.id}`, 'PATCH', { status: 'active' }, owner)).status, 200);
   for (const [member, role] of [[editor, 'editor'], [reviewer, 'reviewer']]) {
     const invite = await (await call(workspacePath + '/invitations', 'POST', { email: member.email, role }, owner)).json();
     assert.equal((await call('/api/workspace-invitations/accept', 'POST', { token: invite.token }, member)).status, 200);

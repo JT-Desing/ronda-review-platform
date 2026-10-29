@@ -16,6 +16,7 @@ import { RondaProvider } from '../state/RondaContext.jsx';
 import {reauthenticateAccount} from '../state/sessionRecovery.js';
 import {capturePasswordResetLink,clearPasswordResetLink,hasInvalidPasswordResetToken,passwordResetTokenFromUrl,readPasswordResetToken} from '../domain/password-reset-link.js';
 import { api, accountStorage, initializeAccount, flushAccount, retryAccount, pendingAccountCopy, recoverCopy, dismissPendingCopy } from '../state/accountStorage.js';
+import {TeamPlanPicker} from './TeamPlanPicker.jsx';
 
 const AccountActionsContext = createContext(null);
 export function useAccountActions() {
@@ -107,7 +108,7 @@ export default function AccountAccess({ children }) {
     const input = Object.fromEntries(new FormData(form));
     try {
       if(mode==='register'){
-        const setup={choice:input.workspaceChoice||signupWorkspace.choice,name:input.teamName||signupWorkspace.name,code:input.invitationCode||signupWorkspace.code,requestId:crypto.randomUUID()};
+        const setup={choice:input.workspaceChoice||signupWorkspace.choice,name:input.teamName||signupWorkspace.name,code:input.invitationCode||signupWorkspace.code,plan:signupWorkspace.plan||'estudio',requestId:crypto.randomUUID()};
         setOnboardingDraft(setup);
         const {workspaceChoice,teamName,invitationCode,...credentials}=input;
         const completion=await completeSignup({api,credentials,setup,enter:async(account,options)=>enter(account,options)});
@@ -209,7 +210,7 @@ export default function AccountAccess({ children }) {
           <label><input type="radio" name="workspaceChoice" value="personal" checked={signupWorkspace.choice==='personal'} onChange={()=>setSignupWorkspace(current=>({...current,choice:'personal'}))}/> Solo en mi espacio personal</label>
           <label><input type="radio" name="workspaceChoice" value="create" checked={signupWorkspace.choice==='create'} onChange={()=>setSignupWorkspace(current=>({...current,choice:'create'}))}/> Crear un equipo para mi empresa</label>
           <label><input type="radio" name="workspaceChoice" value="join" checked={signupWorkspace.choice==='join'} onChange={()=>setSignupWorkspace(current=>({...current,choice:'join'}))}/> Ya tengo un código de invitación</label>
-          {signupWorkspace.choice==='create'&&<label>Nombre de la empresa o equipo<input name="teamName" autoComplete="organization" required maxLength={80} value={signupWorkspace.name} aria-invalid={signupWorkspace.name.length>0&&!isValidTeamName(signupWorkspace.name)} aria-describedby="signup-team-name-hint" onChange={event=>setSignupWorkspace(current=>({...current,name:event.target.value}))} placeholder="Ej. Estudio Aurora"/><small id="signup-team-name-hint">{signupWorkspace.name.length>0&&!isValidTeamName(signupWorkspace.name)?'Escribe al menos un carácter que no sea un espacio.':'El nombre se guardará sin espacios al inicio o al final.'}</small></label>}
+          {signupWorkspace.choice==='create'&&<label>Nombre de la empresa o equipo<input name="teamName" autoComplete="organization" required maxLength={80} value={signupWorkspace.name} aria-invalid={signupWorkspace.name.length>0&&!isValidTeamName(signupWorkspace.name)} aria-describedby="signup-team-name-hint" onChange={event=>setSignupWorkspace(current=>({...current,name:event.target.value}))} placeholder="Ej. Estudio Aurora"/><small id="signup-team-name-hint">{signupWorkspace.name.length>0&&!isValidTeamName(signupWorkspace.name)?'Escribe al menos un carácter que no sea un espacio.':'El nombre se guardará sin espacios al inicio o al final.'}</small></label>}{signupWorkspace.choice==='create'&&<TeamPlanPicker value={signupWorkspace.plan||'estudio'} onChange={plan=>setSignupWorkspace(current=>({...current,plan}))} disabled={busy}/>}
           {signupWorkspace.choice==='join'&&<><label>Código de invitación<input name="invitationCode" autoComplete="off" spellCheck={false} required maxLength={43} value={signupWorkspace.code} aria-invalid={signupWorkspace.code.length>0&&!isValidInvitationCode(signupWorkspace.code)} aria-describedby="signup-invitation-code-hint" onChange={event=>setSignupWorkspace(current=>({...current,code:event.target.value.trim()}))} placeholder="Pega aquí el código del equipo"/></label><small id="signup-invitation-code-hint">{signupWorkspace.code.length>0&&!isValidInvitationCode(signupWorkspace.code)?'El código está incompleto o no tiene el formato esperado. Pega el código completo de la invitación.':'Pega el código completo de 43 caracteres recibido por correo; usa el mismo correo al que enviaron la invitación.'}</small></>}
         </fieldset>
       </>}

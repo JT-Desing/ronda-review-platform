@@ -53,7 +53,7 @@ export async function applySignupWorkspace({api,setup}){
     const joining=normalizedSetup.choice==='join';
     const result=await api(joining?'/api/workspace-invitations/accept':'/api/workspaces',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(joining?{token:normalizedSetup.code.trim()}:{name:normalizedSetup.name,requestId:normalizedSetup.requestId})
+      body:JSON.stringify(joining?{token:normalizedSetup.code.trim()}:{name:normalizedSetup.name,requestId:normalizedSetup.requestId,plan:normalizedSetup.plan||'estudio'})
     });
     const workspaceId=result.workspaceId||result.workspace?.id;
     if(!workspaceId)throw new Error('No se pudo confirmar el equipo. Puedes reintentar desde el siguiente paso.');

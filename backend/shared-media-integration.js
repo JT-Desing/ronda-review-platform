@@ -28,7 +28,8 @@ try{
   async function* revokedStream(){yield png.subarray(0,5);await f.pool.query('DELETE FROM workspace_members WHERE workspace_id=$1 AND user_id=$2',[f.space,f.editor]);yield png.subarray(5);}
   await assert.rejects(service.receive(f.space,f.editor,during.uploadId,Readable.from(revokedStream())),{status:404});
   assert.equal((await f.pool.query('SELECT state FROM shared_media_files WHERE id=$1',[during.uploadId])).rows[0].state,'failed');
-  // 2000 MiB used leaves 48 MiB: one 40 MiB reservation fits, two do not.
+  // A 2 GB custom plan with 2000 MiB used leaves 48 MiB: one 40 MiB reservation fits, two do not.
+  await f.pool.query("UPDATE workspaces SET plan='a-medida',custom_storage_gb=2 WHERE id=$1",[f.space]);
   await f.pool.query("UPDATE shared_media_files SET state='failed'");
   for(let i=0;i<20;i++)await service.reserve(f.space,f.admin,{...input,size:104857600,requestId:randomUUID()});
   const results=await Promise.allSettled([1,2].map(()=>service.reserve(f.space,f.admin,{...input,size:41943040,requestId:randomUUID()})));

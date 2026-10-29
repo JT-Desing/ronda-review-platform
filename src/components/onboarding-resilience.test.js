@@ -73,7 +73,7 @@ test('new-account onboarding offers separate company, invite-code and personal p
   assert.match(onboarding,/initialChoice='',initialName='',initialCode=''/);
   assert.match(onboarding,/initialError='',initialRequestId=''/);
   assert.match(onboarding,/initialRequestId\|\|crypto\.randomUUID\(\)/);
-  assert.match(onboarding,/choice==='join'\?\{token:code\.trim\(\)\}:\{name:normalizeTeamName\(name\),requestId:key\}/);
+  assert.match(onboarding,/choice==='join'\?\{token:code\.trim\(\)\}:\{name:normalizeTeamName\(name\),requestId:key,plan\}/);
 });
 
 test('company team name validation is explained and blocks registration before account creation',()=>{
