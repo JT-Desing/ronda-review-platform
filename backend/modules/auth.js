@@ -4,6 +4,7 @@ import { authService } from '../auth-service.js';
 import { userRepository } from '../repositories/users.js';
 import { clientAddress, rateLimiter } from '../rate-limit.js';
 import {withPlatformRole} from '../platform-access.js';
+import { acceptedPrivacy, withPrivacy, PRIVACY_POLICY_VERSION } from '../privacy.js';
 import { requestPasswordReset, deliverPasswordReset, completePasswordReset } from '../password-reset.js';
 export async function handleAuth({ req, res, path, sessionToken, pool, cookie, mailer, origin }) {
   if (req.method === 'POST' && path === '/api/auth/password-reset/request') {
@@ -35,11 +36,11 @@ export async function handleAuth({ req, res, path, sessionToken, pool, cookie, m
     if (!await allow(`auth-email-ip:${digest(`${email}\n${address}`)}`, 10, 900) || !await allow(`auth-email:${digest(email)}`, 50, 3600)) return reply(res, 429, { error: 'Demasiados intentos. Espera 15 minutos.' }, { 'Retry-After': '900' });
     const service = authService(userRepository(pool));
     const user = path.endsWith('/register')
-      ? await service.register({ email, password, name: input.name })
+      ? await service.register({ email, password, name: input.name, privacyVersion: acceptedPrivacy(input) ? PRIVACY_POLICY_VERSION : null })
       : await service.login({ email, password });
     const value = token();
     await pool.query("INSERT INTO sessions VALUES($1,$2,now()+interval '7 days')", [digest(value), user.id]);
-    return reply(res, 200, { user: withPlatformRole(user) }, { 'Set-Cookie': cookie(value, 604800) });
+    return reply(res, 200, { user: withPlatformRole(withPrivacy(user)) }, { 'Set-Cookie': cookie(value, 604800) });
   }
   return reply(res, 404, { error: 'Ruta no disponible.' });
 }

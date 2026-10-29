@@ -21,8 +21,8 @@ La extensión no es necesaria para iniciar sesión ni para el resto de Ronda. Al
 ## Pendiente antes del envío
 
 - Cuenta de desarrollador de Chrome Web Store habilitada y aceptación de su acuerdo/registro por el titular.
-- Confirmar correo de soporte; `soporte@repolite.link` en `PRIVACY.md` es un placeholder.
-- Publicar la política de privacidad en URL HTTPS y completar el cuestionario de uso de datos.
+- Hecho: correo de soporte ronda@repolite.link.
+- Política publicada en https://ronda.repolite.link/legal/privacidad.html al desplegar esta versión. Falta completar el cuestionario de uso de datos en la consola.
 - Hecho: iconos de 16, 32, 48 y 128 en `extension/icons/` y ZIP de producción con `scripts/package-extension.sh` (sale en `dist-extension/`).
 - Hecho: probada en Chromium contra Ronda local, con conexión del sitio, selección de texto, comentario y scroll (ver PR #22 y #25).
 - Faltan las capturas de ficha (1280×800).
