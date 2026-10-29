@@ -41,3 +41,14 @@ test('Ronda shows a Chrome Web Store install link only after a store URL is conf
   assert.match(app,/Conectar este sitio/);
   assert.match(app,/Es opcional para el resto de Ronda/);
 });
+
+test('extension declares store icons that exist in every required size',async()=>{
+  const manifest=JSON.parse(await read('manifest.json'));
+  for(const size of ['16','32','48','128']){
+    assert.equal(manifest.icons[size],`icons/icon-${size}.png`);
+    const png=await readFile(new URL(manifest.icons[size],root));
+    assert.equal(png.subarray(1,4).toString(),'PNG');
+    assert.equal(png.readUInt32BE(16),Number(size));
+  }
+  assert.equal(manifest.action.default_icon['16'],'icons/icon-16.png');
+});

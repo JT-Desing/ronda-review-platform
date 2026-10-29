@@ -11,7 +11,10 @@ const origin = 'https://invite-qa.invalid';
 let pool, server;
 try {
   await admin.query(`CREATE DATABASE "${name}"`);
-  pool = new Pool({ connectionString: url.href }); await migrate(pool);
+  pool = new Pool({ connectionString: url.href });
+  // The forced DROP below ends idle connections (57P01); anything else must still fail the run.
+  pool.on('error', error => { if (error.code !== '57P01') throw error; });
+  await migrate(pool);
   server = http.createServer(createApp({ pool, origin }));
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;

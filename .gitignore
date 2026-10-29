@@ -13,3 +13,4 @@ coverage/
 .worktrees/
 .superpowers/
 !.env.offsite.example
+dist-extension/
