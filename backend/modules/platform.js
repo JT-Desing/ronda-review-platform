@@ -93,7 +93,7 @@ export async function handlePlatform({ req, res, path, account, pool }) {
   const workspace = path.match(new RegExp(`^/api/platform/workspaces/(${uuid})$`));
   if (workspace && req.method === 'PATCH') return reply(res, 200, await updateWorkspacePlan(pool, account.id, workspace[1], await objectBody(req)));
   if (path === '/api/platform/accounts' && req.method === 'GET') {
-    const email = new URL(req.url, 'http://ronda.invalid').searchParams.get('email') || '';
+    const email = new URL(req.url, 'https://ronda.invalid').searchParams.get('email') || '';
     if (!email) throw workspaceError(400, 'Indica el correo de la cuenta.');
     return reply(res, 200, await findAccount(pool, email));
   }

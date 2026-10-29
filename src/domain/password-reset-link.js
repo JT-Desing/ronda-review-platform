@@ -18,7 +18,7 @@ export function hasInvalidPasswordResetToken(locationLike = globalThis.location)
 }
 
 function scrubResetToken(locationLike, historyLike) {
-  const next = new URL(`${locationLike.pathname || '/'}${locationLike.search || ''}${locationLike.hash || ''}`, 'http://ronda.local');
+  const next = new URL(`${locationLike.pathname || '/'}${locationLike.search || ''}${locationLike.hash || ''}`, 'https://ronda.local');
   next.searchParams.delete('reset');
   const rawHash = next.hash.slice(1);
   const fragment = new URLSearchParams(rawHash);
@@ -74,7 +74,7 @@ export function clearPasswordResetToken(storage) {
 
 export function clearPasswordResetLink({ locationLike = globalThis.location, historyLike = globalThis.history, storage } = {}) {
   clearPasswordResetToken(storage);
-  const next = new URL(`${locationLike.pathname || '/'}${locationLike.search || ''}${locationLike.hash || ''}`, 'http://ronda.local');
+  const next = new URL(`${locationLike.pathname || '/'}${locationLike.search || ''}${locationLike.hash || ''}`, 'https://ronda.local');
   next.searchParams.delete('reset');
   const rawHash = next.hash.slice(1);
   const fragment = new URLSearchParams(rawHash);
