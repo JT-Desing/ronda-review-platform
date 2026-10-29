@@ -1,12 +1,12 @@
 # Política de privacidad de Ronda
 
-Versión 1.0, vigente desde el [PENDIENTE: fecha de publicación].
+Versión 1.0, vigente desde el 29 de octubre de 2026.
 
 Esta es la versión corta. El detalle legal está en la [Política de tratamiento de datos personales](politica-tratamiento-datos.md), que forma parte de esta política.
 
 ## Quién es responsable
 
-[PENDIENTE: razón social], NIT [PENDIENTE], con domicilio en [PENDIENTE]. Contacto: ronda@repolite.link.
+Jaime Alexis Herrera Ruiz, persona natural que opera Ronda, C.C. 1.040.732.222, con domicilio en Medellín. Contacto: ronda@repolite.link, teléfono 301 744 5788.
 
 ## Qué datos guardamos
 
@@ -27,7 +27,7 @@ Las piezas, archivos y comentarios que sube una empresa son suyos. Ronda los gua
 
 ## Con quién compartimos
 
-Con proveedores que hacen funcionar el servicio: Cloudflare (dominio y conexión), Zoho (envío de correos), Google (solo si eliges entrar con Google), el proveedor de hosting y el de copias de seguridad cifradas. Algunos tienen servidores fuera de Colombia.
+Con proveedores que hacen funcionar el servicio: Cloudflare (dominio y conexión), Zoho (envío de correos), Google (solo si eliges entrar con Google), Hoy Ronda funciona en un servidor propio en Medellín. Algunos de esos proveedores tienen servidores fuera de Colombia.
 
 ## Extensión "Ronda · Anotaciones web"
 
