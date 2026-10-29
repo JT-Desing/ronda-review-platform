@@ -36,6 +36,8 @@ Es opcional y sirve para comentar páginas web en vivo.
 - Solo actúa en los sitios HTTPS que tú autorizas uno por uno, desde el diálogo de Chrome.
 - En esos sitios lee el desplazamiento y el tamaño de la página, y el texto que seleccionas para comentar. Se lo pasa a tu pestaña de Ronda, y se guarda como parte del comentario.
 - Guarda en tu navegador la lista de sitios que conectaste.
+- Si el sitio está protegido, puedes guardar su usuario y contraseña en la extensión. Quedan solo en tu navegador, sirven para todas las páginas de ese sitio y Ronda no los recibe. Puedes borrarlos con "Olvidar".
+- Para mostrar el sitio dentro de Ronda, quita las cabeceras que impiden insertarlo, solo en las páginas de ese sitio que abre Ronda.
 - No lee tu historial, no envía el contenido de las páginas a otros servidores y no se usa para publicidad.
 - Puedes quitar el permiso de un sitio o desinstalarla cuando quieras desde la configuración de extensiones de Chrome. Ronda funciona sin ella.
 

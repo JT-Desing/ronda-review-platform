@@ -11,7 +11,7 @@ export function ExternalWeb({url,name,activeTool='',setActiveTool=()=>{},activeC
   const holder=useRef(null),iframe=useRef(null),bridgeNonce=useRef(crypto.randomUUID());
   useEffect(()=>{setLoaded(false);setActiveTool('');setCommentMark(null);setCommentDraft('');setWebMetrics(null);setTextSelectionMode(false);setExtensionConnected(false);bridgeNonce.current=crypto.randomUUID();},[url]);
   useEffect(()=>{
-    const receive=event=>{if(event.source===window&&event.origin===window.location.origin&&event.data?.type==='ronda:web-review:extension-installed')setExtensionInstalled(true)};
+    const receive=event=>{if(event.source!==window||event.origin!==window.location.origin)return;if(event.data?.type==='ronda:web-review:extension-installed')setExtensionInstalled(true);if(event.data?.type==='ronda:web-review:auth-required'&&typeof event.data.host==='string')setCaptureError(`${event.data.host} pide usuario y contraseña. Abre la extensión de Ronda (icono en la barra de Chrome) y guárdalos; se usarán para todas las páginas de ese sitio.`)};
     window.addEventListener('message',receive);
     window.postMessage({type:'ronda:web-review:check-extension'},window.location.origin);
     return()=>window.removeEventListener('message',receive);

@@ -52,3 +52,17 @@ test('extension declares store icons that exist in every required size',async()=
   }
   assert.equal(manifest.action.default_icon['16'],'icons/icon-16.png');
 });
+
+test('protected sites: framing rule is scoped to Ronda frames and credentials stay in the browser',async()=>{
+  const manifest=JSON.parse(await read('manifest.json'));
+  const worker=await read('service-worker.js');
+  const popup=await read('popup/popup.js');
+  assert.ok(manifest.permissions.includes('declarativeNetRequestWithHostAccess'));
+  assert.ok(!manifest.permissions.includes('declarativeNetRequest'));
+  assert.ok(manifest.permissions.includes('webRequestAuthProvider'));
+  assert.match(worker,/initiatorDomains: \[new URL\(RONDA_ORIGIN\)\.hostname\]/);
+  assert.match(worker,/resourceTypes: \['sub_frame'\]/);
+  assert.match(worker,/answered\.has\(details\.requestId\)/);
+  assert.match(worker,/sender\.url\?\.startsWith\(chrome\.runtime\.getURL/);
+  assert.doesNotMatch(popup+worker,/fetch\(/);
+});

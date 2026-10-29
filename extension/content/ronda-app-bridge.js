@@ -11,5 +11,10 @@
       chrome.runtime.sendMessage({ type: 'ronda:open-connection-popup' });
     }
   });
+  chrome.runtime.onMessage.addListener(message => {
+    if (message?.type === 'ronda:auth-required' && typeof message.host === 'string') {
+      window.postMessage({ type: 'ronda:web-review:auth-required', host: message.host }, origin);
+    }
+  });
   window.postMessage({ type: 'ronda:web-review:extension-installed' }, origin);
 })();
