@@ -6,7 +6,7 @@ import './platform-plans.css';
 // workspaceId set: a team the viewer administers. Without it: the viewer's personal plan.
 export function PlanUsage({workspaceId}){
  const [data,setData]=useState(null);
- useEffect(()=>{let live=true;setData(null);api(workspaceId?`/api/workspaces/${workspaceId}/plan`:'/api/account/plan').then(value=>live&&setData(value)).catch(()=>{});return()=>{live=false;};},[workspaceId]);
+ useEffect(()=>{let live=true;setData(null);api(workspaceId?`/api/workspaces/${encodeURIComponent(workspaceId)}/plan`:'/api/account/plan').then(value=>live&&setData(value)).catch(()=>{});return()=>{live=false;};},[workspaceId]);
  if(!data)return null;
  const storage=usageLevel(data.usage.storageBytes,data.limits.storageBytes);
  const seats=workspaceId?usageLevel(data.usage.seats,data.limits.members):null;

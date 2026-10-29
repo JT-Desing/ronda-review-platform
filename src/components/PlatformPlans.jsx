@@ -20,7 +20,7 @@ function PlanFields({draft,setDraft,planIds}){
 
 function CompanyRow({space,onSaved,onNotify}){
  const [draft,setDraft]=useState({plan:space.plan,status:space.status,extraPacks:space.extraPacks,customMembers:space.customMembers,customStorageGb:space.customStorageGb}),[busy,setBusy]=useState(false);
- const save=async e=>{e.preventDefault();setBusy(true);try{await send(`/api/platform/workspaces/${space.id}`,'PATCH',draft);onNotify(`Plan de ${space.name} actualizado`);onSaved();}catch(reason){onNotify(reason.message);}finally{setBusy(false);}};
+ const save=async e=>{e.preventDefault();setBusy(true);try{await send(`/api/platform/workspaces/${encodeURIComponent(space.id)}`,'PATCH',draft);onNotify(`Plan de ${space.name} actualizado`);onSaved();}catch(reason){onNotify(reason.message);}finally{setBusy(false);}};
  return <article className={`platform-company status-${space.status}`}><header><div><h2>{space.name}</h2><small>{space.admins?.join(', ')||'Sin administrador'}</small></div><span className="plan-badge">{PLAN_CATALOG[space.plan]?.name} · {PLAN_STATUS_LABELS[space.status]}</span></header>
   <Meter label="Personas e invitaciones" used={space.members+space.invitations} limit={space.limits.members}/>
   <Meter label="Espacio" used={space.storageBytes} limit={space.limits.storageBytes} format={formatBytes}/>
@@ -37,7 +37,7 @@ function NewCompany({onCreated,onNotify}){
 function PersonalAccount({onNotify}){
  const [email,setEmail]=useState(''),[account,setAccount]=useState(null),[draft,setDraft]=useState(null),[busy,setBusy]=useState(false);
  const find=async e=>{e.preventDefault();setBusy(true);try{const result=await api(`/api/platform/accounts?email=${encodeURIComponent(email)}`);setAccount(result.account);setDraft({plan:result.account.plan,status:result.account.status,extraPacks:result.account.extraPacks});}catch(reason){setAccount(null);onNotify(reason.message);}finally{setBusy(false);}};
- const save=async e=>{e.preventDefault();setBusy(true);try{const result=await send(`/api/platform/accounts/${account.id}`,'PATCH',draft);setAccount({...account,...result.account});onNotify(`Plan personal de ${account.email} actualizado`);}catch(reason){onNotify(reason.message);}finally{setBusy(false);}};
+ const save=async e=>{e.preventDefault();setBusy(true);try{const result=await send(`/api/platform/accounts/${encodeURIComponent(account.id)}`,'PATCH',draft);setAccount({...account,...result.account});onNotify(`Plan personal de ${account.email} actualizado`);}catch(reason){onNotify(reason.message);}finally{setBusy(false);}};
  return <section className="platform-personal"><h2>Cuenta personal</h2><form onSubmit={find}><label>Correo<input type="email" required value={email} onChange={e=>setEmail(e.target.value)}/></label><button disabled={busy}>Buscar</button></form>
   {account&&<article className="platform-company"><header><div><h2>{account.name}</h2><small>{account.email}</small></div><span className="plan-badge">{PLAN_CATALOG[account.plan]?.name} · {PLAN_STATUS_LABELS[account.status]}</span></header><Meter label="Espacio" used={account.storageBytes} limit={account.limits.storageBytes} format={formatBytes}/><form onSubmit={save}><PlanFields draft={draft} setDraft={setDraft} planIds={PERSONAL_PLAN_IDS}/><button disabled={busy}>Guardar plan</button></form></article>}</section>;
 }

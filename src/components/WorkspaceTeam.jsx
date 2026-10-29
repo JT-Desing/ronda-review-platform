@@ -46,7 +46,7 @@ export function WorkspaceTeam({ onNotify }) {
       const workspaces=teamWorkspaces(allWorkspaces);
       const savedTeam=readPreferredTeam(workspacePreferenceStorage(),currentAccountId());
       const id = preferredWorkspace(workspaces,selected||savedTeam);
-      const result = id ? await request(`/api/workspaces/${id}`) : null;
+      const result = id ? await request(`/api/workspaces/${encodeURIComponent(id)}`) : null;
       if (active) { setSpaces(workspaces); setDetail(result); if (id && id !== selected) setSelected(id); if(id&&workspaces.some(item=>item.id===id&&item.kind==='team'))rememberPreferredTeam(workspacePreferenceStorage(),currentAccountId(),id); }
     })().catch(reason => { if (active) {setError(reason.message);setRetryableError(teamErrorCanRetry(reason));} }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -65,7 +65,7 @@ export function WorkspaceTeam({ onNotify }) {
   const visiblePending = pending.filter(item=>item.email.toLowerCase().includes(query.toLowerCase()));
   const visible = members.filter(member => `${member.name} ${member.email}`.toLowerCase().includes(query.toLowerCase()));
   const references = Object.values(state.members).filter(member => member.id !== state.currentUserId);
-  const path = `/api/workspaces/${selected}`;
+  const path = `/api/workspaces/${encodeURIComponent(selected)}`;
   return <div className="dashboard-page team-page server-team">
     {!demoSession()&&<CreateTeamForm onCreated={workspace=>{setSelected(workspace.id);setRevision(value=>value+1);onNotify('Equipo creado. Ya puedes invitar personas.');}}/>}
     <header className="dashboard-header"><div><span className="eyebrow">ESPACIO DE TRABAJO</span><h1>Tu equipo</h1><p>Las personas que colaboran contigo y sus permisos de acceso.</p></div><div className="team-header-actions"><button aria-label="Actualizar equipo" disabled={busy || loading} onClick={() => setRevision(value => value + 1)}><Icon name="redo" size={16}/></button>{admin&&<LiquidButton aria-expanded={inviteOpen} aria-controls="team-invite-panel" onClick={()=>setInviteOpen(value=>!value)}><Icon name="plus" size={16}/>Invitar persona</LiquidButton>}</div></header>

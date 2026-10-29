@@ -1,8 +1,8 @@
 import {demoSession} from './demoSession.js';
 import {jsonRequest} from './jsonRequest.js';
 import {measurePhase} from './performanceTelemetry.js';
-export const projectPath=c=>`/api/workspaces/${c.workspaceId}/projects/${c.projectId}`;
-export const versionPath=c=>`${projectPath(c)}/assets/${c.assetId}/versions/${c.versionId}`;
+export const projectPath=c=>`/api/workspaces/${encodeURIComponent(c.workspaceId)}/projects/${encodeURIComponent(c.projectId)}`;
+export const versionPath=c=>`${projectPath(c)}/assets/${encodeURIComponent(c.assetId)}/versions/${encodeURIComponent(c.versionId)}`;
 export async function reviewRequest(path,options={}){
   if(demoSession())throw new Error('La revisión compartida real no está disponible en el demo.');
   return jsonRequest(path,options);
@@ -16,7 +16,7 @@ export const postDecision=(c,input)=>reviewSend(versionPath(c)+'/decisions','POS
 export async function uploadFile(c,file,requestId,onProgress,signal){
   if(file.size>100*1024*1024)throw Object.assign(new Error('Cada archivo debe pesar como máximo 100 MB.'),{status:413});
   const {uploadId}=await measurePhase('upload.reserve',()=>reviewSend(projectPath(c)+'/uploads','POST',{name:file.name,mime:file.type,size:file.size,assetId:c.assetId,requestId}));
-  const path=`/api/workspaces/${c.workspaceId}/uploads/${uploadId}`;
+  const path=`/api/workspaces/${encodeURIComponent(c.workspaceId)}/uploads/${encodeURIComponent(uploadId)}`;
   if(signal?.aborted)throw new DOMException('Carga cancelada','AbortError');
   await measurePhase('upload.transfer',()=>new Promise((resolve,reject)=>{
     const xhr=new XMLHttpRequest();xhr.open('PUT',path+'/content');xhr.withCredentials=true;xhr.timeout=600000;xhr.setRequestHeader('Content-Type',file.type);
