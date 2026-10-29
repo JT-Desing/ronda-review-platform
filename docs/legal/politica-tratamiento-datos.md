@@ -1,18 +1,19 @@
 # Política de tratamiento de datos personales de Ronda
 
-Versión 1.0, vigente desde el [PENDIENTE: fecha de publicación].
+Versión 1.0, vigente desde el 29 de octubre de 2026.
 
 Esta política cumple la Ley 1581 de 2012, el Decreto 1377 de 2013 (compilado en el Decreto 1074 de 2015) y las demás normas colombianas de protección de datos personales. Explica qué datos personales trata Ronda, para qué, con quién los comparte, por cuánto tiempo y cómo puedes ejercer tus derechos.
 
 ## 1. Responsable del tratamiento
 
-- Razón social: [PENDIENTE]
-- NIT: [PENDIENTE]
-- Domicilio: [PENDIENTE: dirección y ciudad]
+- Responsable: Jaime Alexis Herrera Ruiz, persona natural que opera la plataforma Ronda
+- Identificación: C.C. 1.040.732.222
+- Domicilio: Medellín, Antioquia, Colombia
 - Correo para temas de datos personales: ronda@repolite.link
+- Teléfono: 301 744 5788
 - Sitio web: https://repolite.link
 
-En esta política, "Ronda" se refiere a la plataforma de revisión de piezas creativas disponible en https://ronda.repolite.link, y "el Responsable" a la empresa identificada arriba.
+En esta política, "Ronda" se refiere a la plataforma de revisión de piezas creativas disponible en https://ronda.repolite.link, y "el Responsable" a la persona identificada arriba. Cuando Ronda se constituya como empresa, esta política se actualizará con sus datos y se pedirá de nuevo tu autorización.
 
 ## 2. Dos roles distintos: Responsable y Encargado
 
@@ -83,10 +84,9 @@ Ronda se apoya en estos proveedores, que tratan datos solo para prestar su servi
 | Cloudflare | Dominio, protección y túnel de conexión hacia el servidor | Tráfico de la plataforma, incluida la dirección IP |
 | Zoho (correo) | Enviar invitaciones y correos de recuperación | Correo y nombre del destinatario, contenido del mensaje |
 | Google | Inicio de sesión con Google, solo si lo eliges | Identificador, nombre y correo |
-| Proveedor de almacenamiento compatible con S3 | Copias de seguridad cifradas fuera del servidor | Copia cifrada de la base de datos y los archivos |
-| Proveedor de hosting | Servidor donde funciona Ronda | Todos los datos de la plataforma |
+| Servidor propio del Responsable en Medellín | Equipo donde funciona Ronda y donde se guardan sus copias de seguridad | Todos los datos de la plataforma |
 
-[PENDIENTE: confirmar el proveedor de hosting y el de copias externas antes de publicar.]
+Ronda funciona hoy en un servidor propio del Responsable, conectado a internet por un túnel cifrado de Cloudflare. Si cambia el proveedor de hosting o se agregan copias externas, lo avisaremos según la sección 12.
 
 Dentro de un equipo, las personas con acceso ven tu nombre, tu correo, tu rol y lo que publicas en los proyectos que comparten.
 
@@ -104,7 +104,7 @@ Varios de estos proveedores tienen servidores fuera de Colombia, por ejemplo en 
 | Invitación | Vence a los 7 días; queda en el historial del equipo |
 | Resumen de la IP para limitar intentos | 1 día |
 | Copias de seguridad en el servidor | 14 días |
-| Copias de seguridad externas cifradas | Hasta unos 6 meses (últimas 4, 14 diarias, 8 semanales y 6 mensuales) |
+| Copias de seguridad externas cifradas, cuando se activen | Hasta unos 6 meses (últimas 4, 14 diarias, 8 semanales y 6 mensuales) |
 
 Cuando suprimes tu cuenta, los datos salen de la plataforma de inmediato y desaparecen de las copias de seguridad cuando estas vencen, como máximo en unos 6 meses. Las copias no se usan para nada más que restaurar el servicio.
 
@@ -113,7 +113,7 @@ Cuando suprimes tu cuenta, los datos salen de la plataforma de inmediato y desap
 - Las contraseñas se guardan con hash scrypt y sal única.
 - La cookie de sesión es HttpOnly, SameSite=Lax y, en producción, Secure.
 - Cada equipo está aislado: una persona solo ve los proyectos de los equipos a los que pertenece y según su rol.
-- Los archivos se guardan con permisos restringidos en el servidor, y las copias externas van cifradas.
+- Los archivos se guardan con permisos restringidos en el servidor, y las copias externas, cuando se activen, van cifradas.
 - Los enlaces de invitación y de recuperación son de un solo uso y vencen.
 
 Ningún sistema es infalible. Si ocurre un incidente que afecte tus datos, te lo informaremos y lo reportaremos a la Superintendencia de Industria y Comercio como exige la ley.
