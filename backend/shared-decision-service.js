@@ -16,9 +16,12 @@ export function sharedDecisionService(repository){
       return repository.access(space,actor,async(db,role)=>{
         const v=await repository.version(db,space,c.projectId,c.assetId,c.versionId,true);
         let assigned=(await db.query('SELECT * FROM shared_review_decisions WHERE version_id=$1 AND user_id=$2 AND active=true',[c.versionId,actor])).rows[0];
-        // A member who can comment may decide without being assigned first: deciding adds them as a reviewer.
+        // On a version nobody was assigned to, a member who can comment may decide directly and
+        // becomes its reviewer. Once someone is assigned, only the assigned people decide.
         if(!assigned){
           requireReviewAction(role,'comment');
+          const active=(await db.query('SELECT count(*)::integer AS count FROM shared_review_decisions WHERE version_id=$1 AND active=true',[c.versionId])).rows[0].count;
+          if(active>0)throw workspaceError(403,'No estás asignado como revisor de esta versión.');
           if(v.status==='approved')throw workspaceError(409,'La versión aprobada es de solo lectura.');
           if(v.revision!==input.revision)throw workspaceError(409,'La versión cambió. Actualiza antes de decidir.');
           assigned=(await db.query("INSERT INTO shared_review_decisions(version_id,user_id) VALUES($1,$2) ON CONFLICT(version_id,user_id) DO UPDATE SET active=true,decision='pending',request_id=NULL,decided_at=NULL RETURNING *",[c.versionId,actor])).rows[0];
