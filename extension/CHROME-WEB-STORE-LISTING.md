@@ -23,5 +23,7 @@ La extensión no es necesaria para iniciar sesión ni para el resto de Ronda. Al
 - Cuenta de desarrollador de Chrome Web Store habilitada y aceptación de su acuerdo/registro por el titular.
 - Confirmar correo de soporte; `soporte@repolite.link` en `PRIVACY.md` es un placeholder.
 - Publicar la política de privacidad en URL HTTPS y completar el cuestionario de uso de datos.
-- Icono de tienda de 128×128, capturas de ficha, validar comportamiento real en Chrome/Edge y entregar ZIP de producción.
+- Hecho: iconos de 16, 32, 48 y 128 en `extension/icons/` y ZIP de producción con `scripts/package-extension.sh` (sale en `dist-extension/`).
+- Hecho: probada en Chromium contra Ronda local, con conexión del sitio, selección de texto, comentario y scroll (ver PR #22 y #25).
+- Faltan las capturas de ficha (1280×800).
 - Enviar a revisión, esperar aprobación, copiar el ID/listing URL y configurar `VITE_RONDA_EXTENSION_STORE_URL` en el build de Ronda.

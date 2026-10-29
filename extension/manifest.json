@@ -5,11 +5,12 @@
   "version": "1.0.0",
   "description": "Anota sitios web en vivo desde una revisión de Ronda. El acceso se concede por sitio.",
   "minimum_chrome_version": "127",
+  "icons": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
   "permissions": ["scripting", "storage"],
   "host_permissions": ["https://ronda.repolite.link/*"],
   "optional_host_permissions": ["https://*/*"],
   "background": { "service_worker": "service-worker.js", "type": "module" },
-  "action": { "default_title": "Conectar sitio con Ronda", "default_popup": "popup/popup.html" },
+  "action": { "default_icon": { "16": "icons/icon-16.png", "32": "icons/icon-32.png" }, "default_title": "Conectar sitio con Ronda", "default_popup": "popup/popup.html" },
   "content_scripts": [{
     "matches": ["https://ronda.repolite.link/*"],
     "js": ["content/ronda-app-bridge.js"],
