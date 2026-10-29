@@ -2,9 +2,9 @@ import { hashPassword, verifyPassword } from './security.js';
 const invalid = (message, status) => Object.assign(new Error(message), { status });
 export function authService(users) {
   return {
-    async register({ email, password, name }) {
+    async register({ email, password, name, privacyVersion = null }) {
       if (typeof name !== 'string' || !name.trim() || name.trim().length > 100) throw invalid('Indica tu nombre (máximo 100 caracteres).', 400);
-      try { return await users.createWithWorkspace({ email, name: name.trim(), passwordHash: await hashPassword(password) }); }
+      try { return await users.createWithWorkspace({ email, name: name.trim(), passwordHash: await hashPassword(password), privacyVersion }); }
       catch (error) {
         if (error.code === '23505') throw invalid('No se pudo crear la cuenta. Intenta iniciar sesión.', 409);
         throw error;

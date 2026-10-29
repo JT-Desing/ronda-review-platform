@@ -2,7 +2,7 @@ import {readSharedProjectLink} from './shared-project-link.js';
 import {ensureRouteHistoryIndex,pushRouteHistory,readRouteHistoryIndex} from './route-history.js';
 import {readReviewRoute} from './review-route.js';
 
-const studioViews=new Set(['home','projects','personal','pauta','activity','planning','team','settings','branding','review']);
+const studioViews=new Set(['home','projects','personal','pauta','activity','planning','team','settings','branding','platform','review']);
 
 export function readStudioView(hash){
  if(readReviewRoute(hash))return 'review';

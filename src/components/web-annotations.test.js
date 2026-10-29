@@ -96,7 +96,9 @@ test('text selection mode hands pointer input to the reviewed page and saves the
   assert.match(component,/text-selection-mode/);
   assert.match(component,/Seleccionar texto/);
   assert.match(component,/selectionToDocumentMark\(event\.data,metrics,activeColor\)/);
-  assert.match(component,/setMarks\(\[\.\.\.viewportMarks,documentMarkToViewport\(mark,metrics\)\]\)/);
+  // The new anchor is stored in document space and earlier marks keep their own coordinates.
+  assert.match(component,/setMarks\(current=>\[\.\.\.current,mark\]\)/);
+  assert.doesNotMatch(component,/setMarks\(\[\.\.\.viewportMarks/);
   assert.match(component,/selectionRects/);
   assert.match(css,/figure-selection-highlight/);
 });

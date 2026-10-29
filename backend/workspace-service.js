@@ -1,5 +1,7 @@
 import { token, digest } from './security.js';
-import { validateRole, protectLastAdmin, workspaceError, WORKSPACE_SEAT_LIMIT } from './workspace-policy.js';
+import { validateRole, protectLastAdmin, workspaceError } from './workspace-policy.js';
+import { TEAM_PLANS } from './plans.js';
+import { workspacePlan, workspaceSeatsUsed } from './repositories/plans.js';
 import {reviewSummary} from './shared-decision-service.js';
 import {requestId} from './project-policy.js';
 async function event(client, workspaceId, actorId, action, details) {
@@ -9,21 +11,24 @@ export function workspaceService(repository) {
   return {
     async createTeam(actorId,input){
       if(typeof input?.name!=='string'||!input.name.trim()||input.name.trim().length>80)throw workspaceError(400,'Escribe un nombre de equipo de 1 a 80 caracteres.');
-      return repository.createTeam(actorId,{name:input.name.trim(),requestId:requestId(input.requestId)});
+      if(!TEAM_PLANS.includes(input.plan))throw workspaceError(400,'Elige el plan del equipo: Estudio, Agencia o A medida.');
+      return repository.createTeam(actorId,{name:input.name.trim(),requestId:requestId(input.requestId),plan:input.plan});
     },
     async invite(workspaceId, actorId, input) {
       validateRole(input.role);
       const email = typeof input.email === 'string' ? input.email.trim().toLowerCase() : '';
+      const name = typeof input.name === 'string' && input.name.trim() ? input.name.trim() : null;
+      if (name && name.length > 100) throw workspaceError(400, 'El nombre puede tener hasta 100 caracteres.');
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) throw workspaceError(400, 'Indica un correo válido.');
       return repository.transaction(workspaceId, actorId, async client => {
         const duplicate = await client.query('SELECT 1 FROM workspace_members m JOIN users u ON u.id=m.user_id WHERE m.workspace_id=$1 AND u.email=$2', [workspaceId, email]);
         if (duplicate.rows.length) throw workspaceError(409, 'Esta persona ya pertenece al equipo.');
         const pending = await client.query('SELECT 1 FROM workspace_invitations WHERE workspace_id=$1 AND email=$2 AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at>now()', [workspaceId, email]);
         if (pending.rows.length) throw workspaceError(409, 'Ya existe una invitación pendiente; revócala para generar otra.');
-        const count = await client.query('SELECT (SELECT count(*) FROM workspace_members WHERE workspace_id=$1)+(SELECT count(*) FROM workspace_invitations WHERE workspace_id=$1 AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at>now()) AS count', [workspaceId]);
-        if (Number(count.rows[0].count) >= WORKSPACE_SEAT_LIMIT) throw workspaceError(409, 'Límite operativo inicial: 20 miembros e invitaciones por espacio.');
+        const { status, limits } = await workspacePlan(client, workspaceId);
+        if (await workspaceSeatsUsed(client, workspaceId) >= limits.members) throw workspaceError(409, status === 'active' ? `El plan del equipo admite ${limits.members} personas entre miembros e invitaciones.` : 'El plan del equipo está pendiente de activación. Hasta entonces solo admite a su administrador.');
         const value = token();
-        const invitation = (await client.query("INSERT INTO workspace_invitations(workspace_id,email,role,token_hash,created_by,expires_at) VALUES($1,$2,$3,$4,$5,now()+interval '7 days') RETURNING id,email,role,expires_at", [workspaceId, email, input.role, digest(value), actorId])).rows[0];
+        const invitation = (await client.query("INSERT INTO workspace_invitations(workspace_id,email,role,token_hash,created_by,expires_at,invitee_name) VALUES($1,$2,$3,$4,$5,now()+interval '7 days',$6) RETURNING id,email,role,expires_at,invitee_name AS name", [workspaceId, email, input.role, digest(value), actorId, name])).rows[0];
         await event(client, workspaceId, actorId, 'invitation.created', { email, role: input.role });
         return { invitation, token: value }; // Raw token returned once; never stored or logged.
       });

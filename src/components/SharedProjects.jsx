@@ -10,6 +10,7 @@ import {readSharedProjectLink,setSharedProjectLocation} from '../domain/shared-p
 import {ShareProjectButton} from './ShareProjectButton.jsx';
 import {CreateTeamForm} from './CreateTeamForm.jsx';
 import {ProjectInvitations,ProjectJoin} from './ProjectInvitations.jsx';
+import {PlanUsage} from './PlanUsage.jsx';
 import {ProjectMemberPicker,ProjectAccessPanel} from './ProjectMembers.jsx';
 import {LiquidButton} from './LiquidButton.js';
 import {teamWorkspaces,preferredWorkspace,readPreferredTeam,rememberPreferredTeam,forgetPreferredTeam} from '../domain/workspace-routing.js';
@@ -92,7 +93,7 @@ export function SharedProjects({ onNotify, onDirtyChange }) {
     {!selected&&!loading&&<CreateTeamForm onCreated={workspace=>{setRequestedSpace(workspace.id);setRefresh(value=>value+1);onNotify('Equipo creado. Crea tu primer proyecto o usa Invitar al equipo.');}}/>}
     <header className="dashboard-header"><div><span className="eyebrow">COLABORACIÓN DEL EQUIPO</span><h1>Proyectos compartidos</h1><p>Organiza las entregas y reúne las revisiones de tu equipo.</p></div><button className="shared-refresh" disabled={busy || loading} onClick={() => {if(canChange())setRefresh(value => value + 1);}}><Icon name="redo" size={16}/>Actualizar</button></header>
     <details className="shared-scope-help"><summary><Icon name="users" size={16}/><span>Visible para tu equipo <small>· Tu contenido privado permanece separado</small></span><Icon name="chevron" size={14}/></summary><p>Los miembros de este espacio pueden ver los proyectos y las piezas que subas aquí. Tus proyectos privados no se copian ni se comparten automáticamente.</p></details>
-    {!selected&&!loading&&space&&role==='admin'&&<ProjectInvitations key={space} workspaceId={space}/>}
+    {!selected&&!loading&&space&&role==='admin'&&<PlanUsage key={`plan-${space}`} workspaceId={space}/>}{!selected&&!loading&&space&&role==='admin'&&<ProjectInvitations key={space} workspaceId={space}/>}
     {!selected&&!loading&&<ProjectJoin onJoined={id=>{setRequestedSpace(id);setRefresh(n=>n+1);}}/>}
     {spaces.length>0&&<div className="shared-toolbar"><label>Espacio del equipo<select disabled={busy || loading || !spaces.length} value={space} onChange={event => { if(!canChange())return;const nextSpace=event.target.value;setSharedProjectLocation(window,nextSpace,'');setSpace(nextSpace);setRequestedSpace(nextSpace);setProjects([]);setDetail(null);setLoading(true);setSelected('');setEditing(null);setCreating(false); }}>{spaces.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>Buscar proyecto compartido<input type="search" placeholder="Nombre o cliente" value={query} onChange={event => setQuery(event.target.value)} /></label>{canEdit && <LiquidButton disabled={busy || loading} className="shared-create-project" onClick={() => setCreating(true)}>Nuevo proyecto compartido</LiquidButton>}</div>}
     {error && <div role="alert" className="shared-feedback"><p>{error}</p><button disabled={busy} onClick={() => {if(canChange())setRefresh(value => value + 1);}}>Actualizar datos</button></div>}

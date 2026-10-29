@@ -14,7 +14,7 @@ try {
   const user=(await pool.query("INSERT INTO users(email,name,password_hash) VALUES('model@example.invalid','QA','not-a-login') RETURNING id")).rows[0].id;
   await pool.query('INSERT INTO account_data(user_id,data) VALUES($1,$2)',[user,{private:'preserve'}]);
   const spaces=[];
-  for(let i=0;i<2;i++)spaces.push((await pool.query("INSERT INTO workspaces(name,kind) VALUES('QA','team') RETURNING id")).rows[0].id);
+  for(let i=0;i<2;i++)spaces.push((await pool.query("INSERT INTO workspaces(name,kind,plan,plan_status) VALUES('QA','team','agencia','active') RETURNING id")).rows[0].id);
   const projects=[];
   for(const space of spaces) projects.push((await pool.query("INSERT INTO shared_projects(workspace_id,name,created_by,request_id) VALUES($1,'QA',$2,$3) RETURNING id",[space,user,randomUUID()])).rows[0].id);
   await assert.rejects(pool.query("INSERT INTO shared_assets(workspace_id,project_id,name,kind,created_by,request_id) VALUES($1,$2,'bad','image',$3,$4)",[spaces[0],projects[1],user,randomUUID()]),{code:'23503'});

@@ -6,7 +6,7 @@ const client = await pool.connect();
 try {
   await client.query('BEGIN');
   await client.query('SELECT pg_advisory_xact_lock(741214)');
-  await client.query("INSERT INTO workspaces(id,name,kind) VALUES($1,$2,'team') ON CONFLICT(id) DO UPDATE SET kind='team'", [workspaceId, 'ePayco MKT']);
+  await client.query("INSERT INTO workspaces(id,name,kind,plan,plan_status) VALUES($1,$2,'team','agencia','active') ON CONFLICT(id) DO UPDATE SET kind='team',plan=COALESCE(workspaces.plan,'agencia')", [workspaceId, 'ePayco MKT']);
   if (email) {
     const user = (await client.query('SELECT id FROM users WHERE email=$1', [email])).rows[0];
     if (!user) throw new Error('La persona debe registrarse primero en Ronda.');

@@ -40,3 +40,13 @@ test('invitation email escapes the invited address before inserting it into HTML
   assert.doesNotMatch(message.html,/<img src=x/i);
   assert.match(message.html,/&lt;img src=x onerror=alert\(1\)&gt;/);
 });
+
+test('a named invitation mail explains the one-click entry and escapes the name', async () => {
+  let message; const mailer={enabled:true,async send(value){message=value;return {accepted:[value.to]};}};
+  const result={token:'a'.repeat(43),invitation:{email:'ana@example.invalid',name:'Ana <b>',expires_at:new Date().toISOString()}};
+  await sendInvitationMail({mailer,origin:'https://ronda.repolite.link',result});
+  assert.match(message.text,/Hola, Ana <b>\. /);
+  assert.match(message.text,/sin contraseña/);
+  assert.match(message.html,/Hola, Ana &lt;b&gt;\./);
+  assert.doesNotMatch(message.html,/Ana <b>/);
+});

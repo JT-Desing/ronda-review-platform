@@ -106,3 +106,12 @@
 .account-profile-links button:active,.account-profile-action:active{transform:translateY(1px)}
 @media(max-width:520px){.account-profile-popover{padding:12px}.account-profile-heading{padding-bottom:12px}}
 @media(prefers-reduced-motion:reduce){.account-profile-links button:active,.account-profile-action:active{transform:none}}
+.account-invitation-entry{display:grid;gap:14px}
+.account-invitation-eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.account-invitation-entry h1{margin:0}.account-invitation-entry p{margin:0;color:var(--muted);line-height:1.55}
+.account-invitation-entry dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface-2);font-size:13px}
+.account-invitation-entry dt{color:var(--muted)}.account-invitation-entry dd{margin:0;word-break:break-all}
+.account-invitation-note{margin:0 0 4px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface-2);font-size:13px;line-height:1.5}
+.account-consent{display:flex!important;align-items:flex-start;gap:10px;font-weight:400!important;font-size:13px!important;line-height:1.5;color:var(--muted)}
+.account-consent input{width:auto!important;min-height:0!important;margin-top:3px;accent-color:var(--accent)}
+.account-consent a{color:var(--accent)}

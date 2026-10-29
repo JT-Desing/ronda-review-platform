@@ -46,7 +46,8 @@ test('new-account onboarding offers separate company, invite-code and personal p
   assert.match(access,/name="workspaceChoice" value="join"/);
   assert.match(access,/name="teamName" autoComplete="organization" required/);
   assert.match(access,/name="invitationCode" autoComplete="off" spellCheck=\{false\} required/);
-  assert.match(access,/const \{workspaceChoice,teamName,invitationCode,...credentials\}=input/);
+  assert.match(access,/const \{workspaceChoice,teamName,invitationCode,acceptPrivacy,\.\.\.fields\}=input/);
+  assert.match(access,/const credentials=\{\.\.\.fields,acceptPrivacy:acceptPrivacy==='on'\}/);
   assert.match(access,/completeSignup\(\{api,credentials,setup,enter:async\(account,options\)=>enter\(account,options\)\}\)/);
   assert.match(access,/location\.hash=`#team\/\$\{completion\.workspaceId\}`/);
   assert.match(access,/setOnboardingDraft\(completion\.onboardingDraft\)/);
@@ -73,7 +74,7 @@ test('new-account onboarding offers separate company, invite-code and personal p
   assert.match(onboarding,/initialChoice='',initialName='',initialCode=''/);
   assert.match(onboarding,/initialError='',initialRequestId=''/);
   assert.match(onboarding,/initialRequestId\|\|crypto\.randomUUID\(\)/);
-  assert.match(onboarding,/choice==='join'\?\{token:code\.trim\(\)\}:\{name:normalizeTeamName\(name\),requestId:key\}/);
+  assert.match(onboarding,/choice==='join'\?\{token:code\.trim\(\)\}:\{name:normalizeTeamName\(name\),requestId:key,plan\}/);
 });
 
 test('company team name validation is explained and blocks registration before account creation',()=>{

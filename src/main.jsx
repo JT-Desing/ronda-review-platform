@@ -26,6 +26,8 @@ import { getCommentEmptyState } from './domain/comments.js';
 import { annotationVisibleAt, finalizeAnnotation, toNormalizedPoint } from './domain/annotations.js';
 import { readDraftForContext, saveSessionDraft } from './state/migration.js';
 import { ProjectActions, TeamActions, SettingsActions, ReviewSummary } from './components/WorkspaceActions.jsx';
+import { PlatformPlans } from './components/PlatformPlans.jsx';
+import { PlanUsage } from './components/PlanUsage.jsx';
 import { TimelineMarkers } from './components/TimelineMarkers.jsx';
 import { DeliveryGrid, fileStore, fileKind } from './components/DeliveryGrid.jsx';
 import {assetReviewUrl} from './components/DeliveryGrid.jsx';
@@ -404,15 +406,16 @@ function App({demo=false,onExitDemo}) {
     <main data-view={currentView} className={`workspace ${currentView!=='review'?'dashboard-workspace':''}`}>
       {sectionSculptures[currentView]&&<div className="abstract-sculpture-background" aria-hidden="true"><img className="section-sculpture section-sculpture-primary" src={sectionSculptures[currentView]} alt="" draggable={false}/><img className="section-sculpture section-sculpture-companion" src={sectionCompanions[currentView]} alt="" draggable={false}/></div>}
       {demo&&<div className="demo-company-banner" role="status"><span>DEMO · Empresa activa · Datos ficticios. Los cambios se descartan al salir.</span><button onClick={onExitDemo}>Volver a mi cuenta</button></div>}
-      {currentView!=='review' && <header className="studio-topbar"><span>{currentView==='projects'?'Espacio compartido':currentView==='team'?'Espacio de trabajo':state.workspace.name} <span aria-hidden="true">/</span> <strong>{{home:'Inicio',projects:'Proyectos del equipo',personal:'Mis proyectos personales',pauta:'Pauta',activity:'Actividad',planning:'Planificación',team:'Equipo',settings:'Configuración',branding:'Personalización'}[currentView]}</strong></span><div><NotificationCenter onNavigate={setCurrentView}/><AccountProfileMenu initials={state.members[state.currentUserId]?.initials} onNavigate={setCurrentView}/></div></header>}
+      {currentView!=='review' && <header className="studio-topbar"><span>{currentView==='projects'?'Espacio compartido':currentView==='team'?'Espacio de trabajo':state.workspace.name} <span aria-hidden="true">/</span> <strong>{{home:'Inicio',projects:'Proyectos del equipo',personal:'Mis proyectos personales',pauta:'Pauta',activity:'Actividad',planning:'Planificación',team:'Equipo',settings:'Configuración',branding:'Personalización',platform:'Planes y empresas'}[currentView]}</strong></span><div><NotificationCenter onNavigate={setCurrentView}/><AccountProfileMenu initials={state.members[state.currentUserId]?.initials} onNavigate={setCurrentView}/></div></header>}
       {currentView==='home' && <StudioHome onNavigate={setCurrentView} onOpen={openProject}/>}
       {persistenceError&&<div className="persistence-alert" role="alert"><Icon name="alert" size={16}/><span><strong>Los cambios están solo en este dispositivo</strong><small>{persistenceError==='quota'?'El almacenamiento del navegador está lleno. Quita algunas referencias pesadas o libera espacio.':'El navegador bloqueó el almacenamiento local.'}</small></span><button onClick={retryPersistence}>Reintentar</button></div>}
       {currentView==='projects' && <ProjectActions key={sharedLinkKey} onOpen={openProject} onNotify={setToast} onDirtyChange={setSharedDirty}/>}
-      {currentView==='personal' && <ProjectLibrary onOpen={openProject} onNotify={setToast}/>}
+      {currentView==='personal' && <><PlanUsage/><ProjectLibrary onOpen={openProject} onNotify={setToast}/></>}
       {currentView==='activity' && <ActivityView onNavigate={setCurrentView} onOpenProject={openProject} onOpenComment={openPlanningComment}/>}
       {currentView==='planning' && <RetryableFeature load={loadPlanning} retryView="planning" message="No se pudo cargar Planificación. Comprueba tu conexión e inténtalo de nuevo." loadingLabel="Cargando planificación…" allowDemo={canUseCompanyDemo} onOpen={openPlanningComment}/>}
       {currentView==='team' && <TeamActions onNotify={setToast}/>}
       {currentView==='settings' && <SettingsActions onNotify={setToast} onNavigate={setCurrentView}/>}
+      {currentView==='platform' && <PlatformPlans onNotify={setToast}/>}
       {currentView==='branding' && <BrandSettings onNotify={setToast}/>}
       {currentView==='pauta' && <RetryableFeature load={loadPauta} retryView="pauta" message="No se pudo cargar Pauta. Comprueba tu conexión e inténtalo de nuevo." loadingLabel="Cargando Pauta…"/>}
       {currentView==='review'&&!media&&!demo&&<section className="dashboard-page personal-project-empty">
