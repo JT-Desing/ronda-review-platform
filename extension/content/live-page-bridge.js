@@ -33,10 +33,11 @@
     requestAnimationFrame(sendViewport);
   }
   window.addEventListener('message', event => {
-    // The review iframe deliberately has an opaque origin (sandbox without
-    // allow-same-origin), so its parent is reported as "null". The random
-    // nonce is the handshake capability; keep the iframe sandbox unchanged.
-    if (event.source !== window.parent || event.origin !== 'null') return;
+    // The review iframe has an opaque origin (sandbox without allow-same-origin),
+    // but event.origin is the sender's origin: the Ronda app. Ronda itself sees
+    // "null" for messages coming from this frame. The nonce is the handshake
+    // capability; keep the iframe sandbox unchanged.
+    if (event.source !== window.parent || event.origin !== RONDA_ORIGIN) return;
     if (event.data?.type !== 'ronda:web-review:init' || typeof event.data.nonce !== 'string' || event.data.nonce.length > 100) return;
     nonce = event.data.nonce;
     sendViewport();
