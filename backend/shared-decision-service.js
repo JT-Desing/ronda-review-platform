@@ -1,6 +1,7 @@
 import {workspaceError} from './workspace-policy.js';
 import {requestId} from './project-policy.js';
 import {recordEvent,versionDto} from './shared-review-dto.js';
+import {requireReviewAction} from './shared-review-policy.js';
 export async function reviewSummary(db,versionId){
   const rows=(await db.query('SELECT d.decision FROM shared_review_decisions d JOIN shared_versions v ON v.id=d.version_id JOIN workspace_members m ON m.user_id=d.user_id AND m.workspace_id=v.workspace_id WHERE d.version_id=$1 AND d.active=true',[versionId])).rows;
   const blockers=(await db.query("SELECT count(*)::integer AS count FROM shared_version_comments WHERE version_id=$1 AND status='open' AND priority='blocking'",[versionId])).rows[0].count;
@@ -12,10 +13,16 @@ export function sharedDecisionService(repository){
     async decide(space,actor,c,input){
       const key=requestId(input.requestId);
       if(!['pending','approved','changes_requested'].includes(input.decision)||!Number.isInteger(input.revision))throw workspaceError(400,'Decisión inválida.');
-      return repository.access(space,actor,async db=>{
+      return repository.access(space,actor,async(db,role)=>{
         const v=await repository.version(db,space,c.projectId,c.assetId,c.versionId,true);
-        const assigned=(await db.query('SELECT * FROM shared_review_decisions WHERE version_id=$1 AND user_id=$2 AND active=true',[c.versionId,actor])).rows[0];
-        if(!assigned)throw workspaceError(403,'No estás asignado como revisor de esta versión.');
+        let assigned=(await db.query('SELECT * FROM shared_review_decisions WHERE version_id=$1 AND user_id=$2 AND active=true',[c.versionId,actor])).rows[0];
+        // A member who can comment may decide without being assigned first: deciding adds them as a reviewer.
+        if(!assigned){
+          requireReviewAction(role,'comment');
+          if(v.status==='approved')throw workspaceError(409,'La versión aprobada es de solo lectura.');
+          if(v.revision!==input.revision)throw workspaceError(409,'La versión cambió. Actualiza antes de decidir.');
+          assigned=(await db.query("INSERT INTO shared_review_decisions(version_id,user_id) VALUES($1,$2) ON CONFLICT(version_id,user_id) DO UPDATE SET active=true,decision='pending',request_id=NULL,decided_at=NULL RETURNING *",[c.versionId,actor])).rows[0];
+        }
         if(assigned.request_id===key){if(assigned.decision!==input.decision)throw workspaceError(409,'Solicitud utilizada con otra decisión.');return {version:await versionDto(db,v)};}
         if(v.status==='approved')throw workspaceError(409,'La versión aprobada es de solo lectura.');
         if(v.revision!==input.revision)throw workspaceError(409,'La versión cambió. Actualiza antes de decidir.');
