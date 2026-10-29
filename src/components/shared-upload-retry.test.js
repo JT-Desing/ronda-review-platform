@@ -43,6 +43,14 @@ test('shared delivery exposes an explicit retry using the retained file and requ
   assert.match(media,/failedUpload=useRef\(null\)/);
   assert.match(media,/failedUpload\.current\?\.file===file\?failedUpload\.current/);
   assert.match(media,/uploadFile\(context,file,attempt\.requestId/);
-  assert.match(media,/onRetryUpload=\{\(\)=>\{if\(failedUpload\.current\)add\(failedUpload\.current\.file\);\}\}/);
+  assert.match(media,/onRetryUpload=\{\(\)=>\{if\(uploadQueue\.current\.length\)void processUploadQueue\(\);else if\(failedUpload\.current\)add\(failedUpload\.current\.file,failedUpload\.current\);\}\}/);
   assert.match(grid,/canRetryUpload&&<button disabled=\{blocked\} onClick=\{onRetryUpload\}>Reintentar carga<\/button>/);
+});
+
+test('shared delivery accepts multiple files and retries the batch from the failed file',()=>{
+  const media=readFileSync(new URL('./SharedProjectMedia.jsx',import.meta.url),'utf8');
+  assert.match(media,/type="file" hidden multiple accept=/);
+  assert.match(media,/const files=Array\.from\(e\.target\.files\|\|\[\]\)/);
+  assert.match(media,/uploadQueue\.current=Array\.from\(files\|\|\[\],file=>\(\{file,requestId:crypto\.randomUUID\(\)\}\)\)/);
+  assert.match(media,/while\(queue\.length\)\{const attempt=queue\[0\];if\(!await add\(attempt\.file,attempt\)\)return;queue\.shift\(\);\}/);
 });
