@@ -16,7 +16,7 @@ const FIXTURE_SCRIPTS = [
 // workspace-integration.js is out until it is rewritten for 4f5eada: workspace
 // detail and member management are now superadmin-only (platform-view-policy.js),
 // and the script still expects team admins to use them.
-const SELF_MANAGED_SCRIPTS = ['migration-integration.js', 'shared-project-integration.js', 'plans-integration.js'];
+const SELF_MANAGED_SCRIPTS = ['migration-integration.js', 'shared-project-integration.js', 'plans-integration.js', 'invitation-entry-integration.js'];
 
 const adminUrl = process.env.DATABASE_URL;
 if (!adminUrl || process.env.RONDA_ALLOW_INTEGRATION !== '1') {
