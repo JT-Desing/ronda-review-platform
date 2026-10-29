@@ -18,7 +18,7 @@ export async function handleSharedReview({req,res,path,account,pool,sharedStorag
   const uuid=value=>{if(!UUID_PATTERN.test(value||''))throw workspaceError(404,'Recurso no disponible.');return value;};uuid(space);
   if(parts[3]==='media'&&parts.length===5){
     uuid(parts[4]);if(req.method!=='GET')return reply(res,405,{error:'Método no permitido.'});
-    const download=new URL(req.url,'http://local').searchParams.get('download')==='1';
+    const download=new URL(req.url,'https://local').searchParams.get('download')==='1';
     let file;try{file=await media.readFile(space,account.id,parts[4],{download,range:req.headers.range});}catch(error){if(error.status===416){res.setHeader('Accept-Ranges','bytes');res.setHeader('Content-Range',`bytes */${error.size}`);}throw error;}
     const attachment=download||['file','html'].includes(file.kind),range=file.range,headers={'Content-Type':file.mime,'Content-Length':range?range.end-range.start+1:file.size,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Accept-Ranges':'bytes','Content-Disposition':`${attachment?'attachment':'inline'}; filename*=UTF-8''${encodeURIComponent(file.name)}`};
     if(file.kind==='html')headers['Content-Security-Policy']="default-src 'none'; sandbox";
@@ -49,7 +49,7 @@ export async function handleSharedReview({req,res,path,account,pool,sharedStorag
   if(parts[9]==='decisions'&&parts.length===10&&req.method==='POST')return reply(res,200,await sharedDecisionService(repository).decide(space,account.id,context,await input()));
   if(parts[9]==='comments'){
     const comments=sharedCommentService(repository);
-    if(parts.length===10&&req.method==='GET')return reply(res,200,await comments.listComments(space,account.id,context,{cursor:new URL(req.url,'http://local').searchParams.get('cursor')}));
+    if(parts.length===10&&req.method==='GET')return reply(res,200,await comments.listComments(space,account.id,context,{cursor:new URL(req.url,'https://local').searchParams.get('cursor')}));
     if(parts.length===10&&req.method==='POST')return reply(res,201,await comments.addComment(space,account.id,context,await input(6000000)));
     const id=uuid(parts[10]);
     if(parts.length===13&&parts[11]==='audio'&&req.method==='GET'){const audio=await comments.readAudio(space,account.id,context,id,uuid(parts[12]));res.writeHead(200,{'Content-Type':audio.mime,'Content-Length':audio.bytes.length,'X-Content-Type-Options':'nosniff','Cache-Control':'private, no-store'});res.end(audio.bytes);return;}

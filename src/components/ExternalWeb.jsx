@@ -37,7 +37,8 @@ export function ExternalWeb({url,name,activeTool='',setActiveTool=()=>{},activeC
       if(event.source!==iframe.current?.contentWindow||event.origin!=='null')return;
       if(event.data?.type==='ronda:web-review:extension-ready'){
         setExtensionConnected(true);
-        iframe.current?.contentWindow?.postMessage({type:'ronda:web-review:init',nonce:bridgeNonce.current},'*');
+        // The sandboxed iframe has an opaque origin, so '*' is the only valid target.
+        iframe.current?.contentWindow?.postMessage({type:'ronda:web-review:init',nonce:bridgeNonce.current},'*'); // NOSONAR
         return;
       }
       if(event.data?.nonce!==bridgeNonce.current)return;
@@ -52,7 +53,7 @@ export function ExternalWeb({url,name,activeTool='',setActiveTool=()=>{},activeC
     };
     window.addEventListener('message',receive);return()=>window.removeEventListener('message',receive);
   },[url,textSelectionMode,readonly,webMetrics,activeColor,marks,onFigure,setMarks]);
-  const startBridge=()=>iframe.current?.contentWindow?.postMessage({type:'ronda:web-review:init',nonce:bridgeNonce.current},'*');
+  const startBridge=()=>iframe.current?.contentWindow?.postMessage({type:'ronda:web-review:init',nonce:bridgeNonce.current},'*'); // NOSONAR: opaque-origin sandboxed iframe
   const saveViewportMarks=next=>{
     if(!hasDocumentBridge)return;
     const visible=typeof next==='function'?next(viewportMarks):next;
