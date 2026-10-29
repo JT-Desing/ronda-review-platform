@@ -41,6 +41,7 @@ export async function handleSharedReview({req,res,path,account,pool,sharedStorag
   if(parts[5]==='assets'&&parts.length===6)return req.method==='GET'?reply(res,200,await media.listAssets(space,account.id,projectId)):reply(res,405,{error:'Método no permitido.'});
   const assetId=uuid(parts[6]);
   if(parts.length===8&&['trash','restore'].includes(parts[7])&&req.method==='POST')return reply(res,200,await media.setAssetDeleted(space,account.id,projectId,assetId,parts[7]==='trash',await input()));
+  if(parts[7]==='versions'&&parts.length===8&&req.method==='POST')return reply(res,201,await media.addLinkVersion(space,account.id,projectId,assetId,await input()));
   if(parts[7]==='versions'&&parts.length===8&&req.method==='GET')return reply(res,200,await media.listVersions(space,account.id,projectId,assetId));
   if(parts[7]!=='versions')return reply(res,404,{error:'Ruta no disponible.'});
   const versionId=uuid(parts[8]),context={projectId,assetId,versionId};

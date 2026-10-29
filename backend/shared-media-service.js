@@ -63,6 +63,29 @@ export function sharedMediaService(repository,storage,inspect=inspectLink){
         return {asset:assetDto({...asset,active_version_id:version.id})};
       },true);
     },
+    // A web piece keeps its comments per version: changing its URL adds a version
+    // instead of rewriting the old one. The URL is inspected before any lock.
+    async addLinkVersion(space,actor,projectId,assetId,{url,revision}){
+      if(!Number.isInteger(revision))throw workspaceError(400,'Revisión inválida.');
+      const authorize=async(db,role)=>{
+        requireReviewAction(role,'upload');const asset=await repository.asset(db,space,projectId,assetId,true);
+        if(asset.revision!==revision)throw workspaceError(409,'La pieza cambió. Actualiza antes de cambiar el enlace.');
+        const current=(await db.query('SELECT external_url FROM shared_versions WHERE id=$1',[asset.active_version_id])).rows[0];
+        if(!current?.external_url)throw workspaceError(409,'Solo las piezas con enlace pueden cambiar de enlace.');
+        return asset;
+      };
+      await repository.access(space,actor,authorize);
+      const link=await inspect(url);
+      return repository.access(space,actor,async(db,role)=>{
+        const asset=await authorize(db,role);
+        const previous=(await db.query('SELECT id,number FROM shared_versions WHERE asset_id=$1 ORDER BY number DESC LIMIT 1',[asset.id])).rows[0];
+        const created=(await db.query('INSERT INTO shared_versions(workspace_id,project_id,asset_id,number,external_url,external_mime) VALUES($1,$2,$3,$4,$5,$6) RETURNING id',[space,projectId,asset.id,previous.number+1,link.url,link.mime])).rows[0];
+        await db.query("INSERT INTO shared_review_decisions(version_id,user_id) SELECT $1,d.user_id FROM shared_review_decisions d JOIN workspace_members m ON m.workspace_id=$2 AND m.user_id=d.user_id WHERE d.version_id=$3 AND d.active=true",[created.id,space,previous.id]);
+        await db.query('UPDATE shared_assets SET active_version_id=$1,revision=revision+1 WHERE id=$2',[created.id,asset.id]);
+        await recordEvent(db,space,actor,'review.version_created',{projectId,assetId:asset.id,versionId:created.id});
+        return {asset:assetDto(await repository.asset(db,space,projectId,asset.id)),version:await versionDto(db,await repository.version(db,space,projectId,asset.id,created.id))};
+      },true);
+    },
     async readVersion(space,actor,c){return repository.access(space,actor,async(db,role)=>{const asset=await repository.asset(db,space,c.projectId,c.assetId);const counts=(await db.query("SELECT count(*) FILTER(WHERE status='open')::integer AS open_comments FROM shared_version_comments WHERE version_id=$1",[asset.active_version_id])).rows[0];return {role,asset:assetDto({...asset,...counts}),version:await versionDto(db,await repository.version(db,space,c.projectId,c.assetId,c.versionId)),members:(await db.query('SELECT u.id,u.name,m.role FROM workspace_members m JOIN users u ON u.id=m.user_id WHERE m.workspace_id=$1 ORDER BY u.name,u.id',[space])).rows};});},
     async listAssets(space,actor,projectId,trashed=false){
       return repository.access(space,actor,async(db,role)=>{await repository.project(db,space,projectId);if(trashed)requireReviewAction(role,'upload');const rows=(await db.query(`SELECT a.*,v.file_id AS preview_file_id,f.size AS preview_size,v.number AS version_number,(SELECT count(*)::integer FROM shared_version_comments c WHERE c.version_id=a.active_version_id AND c.status='open') AS open_comments,(SELECT count(*)::integer FROM shared_review_decisions d WHERE d.version_id=a.active_version_id AND d.active=true) AS reviewer_count,(SELECT count(*)::integer FROM shared_review_decisions d WHERE d.version_id=a.active_version_id AND d.active=true AND d.decision='approved') AS approved_count FROM shared_assets a LEFT JOIN shared_versions v ON v.id=a.active_version_id LEFT JOIN shared_media_files f ON f.id=v.file_id WHERE a.workspace_id=$1 AND a.project_id=$2 AND a.deleted_at IS ${trashed?'NOT NULL':'NULL'} ORDER BY a.sort_order,a.created_at,a.id`,[space,projectId])).rows;return {assets:rows.map(assetDto)};});
