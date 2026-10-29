@@ -14,7 +14,18 @@ try{
   await media.receive(f.space,f.admin,uploadId,Readable.from([bytes]));
   const {asset,version}=await media.completeUpload(f.space,f.admin,uploadId),c={projectId:f.project,assetId:asset.id,versionId:version.id};
   const {sharedDecisionService}=await import('./shared-decision-service.js');const decisions=sharedDecisionService(repo);
-  await assert.rejects(decisions.decide(f.space,f.admin,c,{decision:'approved',revision:0,requestId:randomUUID()}),{status:403});
+  // A piece without assigned reviewers can be approved directly by a member; the decision assigns them.
+  const quick=await media.reserve(f.space,f.admin,{projectId:f.project,name:'QA directa',mime:'image/png',size:bytes.length,requestId:randomUUID()});
+  await media.receive(f.space,f.admin,quick.uploadId,Readable.from([bytes]));
+  const direct=await media.completeUpload(f.space,f.admin,quick.uploadId),dc={projectId:f.project,assetId:direct.asset.id,versionId:direct.version.id};
+  const assignedOnly=await media.reserve(f.space,f.admin,{projectId:f.project,name:'QA asignada',mime:'image/png',size:bytes.length,requestId:randomUUID()});
+  await media.receive(f.space,f.admin,assignedOnly.uploadId,Readable.from([bytes]));
+  const withReviewer=await media.completeUpload(f.space,f.admin,assignedOnly.uploadId),ac={projectId:f.project,assetId:withReviewer.asset.id,versionId:withReviewer.version.id};
+  await media.setReviewers(f.space,f.admin,{...ac,revision:0,reviewerIds:[f.reviewer]});
+  await assert.rejects(decisions.decide(f.space,f.editor,ac,{decision:'changes_requested',revision:1,requestId:randomUUID()}),{status:403});
+  const approvedDirect=await decisions.decide(f.space,f.editor,dc,{decision:'approved',revision:0,requestId:randomUUID()});
+  assert.equal(approvedDirect.version.status,'approved');assert.equal(approvedDirect.version.decisions[f.editor],'approved');
+  await assert.rejects(decisions.decide(f.space,f.reviewer,dc,{decision:'changes_requested',revision:1,requestId:randomUUID()}),{status:403});
   await media.setReviewers(f.space,f.admin,{...c,revision:0,reviewerIds:[f.reviewer]});
   const blocker=(await comments.addComment(f.space,f.editor,c,{text:'Bloqueante',priority:'blocking',requestId:randomUUID()})).comment;
   await assert.rejects(decisions.decide(f.space,f.reviewer,c,{decision:'approved',revision:1,requestId:randomUUID()}),{status:409});
