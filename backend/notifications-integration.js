@@ -59,6 +59,17 @@ try{
   await sendNotificationDigests({pool:f.pool,mailer,origin:'https://ronda.test'});
   assert.equal(sent.length,2);
 
+  // A restricted project only notifies people who can open it, mentions included.
+  const hidden=(await f.pool.query("INSERT INTO shared_projects(workspace_id,name,created_by,request_id,restricted) VALUES($1,'Privado',$2,$3,true) RETURNING id",[f.space,f.admin,randomUUID()])).rows[0].id;
+  await f.pool.query("INSERT INTO shared_project_members VALUES($1,$2,$3,'editor')",[f.space,hidden,f.editor]);
+  const before={reviewer:(await kinds(f.reviewer)).length,editor:(await kinds(f.editor)).length};
+  const {uploadId}=await media.reserve(f.space,f.admin,{projectId:hidden,name:'Secreto',mime:'image/png',size:bytes.length,requestId:randomUUID()});
+  await media.receive(f.space,f.admin,uploadId,Readable.from([bytes]));
+  const secret=await media.completeUpload(f.space,f.admin,uploadId);
+  await comments.addComment(f.space,f.admin,{projectId:hidden,assetId:secret.asset.id,versionId:secret.version.id},{text:'@QA 2 mira',mentionIds:[f.reviewer],requestId:randomUUID()});
+  assert.equal((await kinds(f.reviewer)).length,before.reviewer,'no access, no notification');
+  assert.equal((await kinds(f.editor)).length,before.editor+1,'a selected member is notified');
+
   // Leaving the space hides its notifications.
   await f.pool.query('DELETE FROM workspace_members WHERE workspace_id=$1 AND user_id=$2',[f.space,f.reviewer]);
   assert.deepEqual(await kinds(f.reviewer),[]);

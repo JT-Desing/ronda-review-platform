@@ -9,11 +9,15 @@ async function pieceContext(db,space,versionId){
     FROM shared_versions v JOIN shared_assets a ON a.id=v.asset_id JOIN shared_projects p ON p.id=v.project_id WHERE v.id=$1 AND v.workspace_id=$2`,[versionId,space])).rows[0];
 }
 
-// Keeps only current members of the space and never the person who acted.
-async function members(db,space,actor,ids){
+// Keeps only people who can open the project (same rule as the project list: open
+// project, admin, its creator or a selected member) and never the person who acted.
+async function members(db,space,actor,ids,projectId){
   const unique=[...new Set(ids.filter(Boolean))].filter(id=>id!==actor);
   if(!unique.length)return [];
-  return (await db.query('SELECT user_id FROM workspace_members WHERE workspace_id=$1 AND user_id=ANY($2::uuid[])',[space,unique])).rows.map(row=>row.user_id);
+  return (await db.query(`SELECT m.user_id FROM workspace_members m JOIN shared_projects p ON p.workspace_id=m.workspace_id AND p.id=$3
+    WHERE m.workspace_id=$1 AND m.user_id=ANY($2::uuid[]) AND p.deleted_at IS NULL
+    AND (NOT p.restricted OR m.role='admin' OR p.created_by=m.user_id
+      OR EXISTS(SELECT 1 FROM shared_project_members pm WHERE pm.workspace_id=$1 AND pm.project_id=p.id AND pm.user_id=m.user_id))`,[space,unique,projectId])).rows.map(row=>row.user_id);
 }
 
 async function insert(db,space,actor,kind,userIds,details){
@@ -32,21 +36,21 @@ export async function notifyFromEvent(db,space,actor,action,details){
   const base={projectId:piece.projectId,assetId:piece.assetId,versionId:details.versionId,versionNumber:piece.number,assetName:piece.assetName,projectName:piece.projectName};
   if(action==='review.version_created'||action==='review.link_created'){
     const everyone=(await db.query('SELECT user_id FROM workspace_members WHERE workspace_id=$1',[space])).rows.map(row=>row.user_id);
-    return insert(db,space,actor,piece.number>1?'version':'asset',await members(db,space,actor,everyone),base);
+    return insert(db,space,actor,piece.number>1?'version':'asset',await members(db,space,actor,everyone,piece.projectId),base);
   }
   if(action==='review.decision'){
-    return insert(db,space,actor,'decision',await members(db,space,actor,[piece.ownerId]),{...base,decision:details.decision});
+    return insert(db,space,actor,'decision',await members(db,space,actor,[piece.ownerId],piece.projectId),{...base,decision:details.decision});
   }
   const comment=(await db.query('SELECT id,author_id,text FROM shared_version_comments WHERE id=$1 AND version_id=$2',[details.commentId,details.versionId])).rows[0];
   if(!comment)return;
   const reply=action==='review.reply_created'?(await db.query('SELECT text FROM shared_comment_replies WHERE id=$1',[details.replyId])).rows[0]:null;
   const text=excerpt(reply?reply.text:comment.text);
-  const mentioned=await members(db,space,actor,Array.isArray(details.mentionIds)?details.mentionIds:[]);
+  const mentioned=await members(db,space,actor,Array.isArray(details.mentionIds)?details.mentionIds:[],piece.projectId);
   await insert(db,space,actor,'mention',mentioned,{...base,commentId:comment.id,text});
   // The piece owner and everyone already talking on this version hear about new comments.
   const participants=(await db.query(`SELECT author_id FROM shared_version_comments WHERE version_id=$1
     UNION SELECT author_id FROM shared_comment_replies WHERE version_id=$1`,[details.versionId])).rows.map(row=>row.author_id);
-  const audience=(await members(db,space,actor,[piece.ownerId,comment.author_id,...participants])).filter(id=>!mentioned.includes(id));
+  const audience=(await members(db,space,actor,[piece.ownerId,comment.author_id,...participants],piece.projectId)).filter(id=>!mentioned.includes(id));
   await insert(db,space,actor,reply?'reply':'comment',audience,{...base,commentId:comment.id,text});
 }
 
