@@ -1,6 +1,7 @@
-FROM node:24.22.1-alpine AS build
+FROM node:26.12.1-alpine AS build
 
-RUN corepack enable
+# Node 26 no longer ships corepack; install the pinned pnpm from packageManager.
+RUN npm install -g pnpm@11.28.3
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
