@@ -5,7 +5,7 @@ export const TOUR_KEY = 'ronda-tour:v1';
 export const TOUR_STEPS = [
   { target: null, title: 'Bienvenida a Ronda', body: 'Te mostramos en un minuto dónde está cada cosa. Puedes saltar la guía cuando quieras.' },
   { target: 'projects', title: 'Proyectos', body: 'Aquí están los proyectos del equipo. Abre uno para ver sus piezas: imágenes, videos, PDF o páginas web.' },
-  { target: null, title: 'Comentar una pieza', body: 'Dentro de una pieza haz clic sobre el punto que quieres señalar y escribe el comentario. También puedes dibujar con lápiz, flecha o rectángulo. Al terminar, aprueba la pieza o pide cambios.' },
+  { target: 'project-card', view: 'projects', title: 'Comentar una pieza', body: 'Abre un proyecto y elige una pieza. Haz clic sobre el punto que quieres señalar y escribe el comentario; con @ avisas a alguien del equipo. También puedes dibujar con lápiz, flecha o rectángulo. Al terminar, aprueba la pieza o pide cambios.' },
   { target: 'activity', title: 'Actividad', body: 'Lo último que pasó en tus proyectos: comentarios nuevos, versiones y aprobaciones.' },
   { target: 'planning', title: 'Planificación', body: 'Los comentarios que te asignaron y las fechas de entrega, en un solo lugar.' },
   { target: 'team', title: 'Equipo', body: 'Las personas del equipo y su rol. Si eres administrador, desde aquí invitas a alguien nuevo.' },
@@ -17,9 +17,10 @@ export const TOUR_DONE = JSON.stringify('done');
 export const tourPending = value => value !== TOUR_DONE && value !== 'done';
 
 // Keeps steps whose target is on screen (the team step only exists for some roles,
-// and the menu changes between desktop and phone). Steps without a target always stay.
+// and the menu changes between desktop and phone). Steps without a target, and steps
+// that open another view first (their target appears after navigating), always stay.
 export function visibleSteps(steps, isVisible) {
-  return steps.filter(step => !step.target || isVisible(step.target));
+  return steps.filter(step => !step.target || step.view || isVisible(step.target));
 }
 
 // Places the card to the right of the target (side menu), else below it, else above

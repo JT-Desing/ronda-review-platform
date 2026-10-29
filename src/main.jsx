@@ -463,7 +463,7 @@ function App({demo=false,onExitDemo}) {
       {toast && <div className="toast" role="status">{toast}</div>}
     </main>
     <MobileNav user={user} currentView={currentView} onNavigate={setCurrentView}/>
-    {!demo&&<GuidedTour/>}
+    {!demo&&<GuidedTour onNavigate={setCurrentView}/>}
   </div>;
 }
 
