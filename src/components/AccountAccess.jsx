@@ -58,6 +58,18 @@ function SessionRecoveryDialog({user,onRecovered}){
     </form>
   </dialog>;
 }
+const ROLE_LABELS={reviewer:'revisor',editor:'editor',admin:'administrador'};
+function InvitationEntryCard({invitation,busy,error,onEnter,onManual}){
+  return <section className="account-invitation-entry" aria-labelledby="invitation-entry-title">
+    <span className="account-invitation-eyebrow">Invitación a {invitation.workspaceName}</span>
+    <h1 id="invitation-entry-title">Hola, {invitation.name.split(' ')[0]}.</h1>
+    <p>Te invitaron como {ROLE_LABELS[invitation.role]}. Entra para revisar y comentar las piezas del equipo. No necesitas contraseña.</p>
+    <dl><dt>Correo</dt><dd>{invitation.email}</dd><dt>Equipo</dt><dd>{invitation.workspaceName}</dd></dl>
+    {error&&<p role="alert" className="account-error">{error}</p>}
+    <button className="account-primary" type="button" disabled={busy} onClick={onEnter}>{busy?<BrandLoader size="inline" label="Entrando…"/>:`Entrar a ${invitation.workspaceName}`}</button>
+    <button className="account-text-button" type="button" disabled={busy} onClick={onManual}>Prefiero crear la cuenta con contraseña</button>
+  </section>;
+}
 export default function AccountAccess({ children }) {
   const invitationCode=readInvitationCode(location.hash);
   const [user, setUser] = useState(null);
@@ -82,6 +94,17 @@ export default function AccountAccess({ children }) {
   const [recoveryMode,setRecoveryMode]=useState(false);
   const [invalidResetLink,setInvalidResetLink]=useState(()=>hasInvalidPasswordResetToken(location));
   const [email,setEmail]=useState('');
+  const [invitation,setInvitation]=useState(null);
+  useEffect(()=>{
+    if(!invitationCode)return;
+    api(`/api/workspace-invitations/preview?token=${invitationCode}`).then(value=>{setInvitation(value);setEmail(value.email);setMode(value.accountExists?'login':'register');}).catch(failure=>setError(failure.message));
+  },[]);
+  async function enterByInvitation(){
+    if(busy)return;setBusy(true);setError('');
+    try{const result=await api('/api/workspace-invitations/enter',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:invitationCode})});location.hash=`#team/${result.workspaceId}`;await enter(result.user,{signupChoice:'join'});}
+    catch(failure){setError(failure.message);setInvitation(current=>current&&{...current,oneClick:false});}
+    finally{setBusy(false);}
+  }
   async function enter(account,{onboardingRecovery=false,signupChoice=''}={}) {
     const snapshot = await api('/api/data');
     await initializeSignupCompletion({initialize:initializeAccount,account,snapshot,choice:signupChoice,storage:accountStorage,flush:retryAccount});
@@ -193,18 +216,20 @@ export default function AccountAccess({ children }) {
       <button className="account-primary account-recovery-retry" type="button" disabled={busy} onClick={retryCreatedSignup}>{busy?<BrandLoader size="inline" label="Cargando tu espacio…"/>:'Reintentar cargar mi espacio'}</button>
       <button className="account-text-button" type="button" onClick={()=>{setSignupRecovery(null);setMode('login');setError('');}}>Ir a iniciar sesión</button>
     </section>}
-    {!signupRecovery&&<>
+    {!signupRecovery&&invitation?.oneClick&&<InvitationEntryCard invitation={invitation} busy={busy} error={error} onEnter={enterByInvitation} onManual={()=>setInvitation({...invitation,oneClick:false})}/>}
+    {!signupRecovery&&!invitation?.oneClick&&<>
+    {invitation&&<p className="account-invitation-note" role="status">Te invitaron a <strong>{invitation.workspaceName}</strong> como {ROLE_LABELS[invitation.role]}. {invitation.accountExists?'Inicia sesión con tu cuenta para aceptar.':'Completa tus datos para crear la cuenta y entrar.'}</p>}
     <h1>{mode === 'login' ? 'Tu próxima ronda empieza aquí.' : 'Crea tu espacio de revisión.'}</h1>
     <p>Proyectos, archivos y comentarios guardados en tu servidor.</p>
     <div className="account-tabs"><button aria-pressed={mode === 'login'} onClick={() => { setMode('login'); setPasswordVisible(false); setError(''); setDuplicateRegistration(false); }}>Iniciar sesión</button><button aria-pressed={mode === 'register'} onClick={() => { setMode('register'); setPasswordVisible(false); setError(''); setDuplicateRegistration(false); }}>Crear cuenta</button></div>
     {google && <button className="account-primary" onClick={() => location.assign('/api/auth/google')}>Continuar con Google</button>}
     <form onSubmit={submit}>
-      {mode === 'register' && <label>Nombre<input name="name" autoComplete="name" required maxLength={100}/></label>}
-      <label>Correo<input name="email" type="email" autoComplete="email" required maxLength={254} value={email} onChange={event=>setEmail(event.target.value)}/></label>
+      {mode === 'register' && <label>Nombre<input name="name" autoComplete="name" required maxLength={100} defaultValue={invitation?.name||''}/></label>}
+      <label>Correo<input name="email" type="email" autoComplete="email" required maxLength={254} value={email} onChange={event=>setEmail(event.target.value)} readOnly={Boolean(invitation)} aria-describedby={invitation?'invited-email-hint':undefined}/>{invitation&&<small id="invited-email-hint">La invitación es para este correo.</small>}</label>
       <label className="account-password-label">Contraseña<span className="account-password-field"><input name="password" type={passwordVisible?'text':'password'} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} aria-describedby={mode === 'register'?'signup-password-hint':undefined} required minLength={12} maxLength={128}/><button className="account-password-toggle" type="button" aria-label={passwordVisible?'Ocultar contraseña':'Mostrar contraseña'} aria-pressed={passwordVisible} onClick={()=>setPasswordVisible(value=>!value)}>{passwordVisible?'Ocultar':'Mostrar'}</button></span></label>
       {mode === 'register' && <>
         <small id="signup-password-hint">Usa al menos 12 caracteres. La recuperación de cuenta depende de que el correo esté configurado en el servidor.</small>
-        <fieldset className="signup-workspace-choice">
+        <fieldset className="signup-workspace-choice" hidden={Boolean(invitation)}>
           <legend>¿Cómo quieres empezar?</legend>
           <small>Tu espacio personal es privado. Si creas o aceptas una invitación, entraremos a ese equipo al terminar.</small>
           <label><input type="radio" name="workspaceChoice" value="personal" checked={signupWorkspace.choice==='personal'} onChange={()=>setSignupWorkspace(current=>({...current,choice:'personal'}))}/> Solo en mi espacio personal</label>
