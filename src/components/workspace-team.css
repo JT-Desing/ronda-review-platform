@@ -103,3 +103,4 @@
 .create-team-panel h2,.create-team-panel p{margin:0}.create-team-panel p{font-size:13px;line-height:1.6;color:var(--muted)}
 .create-team-panel label{display:flex;flex-direction:column;gap:8px;font-size:12px}.create-team-panel input{min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--text)}
 .create-team-panel button{align-self:flex-start;min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:8px;background:var(--surface-3);color:var(--text)}
+.server-team .team-invite-dialog{width:min(520px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;color:var(--text)}.server-team .team-invite-dialog::backdrop{background:rgb(0 0 0 / .72)}.server-team .team-invite-dialog form{flex-direction:column;align-items:stretch}.server-team .team-invite-dialog .modal-title h2{margin:0}.team-invite-error{color:var(--danger,#ff8a80);font-size:13px}
