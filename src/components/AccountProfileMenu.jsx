@@ -47,7 +47,7 @@ export function AccountProfileMenu({ initials, onNavigate }) {
   const firstName = user?.name?.trim().split(/\s+/)[0] || 'Mi cuenta';
   const closeAnd = action => { setOpen(false); action?.(); };
   return <div className="account-profile-menu" ref={menuRef}>
-    <button ref={triggerRef} className={`account-profile-trigger${status.error ? ' has-sync-error' : ''}`} type="button" aria-label={`Perfil de ${user?.name || 'mi cuenta'}. ${status.message}`} aria-expanded={open} aria-controls="account-profile-popover" onClick={() => setOpen(value => !value)}>
+    <button ref={triggerRef} data-tour="account" className={`account-profile-trigger${status.error ? ' has-sync-error' : ''}`} type="button" aria-label={`Perfil de ${user?.name || 'mi cuenta'}. ${status.message}`} aria-expanded={open} aria-controls="account-profile-popover" onClick={() => setOpen(value => !value)}>
       <span className="avatar small" aria-hidden="true">{initials || firstName.slice(0, 2).toUpperCase()}</span>
       <span className="account-profile-trigger-copy"><strong>{firstName}</strong>{status.error && <small>Hay un problema al guardar</small>}</span>
       <Icon name="chevron" size={14} className="account-profile-chevron"/>

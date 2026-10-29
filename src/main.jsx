@@ -72,6 +72,7 @@ const sectionCompanions={home:sculptureActivity,projects:sculptureSettings,perso
 import ShareReviewDialog from './components/ShareReviewDialog.jsx';
 import {RetryableFeature} from './components/FeatureLoadBoundary.jsx';
 import {consumeFeatureRetry} from './domain/feature-retry.js';
+import {GuidedTour} from './components/GuidedTour.jsx';
 const loadPauta=()=>import('./components/Pauta.jsx');
 const loadPlanning=()=>import('./components/Planning.jsx');
 const loadSocialPreview=()=>import('./components/SocialPreview.jsx');
@@ -94,7 +95,7 @@ const seedComments = [
 
 function MobileNav({ currentView, onNavigate, user }) {
   const items=[['home','grid','Inicio'],['projects','folder','Proyectos'],['personal','personal','Personal'],['pauta','campaign','Pauta'],['planning','calendar','Planner'],['activity','clock','Actividad'],['team','users','Equipo'],['settings','settings','Ajustes']];
-  return <nav className="mobile-nav" aria-label="Navegación móvil">{items.filter(([view])=>canAccessStudioView(user,view)).map(([view,icon,label])=><button key={view} aria-label={label} title={label} className={currentView===view||(currentView==='review'&&view==='personal')||(currentView==='branding'&&view==='settings')?'active':''} onClick={()=>onNavigate(view)}><Icon name={icon}/><span>{label}</span></button>)}</nav>;
+  return <nav className="mobile-nav" aria-label="Navegación móvil">{items.filter(([view])=>canAccessStudioView(user,view)).map(([view,icon,label])=><button key={view} data-tour={view} aria-label={label} title={label} className={currentView===view||(currentView==='review'&&view==='personal')||(currentView==='branding'&&view==='settings')?'active':''} onClick={()=>onNavigate(view)}><Icon name={icon}/><span>{label}</span></button>)}</nav>;
 }
 
 
@@ -456,6 +457,7 @@ function App({demo=false,onExitDemo}) {
       {toast && <div className="toast" role="status">{toast}</div>}
     </main>
     <MobileNav user={user} currentView={currentView} onNavigate={setCurrentView}/>
+    {!demo&&<GuidedTour/>}
   </div>;
 }
 
