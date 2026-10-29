@@ -59,14 +59,31 @@ function SessionRecoveryDialog({user,onRecovered}){
   </dialog>;
 }
 const ROLE_LABELS={reviewer:'revisor',editor:'editor',admin:'administrador'};
+const POLICY_URL='/legal/tratamiento-de-datos.html';
+function PrivacyCheckbox({checked,onChange,name}){
+  return <label className="account-consent"><input type="checkbox" name={name} required checked={checked} onChange={event=>onChange?.(event.target.checked)}/><span>Acepto la <a href={POLICY_URL} target="_blank" rel="noopener">política de tratamiento de datos personales</a> y autorizo a Ronda a tratar mis datos según ella.</span></label>;
+}
+function PrivacyConsent({user,onAccepted,onLogout}){
+  const [checked,setChecked]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
+  async function accept(event){event.preventDefault();if(!checked||busy)return;setBusy(true);setError('');try{await api('/api/account/privacy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({acceptPrivacy:true})});onAccepted();}catch(failure){setError(failure.message);}finally{setBusy(false);}}
+  return <main className="account-access"><section className="account-card account-invitation-entry" aria-labelledby="privacy-consent-title">
+    <span className="account-invitation-eyebrow">Tus datos en Ronda</span>
+    <h1 id="privacy-consent-title">Antes de seguir, {user.name.split(' ')[0]}</h1>
+    <p>Para usar Ronda necesitamos tu autorización para tratar tus datos personales: tu nombre, tu correo y lo que publicas en los proyectos. Te explicamos qué hacemos con ellos y cómo pedir que los corrijamos o borremos.</p>
+    <form onSubmit={accept}><PrivacyCheckbox checked={checked} onChange={setChecked}/>{error&&<p role="alert" className="account-error">{error}</p>}<button className="account-primary" disabled={!checked||busy}>{busy?<BrandLoader size="inline" label="Guardando…"/>:'Aceptar y continuar'}</button></form>
+    <button className="account-text-button" type="button" onClick={onLogout}>Salir sin aceptar</button>
+  </section></main>;
+}
 function InvitationEntryCard({invitation,busy,error,onEnter,onManual}){
+  const [accepted,setAccepted]=useState(false);
   return <section className="account-invitation-entry" aria-labelledby="invitation-entry-title">
     <span className="account-invitation-eyebrow">Invitación a {invitation.workspaceName}</span>
     <h1 id="invitation-entry-title">Hola, {invitation.name.split(' ')[0]}.</h1>
     <p>Te invitaron como {ROLE_LABELS[invitation.role]}. Entra para revisar y comentar las piezas del equipo. No necesitas contraseña.</p>
     <dl><dt>Correo</dt><dd>{invitation.email}</dd><dt>Equipo</dt><dd>{invitation.workspaceName}</dd></dl>
     {error&&<p role="alert" className="account-error">{error}</p>}
-    <button className="account-primary" type="button" disabled={busy} onClick={onEnter}>{busy?<BrandLoader size="inline" label="Entrando…"/>:`Entrar a ${invitation.workspaceName}`}</button>
+    <PrivacyCheckbox checked={accepted} onChange={setAccepted}/>
+    <button className="account-primary" type="button" disabled={busy||!accepted} onClick={onEnter}>{busy?<BrandLoader size="inline" label="Entrando…"/>:`Entrar a ${invitation.workspaceName}`}</button>
     <button className="account-text-button" type="button" disabled={busy} onClick={onManual}>Prefiero crear la cuenta con contraseña</button>
   </section>;
 }
@@ -101,7 +118,7 @@ export default function AccountAccess({ children }) {
   },[]);
   async function enterByInvitation(){
     if(busy)return;setBusy(true);setError('');
-    try{const result=await api('/api/workspace-invitations/enter',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:invitationCode})});location.hash=`#team/${result.workspaceId}`;await enter(result.user,{signupChoice:'join'});}
+    try{const result=await api('/api/workspace-invitations/enter',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:invitationCode,acceptPrivacy:true})});location.hash=`#team/${result.workspaceId}`;await enter(result.user,{signupChoice:'join'});}
     catch(failure){setError(failure.message);setInvitation(current=>current&&{...current,oneClick:false});}
     finally{setBusy(false);}
   }
@@ -133,7 +150,8 @@ export default function AccountAccess({ children }) {
       if(mode==='register'){
         const setup={choice:input.workspaceChoice||signupWorkspace.choice,name:input.teamName||signupWorkspace.name,code:input.invitationCode||signupWorkspace.code,plan:signupWorkspace.plan||'estudio',requestId:crypto.randomUUID()};
         setOnboardingDraft(setup);
-        const {workspaceChoice,teamName,invitationCode,...credentials}=input;
+        const {workspaceChoice,teamName,invitationCode,acceptPrivacy,...fields}=input;
+        const credentials={...fields,acceptPrivacy:acceptPrivacy==='on'};
         const completion=await completeSignup({api,credentials,setup,enter:async(account,options)=>enter(account,options)});
         if(completion.workspaceId)location.hash=`#team/${completion.workspaceId}`;
         setOnboardingDraft(completion.onboardingDraft);
@@ -228,7 +246,7 @@ export default function AccountAccess({ children }) {
       <label>Correo<input name="email" type="email" autoComplete="email" required maxLength={254} value={email} onChange={event=>setEmail(event.target.value)} readOnly={Boolean(invitation)} aria-describedby={invitation?'invited-email-hint':undefined}/>{invitation&&<small id="invited-email-hint">La invitación es para este correo.</small>}</label>
       <label className="account-password-label">Contraseña<span className="account-password-field"><input name="password" type={passwordVisible?'text':'password'} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} aria-describedby={mode === 'register'?'signup-password-hint':undefined} required minLength={12} maxLength={128}/><button className="account-password-toggle" type="button" aria-label={passwordVisible?'Ocultar contraseña':'Mostrar contraseña'} aria-pressed={passwordVisible} onClick={()=>setPasswordVisible(value=>!value)}>{passwordVisible?'Ocultar':'Mostrar'}</button></span></label>
       {mode === 'register' && <>
-        <small id="signup-password-hint">Usa al menos 12 caracteres. La recuperación de cuenta depende de que el correo esté configurado en el servidor.</small>
+        <small id="signup-password-hint">Usa al menos 12 caracteres. La recuperación de cuenta depende de que el correo esté configurado en el servidor.</small>{mode==='register'&&<PrivacyCheckbox name="acceptPrivacy"/>}
         <fieldset className="signup-workspace-choice" hidden={Boolean(invitation)}>
           <legend>¿Cómo quieres empezar?</legend>
           <small>Tu espacio personal es privado. Si creas o aceptas una invitación, entraremos a ese equipo al terminar.</small>
@@ -247,6 +265,7 @@ export default function AccountAccess({ children }) {
     <p className="account-note">{!google && 'Google pendiente de configuración. '}Los datos viven en el PC que aloja Ronda; si está apagado, el servicio no estará disponible.</p>
     </>}
   </section></main>;
+  if(!user.privacyAccepted)return <PrivacyConsent user={user} onAccepted={()=>setUser(current=>({...current,privacyAccepted:true}))} onLogout={logout}/>;
   return <>
     {recovery}
     {error && <div className="account-alert" role="alert">{error}</div>}

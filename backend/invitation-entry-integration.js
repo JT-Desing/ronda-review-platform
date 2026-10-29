@@ -34,20 +34,23 @@ try {
   const shown = await preview(full.token);
   assert.equal(shown.status, 200);
   assert.deepEqual({ ...shown.body }, { email: 'nueva@example.invalid', role: 'reviewer', name: 'Ana Revisora', workspaceName: 'Equipo Invitaciones', accountExists: false, oneClick: true });
-  const entered = await json(await call('/api/workspace-invitations/enter', 'POST', { token: full.token }));
+  // The one-click entry creates the account, so it needs the data-processing authorization first.
+  assert.equal((await call('/api/workspace-invitations/enter', 'POST', { token: full.token })).status, 400);
+  const entered = await json(await call('/api/workspace-invitations/enter', 'POST', { token: full.token, acceptPrivacy: true }));
   assert.equal(entered.status, 200); assert.equal(entered.body.workspaceId, team); assert.ok(entered.cookie);
   const session = await json(await call('/api/auth/session', 'GET', undefined, entered.cookie));
   assert.equal(session.body.user.email, 'nueva@example.invalid');
+  assert.equal(session.body.user.privacyAccepted, true);
   const spaces = (await json(await call('/api/workspaces', 'GET', undefined, entered.cookie))).body.workspaces;
   assert.ok(spaces.some(space => space.id === team && space.role === 'reviewer'));
   assert.ok(spaces.some(space => space.kind === 'personal'));
-  assert.equal((await call('/api/workspace-invitations/enter', 'POST', { token: full.token })).status, 404);
+  assert.equal((await call('/api/workspace-invitations/enter', 'POST', { token: full.token, acceptPrivacy: true })).status, 404);
   assert.equal((await preview(full.token)).status, 404);
 
   // Email only: no one-click entry; the person registers with that address and accepts.
   const emailOnly = await invite({ email: 'solo-correo@example.invalid', role: 'editor' });
   assert.equal((await preview(emailOnly.token)).body.oneClick, false);
-  assert.equal((await call('/api/workspace-invitations/enter', 'POST', { token: emailOnly.token })).status, 409);
+  assert.equal((await call('/api/workspace-invitations/enter', 'POST', { token: emailOnly.token, acceptPrivacy: true })).status, 409);
   const registered = await register('solo-correo@example.invalid', 'Solo Correo');
   assert.equal((await call('/api/workspace-invitations/accept', 'POST', { token: emailOnly.token }, registered.cookie)).status, 200);
 
@@ -55,7 +58,7 @@ try {
   const taken = await invite({ email: 'ya-existe@example.invalid', name: 'Suplantación', role: 'admin' });
   const takenPreview = (await preview(taken.token)).body;
   assert.equal(takenPreview.accountExists, true); assert.equal(takenPreview.oneClick, false);
-  const refused = await json(await call('/api/workspace-invitations/enter', 'POST', { token: taken.token }));
+  const refused = await json(await call('/api/workspace-invitations/enter', 'POST', { token: taken.token, acceptPrivacy: true }));
   assert.equal(refused.status, 409); assert.equal(refused.cookie, undefined);
   assert.equal((await call('/api/workspace-invitations/accept', 'POST', { token: taken.token }, existing.cookie)).status, 200);
 

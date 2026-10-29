@@ -112,3 +112,6 @@
 .account-invitation-entry dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface-2);font-size:13px}
 .account-invitation-entry dt{color:var(--muted)}.account-invitation-entry dd{margin:0;word-break:break-all}
 .account-invitation-note{margin:0 0 4px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface-2);font-size:13px;line-height:1.5}
+.account-consent{display:flex!important;align-items:flex-start;gap:10px;font-weight:400!important;font-size:13px!important;line-height:1.5;color:var(--muted)}
+.account-consent input{width:auto!important;min-height:0!important;margin-top:3px;accent-color:var(--accent)}
+.account-consent a{color:var(--accent)}

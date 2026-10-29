@@ -3,6 +3,7 @@ import { reply, body } from '../http.js';
 import { clientAddress, rateLimiter } from '../rate-limit.js';
 import { withPlatformRole } from '../platform-access.js';
 import { workspaceError } from '../workspace-policy.js';
+import { requirePrivacyAcceptance, withPrivacy, PRIVACY_POLICY_VERSION } from '../privacy.js';
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 const pending = 'accepted_at IS NULL AND revoked_at IS NULL AND expires_at>now()';
 
@@ -25,8 +26,9 @@ async function preview(pool, value) {
 
 // One-click entry: creates the invited account and its session in one step. It never
 // signs in to an existing account, since the inviting admin can also see the code.
-async function enter(pool, value) {
-  const hash = readToken(value);
+async function enter(pool, input) {
+  requirePrivacyAcceptance(input);
+  const hash = readToken(input?.token);
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -35,7 +37,7 @@ async function enter(pool, value) {
     if (!invitation.name) throw workspaceError(409, 'Esta invitación necesita que completes tus datos para crear la cuenta.');
     if ((await client.query('SELECT 1 FROM users WHERE email=$1', [invitation.email])).rows.length) throw workspaceError(409, 'Ya tienes una cuenta en Ronda. Inicia sesión con ella para aceptar la invitación.');
     // No password: like Google accounts, a random hash; the person can set one with password reset.
-    const user = (await client.query('INSERT INTO users(email,name,password_hash) VALUES($1,$2,$3) RETURNING id,email,name', [invitation.email, invitation.name, await hashPassword(token())])).rows[0];
+    const user = (await client.query('INSERT INTO users(email,name,password_hash,privacy_version,privacy_accepted_at) VALUES($1,$2,$3,$4,now()) RETURNING id,email,name,privacy_version', [invitation.email, invitation.name, await hashPassword(token()), PRIVACY_POLICY_VERSION])).rows[0];
     const personal = (await client.query('INSERT INTO workspaces(name) VALUES($1) RETURNING id', [`Espacio de ${invitation.name}`])).rows[0];
     await client.query("INSERT INTO workspace_members(workspace_id,user_id,role) VALUES($1,$2,'admin')", [personal.id, user.id]);
     await client.query('INSERT INTO workspace_members(workspace_id,user_id,role) VALUES($1,$2,$3)', [invitation.workspace_id, user.id, invitation.role]);
@@ -54,8 +56,8 @@ export async function handleInvitationEntry({ req, res, path, pool, cookie }) {
   // POST keeps the code out of URLs and access logs.
   if (path === '/api/workspace-invitations/preview' && req.method === 'POST') return reply(res, 200, await preview(pool, (await body(req))?.token));
   if (path === '/api/workspace-invitations/enter' && req.method === 'POST') {
-    const { user, workspaceId, session } = await enter(pool, (await body(req))?.token);
-    return reply(res, 200, { user: withPlatformRole(user), workspaceId }, { 'Set-Cookie': cookie(session, 604800) });
+    const { user, workspaceId, session } = await enter(pool, await body(req));
+    return reply(res, 200, { user: withPlatformRole(withPrivacy(user)), workspaceId }, { 'Set-Cookie': cookie(session, 604800) });
   }
   return reply(res, 405, { error: 'Método no permitido.' });
 }

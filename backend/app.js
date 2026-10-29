@@ -11,6 +11,7 @@ import {handleSharedReview,isSharedReviewPath} from './modules/shared-review.js'
 import {handlePlatform,isPlatformPath} from './modules/platform.js';
 import {handleInvitationEntry,isInvitationEntryPath} from './modules/invitation-entry.js';
 import {accountPlan,accountStorageUsed} from './repositories/plans.js';
+import {withPrivacy,requirePrivacyAcceptance,recordPrivacyAcceptance} from './privacy.js';
 import {inspectLink} from './external-link.js';
 import {body} from './http.js';
 import {rateLimiter} from './rate-limit.js';
@@ -48,7 +49,13 @@ export function createApp({ pool, origin, mailer, sharedStorage, fileRoot }) {
       if(isSharedReviewPath(path))return await handleSharedReview(context);
       if (/^\/api\/workspaces\/[^/]+\/projects(?:\/|$)/.test(path)) return await handleSharedProjects(context);
       if (path === '/api/workspaces' || path?.startsWith('/api/workspaces/') || path === '/api/workspace-invitations/accept') return await handleWorkspaces(context);
-      if (req.method === 'GET' && path === '/api/auth/session') return reply(res, 200, { user: withPlatformRole(account) });
+      if (req.method === 'GET' && path === '/api/auth/session') return reply(res, 200, { user: withPlatformRole(withPrivacy(account)) });
+      if (req.method === 'POST' && path === '/api/account/privacy') {
+        if (!account) return reply(res, 401, { error: 'Inicia sesión.' });
+        requirePrivacyAcceptance(await body(req));
+        await recordPrivacyAcceptance(pool, account.id);
+        return reply(res, 200, { privacyAccepted: true });
+      }
       if (path === '/api/data') return await handleAccountData(context);
       if (/^\/api\/files\/[0-9a-f-]{36}$/.test(path)) return await handleFiles(context);
       if (path?.startsWith('/api/auth/')) return await handleAuth(context);
