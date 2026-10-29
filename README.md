@@ -42,6 +42,8 @@ Abrir `http://localhost:5173`.
 
 Los ejemplos de empresa y planificación se reservan al superadministrador de plataforma. El servidor asigna `platformRole` usando `RONDA_SUPERADMIN_IDS` con un único ID de cuenta (si contiene varios IDs distintos, no concede el rol a ninguno); sin configuración, ninguna cuenta recibe ese rol. Ser administrador de un espacio personal o equipo no concede acceso a estos ejemplos. No se acepta este permiso desde el registro ni desde los datos editables de un espacio.
 
+Cada equipo lo gestiona su administrador: ve el detalle del equipo, invita, cambia roles y quita miembros. Editores y revisores no pueden hacerlo. El superadministrador gestiona los planes y crea empresas desde "Planes y empresas".
+
 - `DESIGN.md`: dirección y principios.
 - `design-tokens.json`: tokens iniciales.
 - `design-preview.html`: catálogo visual autocontenido.

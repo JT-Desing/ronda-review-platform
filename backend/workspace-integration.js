@@ -38,9 +38,11 @@ try {
   await pool.query("INSERT INTO workspace_invitations(workspace_id,email,role,token_hash,created_by,expires_at) VALUES($1,$2,'reviewer',$3,$4,now()+interval '1 day')", [personal.id, invited.email, digest(personalInviteToken), owner.id]);
   assert.equal((await call('/api/workspace-invitations/accept', 'POST', { token: personalInviteToken }, invited)).status, 404);
   assert.equal((await pool.query('SELECT 1 FROM workspace_members WHERE workspace_id=$1 AND user_id=$2', [personal.id, invited.id])).rows.length, 0);
-  const createdTeam = await call('/api/workspaces', 'POST', { name: 'Integration QA Team', requestId: randomUUID() }, owner);
+  const createdTeam = await call('/api/workspaces', 'POST', { name: 'Integration QA Team', requestId: randomUUID(), plan: 'estudio' }, owner);
   assert.equal(createdTeam.status, 201);
   const workspace = (await createdTeam.json()).workspace;
+  // A 20-person contract keeps the capacity check below meaningful.
+  await pool.query("UPDATE workspaces SET plan='a-medida',plan_status='active',custom_members=20 WHERE id=$1", [workspace.id]);
   assert.equal(workspace.kind, 'team');
   const path = `/api/workspaces/${workspace.id}`;
   assert.equal((await call(path, 'GET', undefined, outsider)).status, 404);
