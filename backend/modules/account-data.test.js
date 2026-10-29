@@ -26,9 +26,9 @@ test('personal-only onboarding preference is accepted and persisted with account
 });
 
 test('the guided tour flag is saved with account data', async () => {
-  const result = await put({ 'ronda-tour:v1': 'done' });
+  const result = await put({ 'ronda-tour:v1': JSON.stringify('done') });
   assert.equal(result.status, 200);
-  assert.deepEqual(result.saved, [{ 'ronda-tour:v1': 'done' }]);
+  assert.deepEqual(result.saved, [{ 'ronda-tour:v1': JSON.stringify('done') }]);
 });
 
 test('account data still rejects unknown preference keys', async () => {

@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TOUR_STEPS, tourPending, visibleSteps, cardPosition } from './guided-tour.js';
+import { TOUR_DONE, TOUR_STEPS, tourPending, visibleSteps, cardPosition } from './guided-tour.js';
 
 test('the tour is pending for current and new accounts until it is marked done', () => {
   assert.equal(tourPending(null), true);
   assert.equal(tourPending('pending'), true);
   assert.equal(tourPending('done'), false);
+  assert.equal(tourPending(TOUR_DONE), false);
+  assert.doesNotThrow(() => JSON.parse(TOUR_DONE), 'account data only accepts JSON values');
 });
 
 test('steps whose target is not on screen are left out, steps without target stay', () => {

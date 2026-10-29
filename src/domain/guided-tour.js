@@ -12,7 +12,9 @@ export const TOUR_STEPS = [
   { target: 'account', title: 'Tu cuenta', body: 'Tu perfil, tus datos y la salida de la sesión. Listo, ya puedes empezar.' },
 ];
 
-export const tourPending = value => value !== 'done';
+// Account data values are JSON text; the flag is stored as the JSON string "done".
+export const TOUR_DONE = JSON.stringify('done');
+export const tourPending = value => value !== TOUR_DONE && value !== 'done';
 
 // Keeps steps whose target is on screen (the team step only exists for some roles,
 // and the menu changes between desktop and phone). Steps without a target always stay.

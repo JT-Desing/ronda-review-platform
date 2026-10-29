@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { accountStorage } from '../state/accountStorage.js';
-import { TOUR_KEY, TOUR_STEPS, tourPending, visibleSteps, cardPosition } from '../domain/guided-tour.js';
+import { TOUR_KEY, TOUR_DONE, TOUR_STEPS, tourPending, visibleSteps, cardPosition } from '../domain/guided-tour.js';
 import './guided-tour.css';
 
 const PADDING = 6;
@@ -14,7 +14,7 @@ export function GuidedTour() {
   const card = useRef(null);
   const step = steps[index];
 
-  const finish = () => { accountStorage.setItem(TOUR_KEY, 'done'); setOpen(false); };
+  const finish = () => { accountStorage.setItem(TOUR_KEY, TOUR_DONE); setOpen(false); };
 
   // The menu is in the DOM only after the first commit, so the steps are picked here.
   useLayoutEffect(() => { if (open) setSteps(visibleSteps(TOUR_STEPS, id => Boolean(targetElement(id)))); }, [open]);
