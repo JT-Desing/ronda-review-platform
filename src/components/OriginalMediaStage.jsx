@@ -16,7 +16,7 @@ const formatTime = value => {
   const frames = Math.floor((seconds % 1) * 24);
   return { time: `00:${String(minutes).padStart(2,'0')}:${String(remainder).padStart(2,'0')}`, frame: Math.floor(seconds * 24), frames };
 };
-export function OriginalMediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, media, currentTime, setCurrentTime, remoteCursor, marks, setMarks, selectedFigure, onFigure, onQuickComment, figureComments, onTimelineComment, reviewVersionId, members={}, readonly=false, versionApproved=false, draftOnlyUndo=false }) {
+export function OriginalMediaStage({ activeTool, setActiveTool, activeColor, setActiveColor, media, currentTime, setCurrentTime, remoteCursor, marks, setMarks, selectedFigure, onFigure, onQuickComment, figureComments, onTimelineComment, reviewVersionId, members={}, mentionPeople, readonly=false, versionApproved=false, draftOnlyUndo=false }) {
   const [zoom,setZoom]=useState(1),[imageRatio,setImageRatio]=useState(16/9);
   const [viewMode,setViewMode]=useState('auto');
   const viewportRef=useRef(null);
@@ -76,7 +76,7 @@ export function OriginalMediaStage({ activeTool, setActiveTool, activeColor, set
     if(key==='d'){e.preventDefault();setActiveTool(tool=>tool?'':'pen');return;}
     if(['1','2','3','4'].includes(key)){e.preventDefault();setActiveTool(['pen','arrow','square','type'][Number(key)-1]);}
   };window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);});
-  if(media?.type==='web')return <section className="media-section original-media-stage" data-media-type={media?.type}><ExternalWeb url={media.url} name={media.name} activeTool={readonly?'':activeTool} setActiveTool={setActiveTool} activeColor={activeColor} setActiveColor={setActiveColor} marks={visibleMarks} setMarks={next=>updateMarks(typeof next==='function'?next(visibleMarks):next)} selectedFigure={selectedFigure} onFigure={onFigure} onQuickComment={onQuickComment} figureComments={figureComments} readonly={readonly}/></section>;
+  if(media?.type==='web')return <section className="media-section original-media-stage" data-media-type={media?.type}><ExternalWeb url={media.url} name={media.name} activeTool={readonly?'':activeTool} setActiveTool={setActiveTool} activeColor={activeColor} setActiveColor={setActiveColor} marks={visibleMarks} setMarks={next=>updateMarks(typeof next==='function'?next(visibleMarks):next)} selectedFigure={selectedFigure} onFigure={onFigure} onQuickComment={onQuickComment} figureComments={figureComments} mentionPeople={mentionPeople} readonly={readonly}/></section>;
   return <section className="media-section original-media-stage" data-media-type={media?.type}>
     {media?.type==='image'&&<div className="image-view-controls" aria-label="Vista de la imagen"><span>Imagen · revisión y anotaciones</span><div><button disabled={viewMode==='auto'||effectiveZoom<=fitZoom} onClick={zoomOut} aria-label="Alejar imagen">−</button><output aria-live="polite">{viewMode==='width'?'Ancho':`${Math.round(effectiveZoom*100)}%`}</output><button disabled={effectiveZoom>=24} onClick={zoomIn} aria-label="Acercar imagen">+</button><button onClick={()=>setViewMode('auto')}>Ajustar a pantalla</button><button onClick={()=>setViewMode('width')}>Ajustar al ancho</button></div></div>}
     <div className="media-stage" ref={stageRef}>
@@ -98,7 +98,7 @@ export function OriginalMediaStage({ activeTool, setActiveTool, activeColor, set
         {media&&playbackError&&failedUrl!==media.url&&<span className="media-brand-loading" role="alert">{playbackError} Usa Reproducir para volver a intentarlo.</span>}
         <AnnotationLayer activeTool={readonly?'':activeTool} activeColor={activeColor} marks={visibleMarks} setMarks={next=>updateMarks(current=>[...current.filter(mark=>!annotationVisibleAt(mark,currentTime,['image','web'].includes(media?.type))),...(typeof next==='function'?next(visibleMarks):next)])} selectedFigure={selectedFigure}/>
         {visibleMarks.map(mark=>{const index=marks.findIndex(item=>item.id===mark.id);return <button key={mark.id} className={`figure-pin ${selectedFigure===mark.id?'selected':''}`} style={{left:`${mark.points[0].x*100}%`,top:`${mark.points[0].y*100}%`}} aria-label={`Figura ${index+1}, ${figureComments.filter(c=>c.annotationId===mark.id).length} comentarios`} onClick={()=>onFigure(mark)}>{index+1}</button>})}
-        {visibleMarks.find(mark=>mark.draft)&&<AnnotationCommentPopover mark={visibleMarks.find(mark=>mark.draft)} disabled={readonly} onPublish={onQuickComment} onUndo={undoMark} onClose={()=>setMarks(current=>current.filter(mark=>!mark.draft))}/>}
+        {visibleMarks.find(mark=>mark.draft)&&<AnnotationCommentPopover mark={visibleMarks.find(mark=>mark.draft)} disabled={readonly} people={mentionPeople} onPublish={onQuickComment} onUndo={undoMark} onClose={()=>setMarks(current=>current.filter(mark=>!mark.draft))}/>}
         {remoteCursor&&<div className="remote-cursor" style={{left:`${remoteCursor.x}%`,top:`${remoteCursor.y}%`,'--presence-color':remoteCursor.color}}><i/><span>{remoteCursor.name}</span></div>}
         <div className="frame-badge">{stamp.time} · F{stamp.frame}</div>
       </div>
