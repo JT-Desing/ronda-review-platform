@@ -4,6 +4,7 @@ import {requireProjectEditor} from '../project-policy.js';
 import { workspaceRepository } from '../repositories/workspaces.js';
 import { workspaceService } from '../workspace-service.js';
 import { sendInvitationMail } from '../invitation-mail.js';
+import { rateLimiter } from '../rate-limit.js';
 const uuid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 async function objectBody(req) {
   const value = await body(req);
@@ -33,7 +34,9 @@ export async function handleWorkspaces({ req, res, path, account, pool, mailer, 
   const [, id, kind, target] = match;
   if (!kind && req.method === 'GET') return reply(res, 200, await repository.read(id, account.id));
   if (kind === 'invitations' && !target && req.method === 'POST') {
-    const result = await service.invite(id, account.id, await objectBody(req));
+    const input = await objectBody(req);
+    if (!await rateLimiter(pool)(`invite:${account.id}`, 30, 3600)) return reply(res, 429, { error: 'Demasiadas invitaciones. Espera un rato antes de enviar más.' });
+    const result = await service.invite(id, account.id, input);
     const emailDelivery = await sendInvitationMail({mailer, origin, result});
     return reply(res, 201, {...result, emailDelivery});
   }

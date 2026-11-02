@@ -1,3 +1,4 @@
+import { requireActivePlan } from './plans.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PLAN_IDS,TEAM_PLANS,planLimits,validatePlanChange,GB} from './plans.js';
@@ -33,4 +34,9 @@ test('plan changes are validated before reaching the database', () => {
   assert.throws(()=>validatePlanChange({plan:'estudio',status:'gratis'},{team:true}), /Estado/);
   assert.throws(()=>validatePlanChange({plan:'estudio',status:'active',extraPacks:-1},{team:true}), /paquetes/);
   assert.throws(()=>validatePlanChange({plan:'a-medida',status:'active',customMembers:0},{team:true}), /personas/);
+});
+
+test('only an active plan can change content', () => {
+  assert.doesNotThrow(() => requireActivePlan('active'));
+  for (const status of ['pending', 'suspended']) assert.throws(() => requireActivePlan(status), error => error.status === 402);
 });

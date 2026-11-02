@@ -60,14 +60,20 @@ export async function notifyFromEvent(db,space,actor,action,details){
   await insert(db,space,actor,reply?'reply':'comment',audience,{...base,commentId:comment.id,text});
 }
 
+// Same access rule as members(), evaluated when a notification is shown or emailed:
+// access removed after the event also removes the notification's content.
+const CAN_STILL_OPEN=`EXISTS(SELECT 1 FROM workspace_members m LEFT JOIN shared_projects p ON p.workspace_id=m.workspace_id AND p.id::text=n.details->>'projectId'
+  WHERE m.workspace_id=n.workspace_id AND m.user_id=n.user_id AND (n.details->>'projectId' IS NULL OR (p.id IS NOT NULL AND p.deleted_at IS NULL
+    AND (NOT p.restricted OR m.role='admin' OR p.created_by=m.user_id
+      OR EXISTS(SELECT 1 FROM shared_project_members pm WHERE pm.workspace_id=p.workspace_id AND pm.project_id=p.id AND pm.user_id=m.user_id)))))`;
+
 const LIMIT=30;
 export async function listNotifications(pool,userId){
   const items=(await pool.query(`SELECT n.id,n.kind,n.details,n.created_at AS "createdAt",n.read_at AS "readAt",n.workspace_id AS "workspaceId",u.name AS "actorName"
     FROM user_notifications n LEFT JOIN users u ON u.id=n.actor_id
-    JOIN workspace_members m ON m.workspace_id=n.workspace_id AND m.user_id=n.user_id
-    WHERE n.user_id=$1 ORDER BY n.created_at DESC LIMIT ${LIMIT}`,[userId])).rows;
-  const unread=(await pool.query(`SELECT count(*)::integer AS count FROM user_notifications n JOIN workspace_members m ON m.workspace_id=n.workspace_id AND m.user_id=n.user_id
-    WHERE n.user_id=$1 AND n.read_at IS NULL`,[userId])).rows[0].count;
+    WHERE n.user_id=$1 AND ${CAN_STILL_OPEN} ORDER BY n.created_at DESC LIMIT ${LIMIT}`,[userId])).rows;
+  const unread=(await pool.query(`SELECT count(*)::integer AS count FROM user_notifications n
+    WHERE n.user_id=$1 AND n.read_at IS NULL AND ${CAN_STILL_OPEN}`,[userId])).rows[0].count;
   return {items:items.map(item=>({...item,line:notificationLine(item)})),unread};
 }
 
@@ -104,14 +110,15 @@ export async function sendNotificationDigests({pool,mailer,origin,limit=200}){
     await client.query('BEGIN');
     rows=(await client.query(`SELECT n.id,n.user_id,n.workspace_id AS "workspaceId",n.kind,n.details,u.email,u.name,a.name AS "actorName"
       FROM user_notifications n JOIN users u ON u.id=n.user_id LEFT JOIN users a ON a.id=n.actor_id
-      WHERE n.emailed_at IS NULL AND n.read_at IS NULL AND n.created_at>now()-interval '1 day'
+      WHERE n.emailed_at IS NULL AND n.read_at IS NULL AND n.created_at>now()-interval '1 day' AND ${CAN_STILL_OPEN}
       ORDER BY n.created_at LIMIT $1 FOR UPDATE OF n SKIP LOCKED`,[limit])).rows;
     if(rows.length)await client.query('UPDATE user_notifications SET emailed_at=now() WHERE id=ANY($1::uuid[])',[rows.map(row=>row.id)]);
     await client.query('COMMIT');
   }catch(error){await client.query('ROLLBACK').catch(()=>{});throw error;}
   finally{client.release();}
+  // One email per person and space, because each email links to a single space.
   const byUser=new Map();
-  for(const row of rows)byUser.set(row.user_id,[...(byUser.get(row.user_id)||[]),row]);
+  for(const row of rows){const key=`${row.user_id}:${row.workspaceId}`;byUser.set(key,[...(byUser.get(key)||[]),row]);}
   let sent=0;
   for(const items of byUser.values()){
     const first=items[0],lines=items.map(notificationLine);
@@ -124,7 +131,11 @@ export async function sendNotificationDigests({pool,mailer,origin,limit=200}){
         html:transactionalEmail({preheader:lines[0],eyebrow:'Novedades del equipo',title:subject,paragraphs:[...lines,...quotes].slice(0,12),actionLabel:'Abrir en Ronda',actionUrl:link,details:[]}),
         attachments:[rondaEmailLogoAttachment]});
       sent++;
-    }catch{console.error('notification_email_failed');}
+    }catch{
+      // Release the claim so the next pass retries; rows older than a day stop retrying.
+      console.error('notification_email_failed');
+      await pool.query('UPDATE user_notifications SET emailed_at=NULL WHERE id=ANY($1::uuid[])',[items.map(item=>item.id)]).catch(()=>console.error('notification_email_release_failed'));
+    }
   }
   return {sent};
 }

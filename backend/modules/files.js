@@ -8,6 +8,7 @@ import { reply } from '../http.js';
 import { servedFileType, decodeFileName } from '../file-policy.js';
 import { syncDirectories } from '../storage/durable.js';
 import { accountPlan, accountStorageUsed } from '../repositories/plans.js';
+import { requireActivePlan } from '../plans.js';
 export async function handleFiles({ req, res, path, account, pool, fileRoot='/data/files' }) {
   const fileMatch = path?.match(/^\/api\/files\/([0-9a-f-]{36})$/);
   if (fileMatch) {
@@ -20,6 +21,7 @@ export async function handleFiles({ req, res, path, account, pool, fileRoot='/da
       if (!Number.isInteger(size) || size < 1 || size > 100 * 1024 * 1024) return reply(res, 413, { error: 'Máximo 100 MB por archivo.' });
       const owner = await pool.query('SELECT user_id FROM files WHERE id=$1 AND user_id=$2', [id, account.id]);
       if (owner.rows.length) { req.resume(); return reply(res, 200, { id }); }
+      requireActivePlan((await accountPlan(pool, account.id)).status);
       const quota = async db => (await accountPlan(db, account.id)).limits.storageBytes;
       const used = db => accountStorageUsed(db, account.id);
       const overQuota = () => Object.assign(new Error('Tu plan no tiene espacio para este archivo. Libera espacio o amplía el plan.'), { status: 413 });
