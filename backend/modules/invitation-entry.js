@@ -1,5 +1,6 @@
 import { token, digest, hashPassword } from '../security.js';
 import { reply, body } from '../http.js';
+import { addGuestToProject } from '../project-membership.js';
 import { clientAddress, rateLimiter } from '../rate-limit.js';
 import { withPlatformRole } from '../platform-access.js';
 import { workspaceError } from '../workspace-policy.js';
@@ -34,7 +35,7 @@ async function enter(pool, input) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const invitation = (await client.query(`SELECT id,workspace_id,email,role,invitee_name AS name FROM workspace_invitations WHERE token_hash=$1 AND ${pending} FOR UPDATE`, [hash])).rows[0];
+    const invitation = (await client.query(`SELECT id,workspace_id,email,role,project_id,invitee_name AS name FROM workspace_invitations WHERE token_hash=$1 AND ${pending} FOR UPDATE`, [hash])).rows[0];
     if (!invitation) throw workspaceError(404, 'Invitación vencida, revocada o ya utilizada.');
     const typed = typeof input?.name === 'string' ? input.name.trim() : '';
     if (typed.length > 100) throw workspaceError(400, 'El nombre puede tener hasta 100 caracteres.');
@@ -46,6 +47,7 @@ async function enter(pool, input) {
     const personal = (await client.query('INSERT INTO workspaces(name) VALUES($1) RETURNING id', [`Espacio de ${invitation.name}`])).rows[0];
     await client.query("INSERT INTO workspace_members(workspace_id,user_id,role) VALUES($1,$2,'admin')", [personal.id, user.id]);
     await client.query('INSERT INTO workspace_members(workspace_id,user_id,role) VALUES($1,$2,$3)', [invitation.workspace_id, user.id, invitation.role]);
+    await addGuestToProject(client, invitation.workspace_id, user.id, invitation);
     await client.query('UPDATE workspace_invitations SET accepted_at=now() WHERE id=$1', [invitation.id]);
     await client.query("INSERT INTO workspace_events(workspace_id,actor_id,action,details) VALUES($1,$2,'invitation.accepted',$3)", [invitation.workspace_id, user.id, { userId: user.id, oneClick: true }]);
     const session = token();

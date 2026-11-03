@@ -16,7 +16,7 @@ async function members(db,space,actor,ids,projectId){
   if(!unique.length)return [];
   return (await db.query(`SELECT m.user_id FROM workspace_members m JOIN shared_projects p ON p.workspace_id=m.workspace_id AND p.id=$3
     WHERE m.workspace_id=$1 AND m.user_id=ANY($2::uuid[]) AND p.deleted_at IS NULL
-    AND (NOT p.restricted OR m.role='admin' OR p.created_by=m.user_id
+    AND ((NOT p.restricted AND m.role<>'guest') OR m.role='admin' OR p.created_by=m.user_id
       OR EXISTS(SELECT 1 FROM shared_project_members pm WHERE pm.workspace_id=$1 AND pm.project_id=p.id AND pm.user_id=m.user_id))`,[space,unique,projectId])).rows.map(row=>row.user_id);
 }
 
@@ -64,7 +64,7 @@ export async function notifyFromEvent(db,space,actor,action,details){
 // access removed after the event also removes the notification's content.
 const CAN_STILL_OPEN=`EXISTS(SELECT 1 FROM workspace_members m LEFT JOIN shared_projects p ON p.workspace_id=m.workspace_id AND p.id::text=n.details->>'projectId'
   WHERE m.workspace_id=n.workspace_id AND m.user_id=n.user_id AND (n.details->>'projectId' IS NULL OR (p.id IS NOT NULL AND p.deleted_at IS NULL
-    AND (NOT p.restricted OR m.role='admin' OR p.created_by=m.user_id
+    AND ((NOT p.restricted AND m.role<>'guest') OR m.role='admin' OR p.created_by=m.user_id
       OR EXISTS(SELECT 1 FROM shared_project_members pm WHERE pm.workspace_id=p.workspace_id AND pm.project_id=p.id AND pm.user_id=m.user_id)))))`;
 
 const LIMIT=30;

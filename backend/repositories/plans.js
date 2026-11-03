@@ -20,6 +20,10 @@ export async function accountStorageUsed(db, userId) {
   return Number((await db.query('SELECT COALESCE(sum(size),0) AS size FROM files WHERE user_id=$1', [userId])).rows[0].size);
 }
 
+export async function workspaceGuestsUsed(db, workspaceId) {
+  return Number((await db.query("SELECT (SELECT count(*) FROM workspace_members WHERE workspace_id=$1 AND role='guest')+(SELECT count(*) FROM workspace_invitations WHERE workspace_id=$1 AND role='guest' AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at>now()) AS count", [workspaceId])).rows[0].count);
+}
+
 export async function workspaceSeatsUsed(db, workspaceId) {
-  return Number((await db.query('SELECT (SELECT count(*) FROM workspace_members WHERE workspace_id=$1)+(SELECT count(*) FROM workspace_invitations WHERE workspace_id=$1 AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at>now()) AS count', [workspaceId])).rows[0].count);
+  return Number((await db.query("SELECT (SELECT count(*) FROM workspace_members WHERE workspace_id=$1 AND role<>'guest')+(SELECT count(*) FROM workspace_invitations WHERE workspace_id=$1 AND role<>'guest' AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at>now()) AS count", [workspaceId])).rows[0].count);
 }
