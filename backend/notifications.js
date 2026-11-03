@@ -111,6 +111,7 @@ export async function sendNotificationDigests({pool,mailer,origin,limit=200}){
     rows=(await client.query(`SELECT n.id,n.user_id,n.workspace_id AS "workspaceId",n.kind,n.details,u.email,u.name,a.name AS "actorName"
       FROM user_notifications n JOIN users u ON u.id=n.user_id LEFT JOIN users a ON a.id=n.actor_id
       WHERE n.emailed_at IS NULL AND n.read_at IS NULL AND n.created_at>now()-interval '1 day' AND ${CAN_STILL_OPEN}
+      AND (u.email_notifications='all' OR (u.email_notifications='mentions' AND n.kind='mention'))
       ORDER BY n.created_at LIMIT $1 FOR UPDATE OF n SKIP LOCKED`,[limit])).rows;
     if(rows.length)await client.query('UPDATE user_notifications SET emailed_at=now() WHERE id=ANY($1::uuid[])',[rows.map(row=>row.id)]);
     await client.query('COMMIT');

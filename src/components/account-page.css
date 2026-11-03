@@ -1,0 +1,14 @@
+.account-page form{display:grid;gap:14px}
+.account-page label{display:grid;gap:6px}
+.account-page label small{color:var(--muted,#a3a3ad)}
+.account-page form>button,.account-page .account-danger{justify-self:start;min-height:44px;padding:8px 16px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--text);cursor:pointer}
+.account-page form>button:disabled{opacity:.45;cursor:default}
+.account-page .account-danger{color:#ffb4b4;border-color:#905358}
+.account-choices{display:grid;gap:10px;margin:0;padding:0;border:0}
+.account-choice{grid-template-columns:auto 1fr;align-items:start;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;cursor:pointer}
+.account-choice:has(input:checked){border-color:var(--accent,#cbb0f0)}
+.account-choice span{display:grid;gap:2px}
+.account-ok{color:#9fe3b5}.account-error{color:#ffb4b4}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.account-page textarea,.account-page select{box-sizing:border-box;width:100%;padding:10px 12px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--text);font:inherit}
+.account-page label{font-size:14px}

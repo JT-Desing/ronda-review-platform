@@ -8,7 +8,7 @@ export function readStudioView(hash){
  if(readReviewRoute(hash))return 'review';
  if(hash==='#personal')return 'personal';
  if(hash==='#projects')return 'projects';
- const match=/^#view\/(home|projects|personal|pauta|activity|planning|team|settings|branding|review)$/.exec(hash||'');
+ const match=/^#view\/(home|projects|personal|pauta|activity|planning|team|settings|branding|review|account)$/.exec(hash||'');
  return match?.[1]||null;
 }
 
