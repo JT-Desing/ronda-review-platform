@@ -1,2 +1,4 @@
 # Prose in a QA note ("tokens, decisiones..."), not a credential.
 dd03fcecd0d8207309fb257fe111357ae18a5b3b:docs/qa/ronda-usability-progress.md:generic-api-key:565
+# Test password in an integration test (now generated at runtime), not a credential.
+c059306484c95db3403623787990e683bcf91774:backend/account-settings-integration.js:generic-api-key:14

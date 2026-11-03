@@ -1,18 +1,21 @@
 import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
 import {reviewFixture} from './shared-review-qa-fixture.js';
 import {readSettings,updateSettings,changePassword,requestPlanChange} from './account-settings.js';
 import {hashPassword,verifyPassword,digest} from './security.js';
 import {sendNotificationDigests} from './notifications.js';
 const f=await reviewFixture();
+// Generated per run so no credential-looking literal lives in the repository.
+const oldPass=randomUUID(),newPass=randomUUID(),wrongPass=randomUUID();
 try{
-  await f.pool.query('UPDATE users SET password_hash=$2 WHERE id=$1',[f.editor,await hashPassword('antigua-clave-12')]);
+  await f.pool.query('UPDATE users SET password_hash=$2 WHERE id=$1',[f.editor,await hashPassword(oldPass)]);
   assert.equal((await readSettings(f.pool,f.editor)).emailNotifications,'all');
   assert.equal((await updateSettings(f.pool,f.editor,{name:'  Eva Nueva ',emailNotifications:'mentions'})).name,'Eva Nueva');
   await assert.rejects(updateSettings(f.pool,f.editor,{emailNotifications:'spam'}),e=>e.status===400);
   await f.pool.query("INSERT INTO sessions VALUES($1,$2,now()+interval '1 day'),($3,$2,now()+interval '1 day')",[digest('actual'),f.editor,digest('otra')]);
-  await assert.rejects(changePassword(f.pool,f.editor,'actual',{currentPassword:'mala-clave-123',newPassword:'nueva-clave-123'}),e=>e.status===403);
-  await changePassword(f.pool,f.editor,'actual',{currentPassword:'antigua-clave-12',newPassword:'nueva-clave-123'});
-  assert.ok(await verifyPassword('nueva-clave-123',(await f.pool.query('SELECT password_hash FROM users WHERE id=$1',[f.editor])).rows[0].password_hash));
+  await assert.rejects(changePassword(f.pool,f.editor,'actual',{currentPassword:wrongPass,newPassword:newPass}),e=>e.status===403);
+  await changePassword(f.pool,f.editor,'actual',{currentPassword:oldPass,newPassword:newPass});
+  assert.ok(await verifyPassword(newPass,(await f.pool.query('SELECT password_hash FROM users WHERE id=$1',[f.editor])).rows[0].password_hash));
   assert.deepEqual((await f.pool.query('SELECT token_hash FROM sessions WHERE user_id=$1',[f.editor])).rows.map(r=>r.token_hash),[digest('actual')]);
   // Digest respects the preference: a comment stays out, a mention goes out.
   const sent=[];const mailer={enabled:true,send:async m=>sent.push(m)};
