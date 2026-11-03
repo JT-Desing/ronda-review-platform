@@ -16,11 +16,11 @@ export function AccountDeletion({ email, onClose }) {
     } catch (reason) { setError(reason.message); setBusy(false); }
   }
   return <div className="modal-layer"><button className="modal-scrim" aria-label="Cancelar" disabled={busy} onClick={onClose}/>
-    <form className="modal project-delete-modal" role="dialog" aria-modal="true" aria-labelledby="account-delete-title" onSubmit={confirm}>
+    <form className="modal project-delete-dialog" onKeyDown={event => { if (event.key === 'Escape' && !busy) onClose(); }} role="dialog" aria-modal="true" aria-labelledby="account-delete-title" onSubmit={confirm}>
       <h2 id="account-delete-title">Eliminar tu cuenta</h2>
       <p>Se borran tus proyectos personales, archivos y notificaciones, y sales de todos los equipos. Lo que subiste o comentaste en un equipo se queda con ese equipo, firmado como "Cuenta eliminada". No se puede deshacer.</p>
-      <label>Escribe tu correo para confirmar<input type="email" autoComplete="off" value={typed} disabled={busy} onChange={event => setTyped(event.target.value)}/></label>
+      <label>Escribe tu correo para confirmar<input autoFocus type="email" autoComplete="off" value={typed} disabled={busy} onChange={event => setTyped(event.target.value)}/></label>
+      <footer><button type="button" disabled={busy} onClick={onClose}>Cancelar</button><button type="submit" className="project-delete-confirm" disabled={!matches || busy}>{busy ? 'Eliminando…' : 'Eliminar cuenta'}</button></footer>
       {error && <p role="alert">{error}</p>}
-      <div className="modal-actions"><button type="button" disabled={busy} onClick={onClose}>Cancelar</button><button type="submit" className="danger" disabled={!matches || busy}>{busy ? 'Eliminando…' : 'Eliminar cuenta'}</button></div>
     </form></div>;
 }
