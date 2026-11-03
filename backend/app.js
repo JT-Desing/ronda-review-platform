@@ -18,6 +18,7 @@ import {body} from './http.js';
 import {rateLimiter} from './rate-limit.js';
 import {requireActivePlan} from './plans.js';
 import {deleteAccount} from './account-deletion.js';
+import {readSettings,updateSettings,changePassword,requestPlanChange} from './account-settings.js';
 
 // Composition root: infrastructure is supplied, no listening or schema mutation here.
 export function createApp({ pool, origin, mailer, sharedStorage, fileRoot }) {
@@ -64,6 +65,20 @@ export function createApp({ pool, origin, mailer, sharedStorage, fileRoot }) {
         requirePrivacyAcceptance(await body(req));
         await recordPrivacyAcceptance(pool, account.id);
         return reply(res, 200, { privacyAccepted: true });
+      }
+      if (path === '/api/account/settings' || path === '/api/account/password' || path === '/api/account/plan-request') {
+        if (!account) return reply(res, 401, { error: 'Inicia sesión.' });
+        if (path === '/api/account/settings' && req.method === 'GET') return reply(res, 200, await readSettings(pool, account.id));
+        if (path === '/api/account/settings' && req.method === 'PATCH') return reply(res, 200, await updateSettings(pool, account.id, await body(req)));
+        if (path === '/api/account/password' && req.method === 'POST') {
+          if (!await rateLimiter(pool)(`password-change:${account.id}`, 5, 900)) return reply(res, 429, { error: 'Demasiados intentos. Espera unos minutos.' });
+          return reply(res, 200, await changePassword(pool, account.id, sessionToken, await body(req)));
+        }
+        if (path === '/api/account/plan-request' && req.method === 'POST') {
+          if (!await rateLimiter(pool)(`plan-request:${account.id}`, 3, 3600)) return reply(res, 429, { error: 'Ya enviaste varias solicitudes. Te responderemos pronto.' });
+          return reply(res, 200, await requestPlanChange({ pool, mailer, origin, account, input: await body(req) }));
+        }
+        return reply(res, 405, { error: 'Método no permitido.' });
       }
       if (req.method === 'POST' && path === '/api/account/delete') {
         if (!account) return reply(res, 401, { error: 'Inicia sesión.' });

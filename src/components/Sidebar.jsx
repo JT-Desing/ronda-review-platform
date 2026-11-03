@@ -13,7 +13,9 @@ export default function Sidebar({ collapsed, setCollapsed, currentView, onNaviga
   const {user}=useAccountActions();
   const projectCount=Object.keys(state.projects||{}).length;
   const pieceCount=(state.assets||[]).length;
-  const accountName=state.members[state.currentUserId]?.name||'Mi cuenta';
+  // The account name lives on the server; the local snapshot can be older.
+  const accountName=user?.name||state.members[state.currentUserId]?.name||'Mi cuenta';
+  const accountInitials=accountName.trim().split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase();
   const [accountMenu,setAccountMenu]=useState(false);
   const accountMenuTriggerRef=useRef(null);
   const accountPopoverRef=useRef(null);
@@ -61,8 +63,8 @@ export default function Sidebar({ collapsed, setCollapsed, currentView, onNaviga
 {canAccessStudioView(user,'branding')&&<button className={currentView==='branding'?'active':''} onClick={()=>onNavigate('branding')}><Icon name="image"/><span>Personalización</span></button>}
     </LensNavigation>
     <div className="account">
-      <span className="avatar small sidebar-account-avatar">{state.members[state.currentUserId]?.initials}</span>
-      <span className="account-copy"><strong>{state.members[state.currentUserId]?.name}</strong><small>Mi cuenta</small></span>
+      <span className="avatar small sidebar-account-avatar">{accountInitials}</span>
+      <span className="account-copy"><strong>{accountName}</strong><small>Mi cuenta</small></span>
       <div className="account-menu-wrap"><button ref={accountMenuTriggerRef} className="account-menu-trigger" type="button" aria-label="Opciones de espacio y cuenta" aria-expanded={accountMenu} aria-controls="account-workspace-popover" onClick={()=>setAccountMenu(value=>!value)}>{collapsed?<span className="avatar small sidebar-account-menu-avatar" aria-hidden="true">{state.members[state.currentUserId]?.initials}</span>:<Icon name="more"/>}</button>{accountMenu&&accountPopoverPosition&&createPortal(<section ref={accountPopoverRef} className="account-popover account-workspace-card" id="account-workspace-popover" style={accountPopoverPosition} aria-label="Opciones del espacio de trabajo">
         <header className="account-popover-heading"><span className="account-popover-mark"><Icon name="personal" size={21}/></span><span><small className="account-popover-eyebrow">ESPACIO PERSONAL</small><strong title={accountName}>{accountName}</strong><small>Tu espacio de trabajo</small></span></header>
         <nav className="account-popover-links" aria-label="Accesos del espacio">
