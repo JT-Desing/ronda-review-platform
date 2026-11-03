@@ -12,7 +12,7 @@ import {CreateTeamForm} from './CreateTeamForm.jsx';
 import {teamErrorCanRetry} from '../domain/team-error.js';
 import {workspaceEventAction} from '../domain/workspace-event-action.js';
 
-const roles = { admin: 'Administrador', editor: 'Editor', reviewer: 'Revisor' };
+const roles = { admin: 'Administrador', editor: 'Editor', reviewer: 'Revisor', guest: 'Cliente invitado' };
 const date = value => new Date(value).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' });
 const workspacePreferenceStorage=()=>{try{return localStorage;}catch{return null;}};
 async function request(path, method = 'GET', input) {
