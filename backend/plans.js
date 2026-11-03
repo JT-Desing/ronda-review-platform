@@ -13,6 +13,11 @@ const PLANS = Object.freeze({
 });
 export const PLAN_IDS = Object.keys(PLANS);
 export const TEAM_PLANS = PLAN_IDS.filter(id => PLANS[id].team);
+// A space without an active plan stays readable and exportable, but cannot change.
+export function requireActivePlan(status) {
+  if (status === 'active') return;
+  throw Object.assign(new Error(status === 'suspended' ? 'El plan está suspendido. Puedes ver y descargar tu trabajo; renueva para seguir editando.' : 'El plan está pendiente de activación. Podrás trabajar cuando se confirme el pago.'), { status: 402 });
+}
 const planError = message => Object.assign(new Error(message), { status: 400 });
 
 // Until the platform owner activates a paid plan, the space keeps the free limits.

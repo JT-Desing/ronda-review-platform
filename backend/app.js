@@ -11,11 +11,12 @@ import {handleSharedReview,isSharedReviewPath} from './modules/shared-review.js'
 import {handlePlatform,isPlatformPath} from './modules/platform.js';
 import {handleInvitationEntry,isInvitationEntryPath} from './modules/invitation-entry.js';
 import {handleNotifications,isNotificationsPath} from './modules/notifications.js';
-import {accountPlan,accountStorageUsed} from './repositories/plans.js';
+import {accountPlan,accountStorageUsed,workspacePlan} from './repositories/plans.js';
 import {withPrivacy,requirePrivacyAcceptance,recordPrivacyAcceptance} from './privacy.js';
 import {inspectLink} from './external-link.js';
 import {body} from './http.js';
 import {rateLimiter} from './rate-limit.js';
+import {requireActivePlan} from './plans.js';
 
 // Composition root: infrastructure is supplied, no listening or schema mutation here.
 export function createApp({ pool, origin, mailer, sharedStorage, fileRoot }) {
@@ -47,6 +48,11 @@ export function createApp({ pool, origin, mailer, sharedStorage, fileRoot }) {
         if(!account)return reply(res,401,{error:'Inicia sesión.'});
         const {plan,status,extraPacks,limits}=await accountPlan(pool,account.id);
         return reply(res,200,{plan,status,extraPacks,limits,usage:{storageBytes:await accountStorageUsed(pool,account.id)}});
+      }
+      const teamContent=path?.match(/^\/api\/workspaces\/([0-9a-f-]{36})\/(?:projects|media|uploads)(?:\/|$)/);
+      if(teamContent&&account&&!['GET','HEAD'].includes(req.method)){
+        const plan=await workspacePlan(pool,teamContent[1]);
+        if(plan)requireActivePlan(plan.status);
       }
       if(isSharedReviewPath(path))return await handleSharedReview(context);
       if (/^\/api\/workspaces\/[^/]+\/projects(?:\/|$)/.test(path)) return await handleSharedProjects(context);
