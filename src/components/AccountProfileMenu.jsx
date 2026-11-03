@@ -2,11 +2,12 @@ import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from
 import { createPortal } from 'react-dom';
 import { useAccountActions } from './AccountAccess.jsx';
 import Icon from './Icon.jsx';
+import { AccountDeletion } from './AccountDeletion.jsx';
 import {canAccessStudioView} from '../domain/platform-access.js';
 
 export function AccountProfileMenu({ initials, onNavigate }) {
   const { user, status, busy, retrySave, openImport, logout } = useAccountActions();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false), [deleting, setDeleting] = useState(false);
   const menuRef = useRef(null);
   const triggerRef = useRef(null);
   const popoverRef = useRef(null);
@@ -69,7 +70,9 @@ export function AccountProfileMenu({ initials, onNavigate }) {
         <small className="account-profile-section-label">DATOS Y SESIÓN</small>
         <button className="account-profile-action" type="button" onClick={() => closeAnd(openImport)}><Icon name="folder" size={16}/><span>Importar copia local</span><Icon className="account-profile-action-tail" name="chevron" size={14}/></button>
         <button className="account-profile-action is-logout" type="button" disabled={busy} onClick={() => closeAnd(logout)}><Icon name="logout" size={16}/><span>{busy ? 'Guardando y cerrando…' : 'Cerrar sesión'}</span></button>
+        <button className="account-profile-action is-danger" type="button" disabled={busy} onClick={() => closeAnd(() => setDeleting(true))}><Icon name="trash" size={16}/><span>Eliminar cuenta</span></button>
       </div>
     </section>, document.body)}
+    {deleting && createPortal(<AccountDeletion email={user?.email} onClose={() => setDeleting(false)}/>, document.body)}
   </div>;
 }
