@@ -39,6 +39,8 @@ El servidor jala las imágenes. CI no tiene SSH ni secretos del servidor.
 
 ### Producción (piloto ePayco, PC de Julian)
 
+Usar `stable`: los cambios se fusionan a `main`, que publica `stable`. `edge` sale de `feature/shared-review`, que ya no recibe cambios.
+
 Producción corre con `compose.epayco.yaml` (proyecto `ronda-epayco-mkt`, volúmenes `epayco-database` y `epayco-files`) y archivos de entorno privados fuera del repo. Ver `EPAYCO-PILOT.md`.
 
 **No usar `compose.yaml` en ese PC.** Tiene otros volúmenes (`ronda-database`, `ronda-files`), así que arrancaría con una base vacía.
@@ -47,7 +49,7 @@ En PowerShell, desde la carpeta del repo:
 
 ```powershell
 $env:RONDA_BACKEND_ENV='RUTA_PRIVADA/backend/.env'
-$env:RONDA_CHANNEL='edge'
+$env:RONDA_CHANNEL='stable'
 docker compose --env-file 'RUTA_PRIVADA/.env' -f compose.epayco.yaml -f compose.deploy.yaml pull
 docker compose --env-file 'RUTA_PRIVADA/.env' -f compose.epayco.yaml -f compose.deploy.yaml up -d
 ```
@@ -56,7 +58,7 @@ docker compose --env-file 'RUTA_PRIVADA/.env' -f compose.epayco.yaml -f compose.
 
 Comprobar que todo quedó bien:
 
-1. `docker compose ... ps` muestra imágenes `ghcr.io/jt-desing/ronda-...:edge` y servicios `healthy`.
+1. `docker compose ... ps` muestra imágenes `ghcr.io/jt-desing/ronda-...:stable` y servicios `healthy`.
 2. https://ronda.repolite.link/api/health responde `"status":"ok"`.
 3. En la app aparecen los proyectos de siempre (confirma que la base es la correcta).
 
