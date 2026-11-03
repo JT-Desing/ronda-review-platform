@@ -17,6 +17,7 @@ import {inspectLink} from './external-link.js';
 import {body} from './http.js';
 import {rateLimiter} from './rate-limit.js';
 import {requireActivePlan} from './plans.js';
+import {deleteAccount} from './account-deletion.js';
 
 // Composition root: infrastructure is supplied, no listening or schema mutation here.
 export function createApp({ pool, origin, mailer, sharedStorage, fileRoot }) {
@@ -63,6 +64,11 @@ export function createApp({ pool, origin, mailer, sharedStorage, fileRoot }) {
         requirePrivacyAcceptance(await body(req));
         await recordPrivacyAcceptance(pool, account.id);
         return reply(res, 200, { privacyAccepted: true });
+      }
+      if (req.method === 'POST' && path === '/api/account/delete') {
+        if (!account) return reply(res, 401, { error: 'Inicia sesión.' });
+        const result = await deleteAccount({ pool, account, input: await body(req), fileRoot });
+        return reply(res, 200, result, { 'Set-Cookie': cookie('', 0) });
       }
       if (path === '/api/data') return await handleAccountData(context);
       if (/^\/api\/files\/[0-9a-f-]{36}$/.test(path)) return await handleFiles(context);
