@@ -1,4 +1,4 @@
-import { requireWorkspaceAdmin, requireWorkspaceMember, workspaceError } from '../workspace-policy.js';
+import { requireWorkspaceAdmin, requireWorkspaceMember,requireWorkspaceOrGuest,requireTeamMember, workspaceError } from '../workspace-policy.js';
 import { workspacePlan, workspaceSeatsUsed, workspaceStorageUsed } from './plans.js';
 export function workspaceRepository(pool) {
   return {
@@ -32,7 +32,8 @@ export function workspaceRepository(pool) {
         const space = (await client.query("SELECT id,name,kind FROM workspaces WHERE id=$1 FOR SHARE", [workspaceId])).rows[0];
         if (!space || space.kind !== 'team') throw workspaceError(404, 'Espacio de equipo no disponible.');
         const role = (await client.query('SELECT role FROM workspace_members WHERE workspace_id=$1 AND user_id=$2', [workspaceId, userId])).rows[0]?.role;
-        requireWorkspaceMember(role);
+        requireWorkspaceOrGuest(role);
+        if (role === 'guest') { await client.query('COMMIT'); return { workspace: { ...space, role }, members: [], invitations: [], events: [] }; }
         const members = (await client.query('SELECT u.id,u.name,u.email,m.role FROM workspace_members m JOIN users u ON u.id=m.user_id WHERE m.workspace_id=$1 ORDER BY u.name,u.id', [workspaceId])).rows;
         const invitations = role === 'admin' ? (await client.query('SELECT id,email,role,expires_at FROM workspace_invitations WHERE workspace_id=$1 AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at>now() ORDER BY created_at', [workspaceId])).rows : [];
         const events = (await client.query('SELECT e.id,e.action,e.details,e.created_at,u.name AS actor FROM workspace_events e LEFT JOIN users u ON u.id=e.actor_id WHERE e.workspace_id=$1 ORDER BY e.created_at DESC,e.id LIMIT 30', [workspaceId])).rows;
@@ -50,7 +51,7 @@ export function workspaceRepository(pool) {
         const space = (await client.query("SELECT id,name,kind FROM workspaces WHERE id=$1 FOR SHARE", [workspaceId])).rows[0];
         if (!space || space.kind !== 'team') throw workspaceError(404, 'Espacio de equipo no disponible.');
         const role = (await client.query('SELECT role FROM workspace_members WHERE workspace_id=$1 AND user_id=$2', [workspaceId, userId])).rows[0]?.role;
-        requireWorkspaceMember(role);
+        requireTeamMember(role);
         const events = (await client.query("SELECT e.id,e.action,e.details,e.created_at,u.name AS actor FROM workspace_events e LEFT JOIN users u ON u.id=e.actor_id WHERE e.workspace_id=$1 AND e.action='review.comment_status' ORDER BY e.created_at DESC,e.id LIMIT 100", [workspaceId])).rows;
         const commentIds=events.map(event=>event.details?.commentId).filter(id=>typeof id==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
         const comments=commentIds.length?(await client.query('SELECT id,text FROM shared_version_comments WHERE id=ANY($1::uuid[])',[commentIds])).rows:[];
