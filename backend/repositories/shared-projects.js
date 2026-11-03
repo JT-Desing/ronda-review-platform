@@ -6,7 +6,7 @@ export function sharedProjectRepository(pool,{projectId}={}) {
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
-        const space = (await client.query(`SELECT id,name,kind FROM workspaces WHERE id=$1 FOR ${write ? 'UPDATE' : 'SHARE'}`, [workspaceId])).rows[0];
+        const space = (await client.query(`SELECT id,name,kind,plan_status AS "planStatus" FROM workspaces WHERE id=$1 FOR ${write ? 'UPDATE' : 'SHARE'}`, [workspaceId])).rows[0];
         if (!space || space.kind !== 'team') throw workspaceError(404, 'Espacio de equipo no disponible.');
         let role = (await client.query('SELECT role FROM workspace_members WHERE workspace_id=$1 AND user_id=$2', [workspaceId, userId])).rows[0]?.role;
         requireWorkspaceOrGuest(role);
