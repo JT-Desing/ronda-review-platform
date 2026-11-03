@@ -2,7 +2,7 @@ import { requireWorkspaceOrGuest, workspaceError } from '../workspace-policy.js'
 import {selectedProjectRole} from '../project-membership.js';
 export function sharedProjectRepository(pool,{projectId}={}) {
   return {
-    async access(workspaceId, userId, operation, write = false) {
+    async access(workspaceId, userId, operation, write = false, guestListing = false) {
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
@@ -10,6 +10,7 @@ export function sharedProjectRepository(pool,{projectId}={}) {
         if (!space || space.kind !== 'team') throw workspaceError(404, 'Espacio de equipo no disponible.');
         let role = (await client.query('SELECT role FROM workspace_members WHERE workspace_id=$1 AND user_id=$2', [workspaceId, userId])).rows[0]?.role;
         requireWorkspaceOrGuest(role);
+        if(role==='guest'&&!projectId&&!guestListing)throw workspaceError(403,'Tu acceso es solo al proyecto compartido.');
         client.rondaActor=userId;client.rondaWorkspaceRole=role;
         if(projectId){const p=(await client.query('SELECT created_by,restricted FROM shared_projects WHERE workspace_id=$1 AND id=$2',[workspaceId,projectId])).rows[0];if(!p)throw workspaceError(404,'Proyecto no disponible.');const member=(await client.query('SELECT role FROM shared_project_members WHERE workspace_id=$1 AND project_id=$2 AND user_id=$3',[workspaceId,projectId,userId])).rows[0];role=selectedProjectRole({workspaceRole:role,creatorId:p.created_by,actor:userId,restricted:p.restricted,memberRole:member?.role});}
         const result = await operation(client, role, space);
