@@ -58,7 +58,7 @@ function SessionRecoveryDialog({user,onRecovered}){
     </form>
   </dialog>;
 }
-const ROLE_LABELS={reviewer:'revisor',editor:'editor',admin:'administrador'};
+const ROLE_LABELS={reviewer:'revisor',editor:'editor',admin:'administrador',guest:'cliente invitado'};
 const POLICY_URL='/legal/tratamiento-de-datos.html';
 function PrivacyCheckbox({checked,onChange,name}){
   return <label className="account-consent"><input type="checkbox" name={name} required checked={checked} onChange={event=>onChange?.(event.target.checked)}/><span>Acepto la <a href={POLICY_URL} target="_blank" rel="noopener">política de tratamiento de datos personales</a> y autorizo a Ronda a tratar mis datos según ella.</span></label>;
