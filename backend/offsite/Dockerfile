@@ -1,4 +1,4 @@
-FROM postgres:17-alpine
+FROM postgres:18-alpine
 # gosu is the postgres entrypoint helper; this image has its own entrypoint.
 RUN apk upgrade --no-cache && apk add --no-cache restic && rm -f /usr/local/bin/gosu
 COPY offsite-backup.sh offsite-verify.sh /usr/local/bin/
