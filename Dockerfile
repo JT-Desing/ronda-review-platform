@@ -1,4 +1,4 @@
-FROM node:26.12.1-alpine AS build
+FROM node:26.13.0-alpine AS build
 
 # Node 26 no longer ships corepack; install the pinned pnpm from packageManager.
 RUN npm install -g pnpm@11.28.3
