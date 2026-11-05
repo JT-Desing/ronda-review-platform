@@ -2,6 +2,8 @@ FROM node:26.13.0-alpine
 WORKDIR /app
 COPY package.json package-lock.json ./
 # npm and corepack are only needed to install; drop them from the runtime image.
+# Changes daily in CI so a cached layer cannot keep fixed Alpine CVEs.
+ARG APK_REFRESH
 RUN apk upgrade --no-cache && npm ci --omit=dev --ignore-scripts \
   && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 COPY *.js ./

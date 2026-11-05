@@ -1,5 +1,7 @@
 FROM postgres:17-alpine
 # gosu is the postgres entrypoint helper; this image has its own entrypoint.
+# Changes daily in CI so a cached layer cannot keep fixed Alpine CVEs.
+ARG APK_REFRESH
 RUN apk upgrade --no-cache && apk add --no-cache restic && rm -f /usr/local/bin/gosu
 COPY offsite-backup.sh offsite-verify.sh /usr/local/bin/
 # Same uid as the API's "node" user: uploaded files are mode 0600.
