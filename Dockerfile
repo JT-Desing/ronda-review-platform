@@ -13,6 +13,8 @@ RUN pnpm build
 FROM docker.io/nginxinc/nginx-unprivileged:1.31-alpine
 
 USER root
+# Changes daily in CI so a cached layer cannot keep fixed Alpine CVEs.
+ARG APK_REFRESH
 RUN apk upgrade --no-cache
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
