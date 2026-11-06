@@ -5,5 +5,7 @@ export async function purgeExpired(pool) {
   const oauthStates = await pool.query('DELETE FROM oauth_states WHERE expires_at < now()');
   // The longest rate-limit window is one hour; a day never drops a live counter.
   const authAttempts = await pool.query("DELETE FROM auth_attempts WHERE window_start < now() - interval '1 day'");
-  return { sessions: sessions.rowCount, oauthStates: oauthStates.rowCount, authAttempts: authAttempts.rowCount };
+  // The outbox is transport, not history: workspace_events keeps what the team sees.
+  const outboxEvents = await pool.query("DELETE FROM event_outbox WHERE occurred_at < now() - interval '30 days'");
+  return { sessions: sessions.rowCount, oauthStates: oauthStates.rowCount, authAttempts: authAttempts.rowCount, outboxEvents: outboxEvents.rowCount };
 }
