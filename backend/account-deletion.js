@@ -19,6 +19,9 @@ export async function deleteAccount({ pool, account, input, fileRoot = '/data/fi
     const personal = (await client.query("SELECT w.id FROM workspaces w JOIN workspace_members m ON m.workspace_id=w.id WHERE m.user_id=$1 AND w.kind<>'team'", [account.id])).rows.map(row => row.id);
     await client.query('DELETE FROM workspace_members WHERE user_id=$1', [account.id]);
     if (personal.length) await client.query("DELETE FROM workspaces WHERE id=ANY($1::uuid[]) AND kind<>'team'", [personal]);
+    // The outbox has no foreign keys, so it is cleaned by hand like the rows above.
+    if (personal.length) await client.query('DELETE FROM event_outbox WHERE workspace_id=ANY($1::uuid[])', [personal]);
+    await client.query('UPDATE event_outbox SET actor_id=NULL WHERE actor_id=$1', [account.id]);
     await client.query("UPDATE shared_review_decisions SET active=false WHERE user_id=$1", [account.id]);
     await client.query('DELETE FROM files WHERE user_id=$1', [account.id]);
     await client.query('DELETE FROM account_data WHERE user_id=$1', [account.id]);

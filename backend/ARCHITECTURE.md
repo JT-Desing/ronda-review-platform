@@ -73,3 +73,13 @@ Migración aditiva 0004; no modificar migraciones previas ni DROP producción. A
 `shared-project-integration.js` usa una base UUID aislada y cuatro cuentas: roles, externos, cruces entre espacios, autor falsificado, concurrencia, reintentos, revocación, persistencia tras reiniciar la API y conservación de snapshots/archivos privados. La UI es una vista independiente; no adapta ni migra la sala privada. Próximo incremento: archivos compartidos con autorización por espacio y versiones, antes de trasladar anotaciones/aprobaciones. SMTP y Google siguen pendientes.
 
 Permisos reales de espacios compartidos, con políticas y repositorios de recursos. Migrar snapshots a entidades compartidas mediante expand-contract y pruebas de aislamiento entre espacios; sin borrar la copia por cuenta hasta verificar migración explícita. SMTP Zoho, validación de correo y Google siguen pendientes de configuración/implementación correspondiente.
+
+## Outbox de eventos
+
+`0022_event_outbox.sql` copia cada fila de `workspace_events` a `event_outbox` con un trigger, en la misma transacción que el cambio. Si el cambio se revierte, el evento tampoco queda. Ningún código de negocio cambió: los servicios siguen escribiendo en `workspace_events`.
+
+El outbox no tiene claves foráneas, para que borrar un espacio no se lleve eventos que nadie ha leído. Cada evento trae `event_id` (el mismo id de `workspace_events`), `event_type`, `event_version`, agregado (`project` si `details.projectId` es un uuid, si no `workspace`) y `seq` para el orden.
+
+`event-outbox.js` publica por lotes con `FOR UPDATE SKIP LOCKED`, así varios procesos pueden publicar sin entregarse la misma fila. La entrega es al menos una vez: el consumidor debe ignorar `eventId` repetidos. Un fallo deja el evento pendiente con espera exponencial (tope de una hora). Todavía no hay consumidor conectado.
+
+Privacidad: `purgeExpired` borra eventos de más de 30 días (el outbox es transporte; el historial visible sigue en `workspace_events`). Borrar una cuenta pone `actor_id` en NULL y elimina los eventos de sus espacios personales. Los payload pueden llevar correos de invitación, por eso la retención es corta.

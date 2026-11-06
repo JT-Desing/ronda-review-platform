@@ -8,10 +8,13 @@ try{
   await assert.rejects(deleteAccount({pool:f.pool,account:reviewer,input:{confirmEmail:'otro@example.invalid'},fileRoot:f.root}),e=>e.status===400);
   await assert.rejects(deleteAccount({pool:f.pool,account:admin,input:{confirmEmail:admin.email},fileRoot:f.root}),e=>e.status===409);
   await f.pool.query("INSERT INTO sessions VALUES('x',$1,now()+interval '1 day')",[f.reviewer]);
+  await f.pool.query("INSERT INTO workspace_events(workspace_id,actor_id,action) VALUES($1,$2,'qa.by_reviewer')",[f.space,f.reviewer]);
   assert.deepEqual(await deleteAccount({pool:f.pool,account:reviewer,input:{confirmEmail:reviewer.email.toUpperCase()},fileRoot:f.root}),{deleted:true});
   const after=await who(f.reviewer);
   assert.equal(after.name,'Cuenta eliminada');assert.notEqual(after.email,reviewer.email);
   assert.equal((await f.pool.query('SELECT count(*)::int AS n FROM workspace_members WHERE user_id=$1',[f.reviewer])).rows[0].n,0);
   assert.equal((await f.pool.query('SELECT count(*)::int AS n FROM sessions WHERE user_id=$1',[f.reviewer])).rows[0].n,0);
+  assert.equal((await f.pool.query('SELECT count(*)::int AS n FROM event_outbox WHERE actor_id=$1',[f.reviewer])).rows[0].n,0);
+  assert.equal((await f.pool.query("SELECT count(*)::int AS n FROM event_outbox WHERE event_type='qa.by_reviewer'")).rows[0].n,1);
   console.log('PASS account deletion: confirmation, last-admin guard, anonymized account, no access left.');
 }finally{await f.close();}
