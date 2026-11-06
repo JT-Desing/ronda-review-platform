@@ -14,3 +14,6 @@ coverage/
 .superpowers/
 !.env.offsite.example
 dist-extension/
+e2e/.stack.json
+test-results/
+playwright-report/
