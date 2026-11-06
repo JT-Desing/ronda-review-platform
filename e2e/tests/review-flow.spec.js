@@ -19,6 +19,9 @@ test('registro, subir pieza y comentar; todo sigue ahí al volver a entrar', asy
 
   await piece.click();
   await expect(page.getByRole('img', { name: 'pieza.png' }).last()).toBeVisible();
+  // The annotation tools must be reachable too (they were off-screen on mobile).
+  await page.getByRole('button', { name: 'Rectángulo (3)' }).click();
+  await expect(page.getByRole('button', { name: 'Rectángulo (3)' })).toHaveAttribute('aria-pressed', 'true');
   await openComments(page);
   await page.getByRole('textbox', { name: 'Escribir comentario' }).fill(COMMENT);
   await page.getByRole('button', { name: 'Publicar comentario' }).click();

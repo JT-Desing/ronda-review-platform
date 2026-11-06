@@ -41,11 +41,6 @@ export async function waitForSaved(page) {
 // On narrow screens the comment panel is a sheet behind a "N comentarios" button.
 export async function openComments(page) {
   const sheet = page.getByRole('button', { name: /^\d+ comentarios \d+ abiertos$/ });
-  if (await sheet.isVisible()) {
-    // The button sits in the page flow; at the viewport edge the fixed mobile
-    // nav covers it, so center it first, as a person scrolling would.
-    await sheet.evaluate(element => element.scrollIntoView({ block: 'center' }));
-    await sheet.click();
-  }
+  if (await sheet.isVisible()) await sheet.click();
   await expect(page.getByRole('textbox', { name: 'Escribir comentario' })).toBeVisible();
 }
