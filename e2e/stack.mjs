@@ -6,7 +6,7 @@
 //   node e2e/stack.mjs stop    -> removes only containers/network it created
 import { execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { readFileSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const STATE = fileURLToPath(new URL('./.stack.json', import.meta.url));
@@ -27,8 +27,14 @@ async function waitForApi(name, port) {
   throw new Error(`E2E API not healthy after ${READY_TIMEOUT_MS / 1000}s:\n${docker('logs', '--tail', '50', `${name}-api`)}`);
 }
 
+// No exists-then-act checks: read and handle ENOENT, so there is no race window.
+function readState() {
+  try { return JSON.parse(readFileSync(STATE, 'utf8')); }
+  catch (error) { if (error.code === 'ENOENT') return null; throw error; }
+}
+
 async function start() {
-  if (existsSync(STATE)) stop();
+  stop();
   const id = randomBytes(4).toString('hex');
   const name = `ronda-e2e-${id}`;
   const password = randomBytes(18).toString('hex');
@@ -48,8 +54,9 @@ async function start() {
 }
 
 function stop() {
-  if (!existsSync(STATE)) return;
-  const { name } = JSON.parse(readFileSync(STATE, 'utf8'));
+  const state = readState();
+  if (!state) return;
+  const { name } = state;
   if (!/^ronda-e2e-[0-9a-f]{8}$/.test(name)) throw new Error('Refusing to remove a non-E2E stack');
   for (const suffix of ['-api', '-db']) {
     const label = (() => { try { return docker('inspect', '--format', '{{index .Config.Labels "ronda.e2e"}}', name + suffix); } catch { return ''; } })();
