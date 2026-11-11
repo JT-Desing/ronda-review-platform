@@ -1,1 +1,1 @@
-{"name":"ronda-api","private":true,"type":"module","scripts":{"start":"node server.js","migrate":"node migrate.js","test":"node --test"},"dependencies":{"google-auth-library":"11.3.2","nodemailer":"^10.3.1","pg":"8.23.1"}}
+{"name":"ronda-api","private":true,"type":"module","scripts":{"start":"node server.js","migrate":"node migrate.js","test":"node --test"},"dependencies":{"google-auth-library":"11.3.2","nodemailer":"^10.4.0","pg":"8.23.1"}}
