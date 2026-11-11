@@ -14,14 +14,14 @@ const app=await readFile(new URL('../main.jsx',import.meta.url),'utf8');
 test('external web review wires the shared annotation layer to the saved comment marks',()=>{
   assert.match(stage,/annotationVisibleAt\(mark,currentTime,\['image','web'\]\.includes\(media\?\.type\)\)/);
   assert.match(stage,/<ExternalWeb[^>]+marks=\{visibleMarks\}[^>]+setMarks=/);
-  assert.match(component,/<AnnotationLayer activeTool=\{readonly\|\|!hasDocumentBridge\?'':activeTool\}[^>]+marks=\{viewportMarks\}[^>]+setMarks=\{saveViewportMarks\}/);
+  assert.match(component,/<AnnotationLayer activeTool=\{readonly\?'':activeTool\}[^>]+marks=\{viewportMarks\}[^>]+setMarks=\{saveViewportMarks\}/);
   assert.match(component,/setActiveTool\(tool\)/);
   assert.doesNotMatch(component,/disabled=\{readonly\|\|!webMetrics\}/);
 });
 
 test('web annotation overlay tracks the actual responsive iframe viewport',()=>{
   assert.match(component,/external-web-viewport/);
-  assert.match(component,/pointerEvents:activeTool&&hasDocumentBridge&&!textSelectionMode\?'none':'auto'/);
+  assert.match(component,/pointerEvents:activeTool&&!textSelectionMode\?'none':'auto'/);
   assert.match(css,/\.external-web-viewport iframe\{position:absolute;inset:0;display:block;width:100%;height:100%/);
   assert.match(css,/\.external-web-viewport \.annotation-layer\{position:absolute;inset:0;width:100%;height:100%/);
   assert.doesNotMatch(css,/\.external-web-sheet|\.external-web-scroll/);
@@ -42,7 +42,7 @@ test('blocked external pages can be captured only with browser permission and sa
   assert.match(delivery,/addWebCapture=async\(file,intent=\{\}\)=>\{if\(!file\)return;await mutate\(async\(\)=>\{const result=await uploadFile\(context,file/);
   assert.match(delivery,/addWebCapture\(event\.detail\?\.file,event\.detail\)/);
   assert.match(component,/Al cargarla, podrás capturar la vista desde las herramientas de anotación/);
-  assert.match(component,/Ronda guardará solo la vista web como pieza para anotar/);
+  assert.match(component,/Sin extensión: puedes publicar comentarios generales y marcar la vista visible/);
 });
 
 test('web annotation tools remain available without the optional bridge and carry the chosen tool into the fixed capture',()=>{
@@ -53,12 +53,12 @@ test('web annotation tools remain available without the optional bridge and carr
   assert.match(delivery,/initialColor=\{captureIntent\?\.assetId===selected\?captureIntent\.color:undefined\}/);
   assert.match(shared,/useState\(initialTool\)/);
   assert.match(shared,/setTool\(initialTool\|\|''\)/);
-  assert.match(component,/Elige una herramienta y captura la zona visible para anotarla sin que se mueva/);
+  assert.match(component,/Elige una herramienta para comentar directamente sobre la vista/);
 });
 
 test('creating or selecting a web annotation opens an anchored comment composer',()=>{
   assert.match(layer,/onAnnotationCreated\(saved\)/);
-  assert.match(component,/onAnnotationCreated=\{mark=>\{if\(hasDocumentBridge\)openComment\(viewportMarkToDocument\(mark,webMetrics\)\)\}\}/);
+  assert.match(component,/onAnnotationCreated=\{mark=>openComment\(toSavedWebMark\(mark\)\)\}/);
   assert.match(component,/external-web-comment-popover/);
   assert.match(component,/undoDraftAnnotation/);
   assert.match(component,/e\.key\.toLowerCase\(\)!=='z'\|\|!marks\.some\(mark=>mark\.draft\)/);
@@ -72,8 +72,7 @@ test('creating or selecting a web annotation opens an anchored comment composer'
 
 test('without the document bridge the live site offers the optional extension and retains capture fallback',()=>{
   assert.match(component,/const hasDocumentBridge=Boolean\(webMetrics\)/);
-  assert.match(component,/marks\.filter\(mark=>mark\.coordinateSpace==='document'\)/);
-  assert.match(component,/if\(!hasDocumentBridge\)return/);
+  assert.match(component,/mark\.coordinateSpace==='viewport'\|\|mark\.coordinateSpace==='document'/);
   assert.match(component,/Capturar vista para anotar/);
   assert.match(component,/La vista integrada depende de las políticas del sitio/);
   assert.match(component,/Conectar este sitio/);
@@ -81,6 +80,14 @@ test('without the document bridge the live site offers the optional extension an
   assert.match(component,/recortaremos únicamente el área de la web visible/);
   assert.match(component,/Es opcional para el resto de Ronda/);
   assert.match(component,/legacyMarks\.length>0/);
+});
+
+test('web comments can be anchored to the visible viewport without installing the extension',()=>{
+  assert.match(component,/mark\.coordinateSpace==='viewport'\|\|mark\.coordinateSpace==='document'/);
+  assert.match(component,/hasDocumentBridge\?viewportMarkToDocument\(mark,webMetrics\):\{\.\.\.mark,coordinateSpace:'viewport'\}/);
+  assert.match(component,/pointerEvents:activeTool&&!textSelectionMode\?'none':'auto'/);
+  assert.match(component,/No necesitas extensión; la marca queda fijada a la vista actual/);
+  assert.match(component,/Las marcas no siguen el scroll del sitio/);
 });
 
 test('document bridge follows iframe scroll without relaxing the iframe sandbox',()=>{
