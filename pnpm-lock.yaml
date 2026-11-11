@@ -18,8 +18,8 @@ importers:
         specifier: 8.6.0
         version: 8.6.0(react@19.3.1)
       geist:
-        specifier: ^1.9.0
-        version: 1.9.0(next@16.4.3(@playwright/test@1.64.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))
+        specifier: ^1.9.2
+        version: 1.9.2(next@16.4.3(@playwright/test@1.64.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))
       iconoir-react:
         specifier: 7.12.1
         version: 7.12.1(react@19.3.1)
@@ -505,8 +505,8 @@ packages:
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
 
-  geist@1.9.0:
-    resolution: {integrity: sha512-uxiyxH5PaKDaK2//ln06NxJEz5gc6771BTwSs1YFgNnASGtp1SYD3VZShSIijvlNwDjMgHnzqye4MmIUTspEzw==}
+  geist@1.9.2:
+    resolution: {integrity: sha512-UU1x2q5Khob0+i4csFvXk1Ki4DePdu7xISuXyEcj1tzQMg64oN7Kbuy4e5z5QhcUWbbvOMJNs3ZxYQqpsEMV3w==}
     peerDependencies:
       next: ^16.4.1
 
@@ -1019,7 +1019,7 @@ snapshots:
   fsevents@2.3.3:
     optional: true
 
-  geist@1.9.0(next@16.4.3(@playwright/test@1.64.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)):
+  geist@1.9.2(next@16.4.3(@playwright/test@1.64.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)):
     dependencies:
       next: 16.4.3(@playwright/test@1.64.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
 
