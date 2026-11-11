@@ -21,8 +21,8 @@ importers:
         specifier: ^1.9.0
         version: 1.9.0(next@16.4.3(@playwright/test@1.64.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))
       iconoir-react:
-        specifier: 7.12.1
-        version: 7.12.1(react@19.3.1)
+        specifier: 7.12.2
+        version: 7.12.2(react@19.3.1)
       pdfjs-dist:
         specifier: ^6.5.438
         version: 6.5.438
@@ -510,8 +510,8 @@ packages:
     peerDependencies:
       next: ^16.4.1
 
-  iconoir-react@7.12.1:
-    resolution: {integrity: sha512-e+Lwgqr10ruCwrCrFjG5RD0axwENFxPzLP1cESiQPEMH9UC/W6dk6u0MYwLoG0MBVsmBYAhVBb5GqO1aSljeGQ==}
+  iconoir-react@7.12.2:
+    resolution: {integrity: sha512-BDOIt6qcGY4pgJ+5et2ZjuWEbVKwnpRyTLq7viN3bF+BzpxVWCNDBkMd8iVeHx+QglqciiS8ftgU5Ddvz0Rn6A==}
     peerDependencies:
       react: 18 || 19
 
@@ -1023,7 +1023,7 @@ snapshots:
     dependencies:
       next: 16.4.3(@playwright/test@1.64.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
 
-  iconoir-react@7.12.1(react@19.3.1):
+  iconoir-react@7.12.2(react@19.3.1):
     dependencies:
       react: 19.3.1
 
