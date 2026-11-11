@@ -119,7 +119,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Install Chromium for Playwright
-        run: pnpm exec playwright install --with-deps chromium
+        # GitHub-hosted Ubuntu images include Chromium's runtime libraries. Avoid
+        # apt-based --with-deps here so transient Ubuntu mirror DNS failures do
+        # not block the E2E check before Playwright starts.
+        run: pnpm exec playwright install chromium
       # Runs before k6 so the load smoke cannot use up the auth rate limit (30 per 5 min per IP).
       - name: E2E (Playwright) against the running stack
         run: pnpm e2e
