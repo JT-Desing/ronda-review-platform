@@ -13,7 +13,7 @@
     "e2e:local": "node e2e/run-local.mjs"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "6.1.2",
+    "@vitejs/plugin-react": "6.2.1",
     "embla-carousel-react": "8.6.0",
     "geist": "^1.9.0",
     "iconoir-react": "7.12.1",
