@@ -1,4 +1,4 @@
-FROM node:26.13.0-alpine
+FROM node:26.13.1-alpine
 WORKDIR /app
 COPY package.json package-lock.json ./
 # npm and corepack are only needed to install; drop them from the runtime image.
