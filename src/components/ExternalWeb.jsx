@@ -12,7 +12,7 @@ export function ExternalWeb({url,name,activeTool='',setActiveTool=()=>{},activeC
   const holder=useRef(null),iframe=useRef(null),bridgeNonce=useRef(crypto.randomUUID());
   useEffect(()=>{setLoaded(false);setActiveTool('');setCommentMark(null);setCommentDraft('');setWebMetrics(null);setTextSelectionMode(false);setExtensionConnected(false);bridgeNonce.current=crypto.randomUUID();},[url]);
   useEffect(()=>{
-    const receive=event=>{if(event.source!==window||event.origin!==window.location.origin)return;if(event.data?.type==='ronda:web-review:extension-installed')setExtensionInstalled(true);if(event.data?.type==='ronda:web-review:auth-required'&&typeof event.data.host==='string')setCaptureError(`${event.data.host} pide usuario y contraseña. Abre la extensión de Ronda (icono en la barra de Chrome) y guárdalos; se usarán para todas las páginas de ese sitio.`)};
+    const receive=event=>{if(event.source!==window||event.origin!==window.location.origin)return;if(event.data?.type==='ronda:web-review:extension-installed')setExtensionInstalled(true);if(event.data?.type==='ronda:web-review:auth-required'&&typeof event.data.host==='string')setCaptureError(`${event.data.host} pide usuario y contraseña. Abre la extensión de Ronda (icono en la barra del navegador) y guárdalos; se usarán para todas las páginas de ese sitio.`)};
     window.addEventListener('message',receive);
     window.postMessage({type:'ronda:web-review:check-extension'},window.location.origin);
     return()=>window.removeEventListener('message',receive);
@@ -71,7 +71,9 @@ export function ExternalWeb({url,name,activeTool='',setActiveTool=()=>{},activeC
     window.postMessage({type:'ronda:web-review:open-connection'},window.location.origin);
     setCaptureError('Se abrió el panel de Ronda. Confirma el acceso solo para este dominio; si el panel no aparece, abre el icono de la extensión.');
   };
-  const extensionStoreUrl=import.meta.env.VITE_RONDA_EXTENSION_STORE_URL||'';
+  // Firefox gets its Add-ons (AMO) listing; every other browser the Chrome Web Store one.
+  const isFirefox=typeof navigator!=='undefined'&&/Firefox\//.test(navigator.userAgent);
+  const extensionStoreUrl=(isFirefox?import.meta.env.VITE_RONDA_EXTENSION_FIREFOX_URL:import.meta.env.VITE_RONDA_EXTENSION_STORE_URL)||'';
   const capturePage=async()=>{
     if(!navigator.mediaDevices?.getDisplayMedia){setCaptureError('Este navegador no permite capturar una pestaña. Puedes usar una captura de pantalla y subirla al proyecto.');return;}
     if(!window.confirm('Desplaza la página hasta la zona que quieres revisar. En el selector, comparte esta pestaña de Ronda: recortaremos únicamente el área de la web visible y la guardaremos como una imagen del proyecto. Las anotaciones quedarán fijadas a esa captura. Para otra zona, repite después de desplazarte. ¿Continuar?'))return;

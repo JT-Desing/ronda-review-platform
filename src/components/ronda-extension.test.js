@@ -42,6 +42,13 @@ test('Ronda shows a Chrome Web Store install link only after a store URL is conf
   assert.match(app,/Es opcional para el resto de Ronda/);
 });
 
+test('Firefox gets the Add-ons link and the auth hint does not name Chrome',async()=>{
+  const app=await readFile(new URL('./ExternalWeb.jsx',import.meta.url),'utf8');
+  assert.match(app,/VITE_RONDA_EXTENSION_FIREFOX_URL/);
+  assert.match(app,/Firefox\\\//);
+  assert.doesNotMatch(app,/barra de Chrome/);
+});
+
 test('extension declares store icons that exist in every required size',async()=>{
   const manifest=JSON.parse(await read('manifest.json'));
   for(const size of ['16','32','48','128']){

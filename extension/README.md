@@ -13,11 +13,26 @@ Ronda sigue funcionando sin extensión. Las capturas anotables permanecen dispon
 
 ## Empaquetar
 
-Comprime el contenido de esta carpeta (no la carpeta contenedora) en un ZIP para Chrome Web Store. Antes del envío final, configura iconos 16/32/48/128, una URL pública de política de privacidad, imágenes promocionales/listing y la URL pública de Ronda para la tienda.
+`sh scripts/package-extension.sh` genera dos ZIP en `dist-extension/`:
+
+- `ronda-anotaciones-web-<versión>.zip` para Chrome Web Store.
+- `ronda-anotaciones-web-<versión>-firefox.zip` para Firefox Add-ons (AMO).
+
+Solo se edita `extension/manifest.json`. El manifiesto de Firefox sale de `scripts/extension-manifest.mjs`, que cambia esto:
+
+- `background.service_worker` pasa a `background.scripts`, porque Firefox ejecuta el fondo como event page.
+- `webRequestAuthProvider` se cambia por `webRequestBlocking`, y `onAuthRequired` usa `blocking` con una promesa.
+- Añade `browser_specific_settings.gecko` con el ID `ronda-anotaciones@repolite.link`, Firefox 128 como mínimo y `data_collection_permissions` (texto seleccionado y desplazamiento).
+
+En Firefox el popup se cierra cuando aparece el aviso de permiso. Por eso el popup deja la petición en `storage.session` y el fondo termina la conexión al recibir `permissions.onAdded`.
+
+Para probar en Firefox sin firmar: `about:debugging#/runtime/this-firefox` > "Cargar complemento temporal" > el ZIP de Firefox.
+
+Ronda muestra el enlace de instalación según el navegador: `VITE_RONDA_EXTENSION_STORE_URL` (Chrome) y `VITE_RONDA_EXTENSION_FIREFOX_URL` (Firefox).
 
 ## Limitaciones
 
-- Requiere Chrome 127+ o un navegador Chromium compatible con `chrome.action.openPopup`.
+- Requiere Chrome 127+ (o Chromium compatible con `chrome.action.openPopup`) o Firefox 128+.
 - La autorización se concede por origen HTTPS exacto. Si una web usa iframes alojados en otros orígenes, esos orígenes no se autorizan automáticamente.
 - La extensión no puede garantizar fidelidad frente a restricciones propias del sitio (CSP, autenticación, contenido embebido, canvas, shadow DOM cerrado, etc.).
 - Las anotaciones quedan ancladas a coordenadas del documento y scroll comunicado por el puente; si el contenido cambia su layout después de comentar, puede cambiar la posición semántica del elemento.
