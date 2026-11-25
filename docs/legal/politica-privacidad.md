@@ -27,7 +27,7 @@ Las piezas, archivos y comentarios que sube una empresa son suyos. Ronda los gua
 
 ## Con quién compartimos
 
-Con proveedores que hacen funcionar el servicio: Cloudflare (dominio y conexión), Zoho (envío de correos), Google (solo si eliges entrar con Google), Hoy Ronda funciona en un servidor propio en Medellín. Algunos de esos proveedores tienen servidores fuera de Colombia.
+Con proveedores que hacen funcionar el servicio: Cloudflare (dominio y conexión), Zoho (envío de correos), Google (solo si eliges entrar con Google). Hoy Ronda funciona en un servidor propio en Medellín. Algunos de esos proveedores tienen servidores fuera de Colombia.
 
 ## Extensión "Ronda · Anotaciones web"
 
