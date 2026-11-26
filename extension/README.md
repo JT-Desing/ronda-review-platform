@@ -28,7 +28,7 @@ En Firefox el popup se cierra cuando aparece el aviso de permiso. Por eso el pop
 
 Para probar en Firefox sin firmar: `about:debugging#/runtime/this-firefox` > "Cargar complemento temporal" > el ZIP de Firefox.
 
-Ronda muestra el enlace de instalación según el navegador: `VITE_RONDA_EXTENSION_STORE_URL` (Chrome) y `VITE_RONDA_EXTENSION_FIREFOX_URL` (Firefox).
+Ronda muestra el enlace de instalación según el navegador: `VITE_RONDA_EXTENSION_STORE_URL` (Chrome), `VITE_RONDA_EXTENSION_FIREFOX_URL` (Firefox) y `VITE_RONDA_EXTENSION_EDGE_URL` (Edge; si está vacía, Edge usa el enlace de Chrome Web Store). En Edge se sube el mismo ZIP de Chrome en Partner Center.
 
 ## Limitaciones
 

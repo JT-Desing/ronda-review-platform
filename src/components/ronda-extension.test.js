@@ -73,3 +73,10 @@ test('protected sites: framing rule is scoped to Ronda frames and credentials st
   assert.match(worker,/sender\.url\?\.startsWith\(chrome\.runtime\.getURL/);
   assert.doesNotMatch(popup+worker,/fetch\(/);
 });
+
+test('Edge gets its Add-ons link and falls back to the Chrome Web Store one',async()=>{
+  const app=await readFile(new URL('./ExternalWeb.jsx',import.meta.url),'utf8');
+  assert.match(app,/VITE_RONDA_EXTENSION_EDGE_URL/);
+  assert.match(app,/Edg\\\//);
+  assert.match(app,/VITE_RONDA_EXTENSION_EDGE_URL\|\|import\.meta\.env\.VITE_RONDA_EXTENSION_STORE_URL/);
+});
