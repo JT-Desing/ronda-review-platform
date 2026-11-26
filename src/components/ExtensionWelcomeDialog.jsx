@@ -44,23 +44,12 @@ export default function ExtensionWelcomeDialog({ userId }) {
 
   useEffect(() => {
     if (!open) return;
-    const previousFocus = document.activeElement;
     const panel = dialog.current;
-    panel?.querySelector('a, button')?.focus();
     const onKeyDown = event => {
       if (event.key === 'Escape') { event.preventDefault(); dismiss(); return; }
-      if (event.key !== 'Tab' || !panel) return;
-      const controls = [...panel.querySelectorAll('a[href], button:not(:disabled)')];
-      if (!controls.length) return;
-      const first = controls[0], last = controls.at(-1);
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     };
     document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      previousFocus?.focus?.();
-    };
+    return () => document.removeEventListener('keydown', onKeyDown);
   }, [open]);
 
   function dismiss() {
@@ -70,8 +59,7 @@ export default function ExtensionWelcomeDialog({ userId }) {
 
   if (!open || extensionDetected === true) return null;
   return <div className="extension-promo-layer">
-    <button className="extension-promo-backdrop" aria-label="Cerrar aviso de la extensión" onClick={dismiss}/>
-    <section ref={dialog} className="extension-promo" role="dialog" aria-modal="true" aria-labelledby="extension-promo-title" aria-describedby="extension-promo-description" tabIndex={-1}>
+    <section ref={dialog} className="extension-promo" role="dialog" aria-modal="false" aria-labelledby="extension-promo-title" aria-describedby="extension-promo-description">
       <button className="extension-promo-close" aria-label="Cerrar" onClick={dismiss}><Icon name="x" size={18}/></button>
       <div className="extension-promo-visual" aria-hidden="true">
         <div className="extension-promo-browser">
