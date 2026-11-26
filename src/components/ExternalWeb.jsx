@@ -71,12 +71,9 @@ export function ExternalWeb({url,name,activeTool='',setActiveTool=()=>{},activeC
     window.postMessage({type:'ronda:web-review:open-connection'},window.location.origin);
     setCaptureError('Se abrió el panel de Ronda. Confirma el acceso solo para este dominio; si el panel no aparece, abre el icono de la extensión.');
   };
-  // Firefox gets its Add-ons (AMO) listing and Edge its own store; Edge installs
-  // from the Chrome Web Store too, so it falls back there until its listing exists.
-  const userAgent=typeof navigator!=='undefined'?navigator.userAgent:'';
-  const isFirefox=/Firefox\//.test(userAgent);
-  const isEdge=/Edg\//.test(userAgent);
-  const extensionStoreUrl=(isFirefox?import.meta.env.VITE_RONDA_EXTENSION_FIREFOX_URL:isEdge?import.meta.env.VITE_RONDA_EXTENSION_EDGE_URL||import.meta.env.VITE_RONDA_EXTENSION_STORE_URL:import.meta.env.VITE_RONDA_EXTENSION_STORE_URL)||'';
+  // Firefox gets its Add-ons (AMO) listing; every other browser the Chrome Web Store one.
+  const isFirefox=typeof navigator!=='undefined'&&/Firefox\//.test(navigator.userAgent);
+  const extensionStoreUrl=(isFirefox?import.meta.env.VITE_RONDA_EXTENSION_FIREFOX_URL:import.meta.env.VITE_RONDA_EXTENSION_STORE_URL)||'';
   const capturePage=async()=>{
     if(!navigator.mediaDevices?.getDisplayMedia){setCaptureError('Este navegador no permite capturar una pestaña. Puedes usar una captura de pantalla y subirla al proyecto.');return;}
     if(!window.confirm('Desplaza la página hasta la zona que quieres revisar. En el selector, comparte esta pestaña de Ronda: recortaremos únicamente el área de la web visible y la guardaremos como una imagen del proyecto. Las anotaciones quedarán fijadas a esa captura. Para otra zona, repite después de desplazarte. ¿Continuar?'))return;
