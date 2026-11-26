@@ -71,6 +71,7 @@ import sculptureSettings from './abstract-sculpture-settings.png';
 const sectionSculptures={home:abstractSculpture,projects:sculptureProjects,personal:sculptureBranding,pauta:sculpturePauta,planning:sculpturePlanning,activity:sculptureActivity,team:sculptureTeam,branding:sculptureBranding,settings:sculptureSettings};
 const sectionCompanions={home:sculptureActivity,projects:sculptureSettings,personal:sculptureTeam,pauta:sculptureProjects,planning:sculpturePauta,activity:sculptureBranding,team:sculpturePlanning,branding:abstractSculpture,settings:sculptureProjects};
 import ShareReviewDialog from './components/ShareReviewDialog.jsx';
+import ExtensionWelcomeDialog from './components/ExtensionWelcomeDialog.jsx';
 import {RetryableFeature} from './components/FeatureLoadBoundary.jsx';
 import {consumeFeatureRetry} from './domain/feature-retry.js';
 import {GuidedTour} from './components/GuidedTour.jsx';
@@ -409,6 +410,7 @@ function App({demo=false,onExitDemo}) {
   if(retryRestoring)return <BrandLoader label="Recuperando la revisión…"/>;
   if(!canAccessStudioView(user,currentView))return <div className="app-shell"><section className="dashboard-page"><h1>Acceso restringido</h1><p>Esta sección está en construcción y solo está disponible para el superadministrador.</p><button type="button" onClick={()=>setCurrentView('projects')}>Ir a Proyectos</button></section></div>;
   return <div className="app-shell">
+    {!demo && <ExtensionWelcomeDialog userId={state.currentUserId}/>}
     <DrawingTrail enabled={currentView==='review'&&!socialMode&&activeTool!=='type'&&Boolean(activeTool)} color={activeColor}/>
     <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} currentView={currentView} onNavigate={setCurrentView} onDemo={canUseCompanyDemo?()=>{if(!canUseCompanyDemo||demo||!canLeaveSharedReview({dirty:sharedDirty,busy:false},()=>window.confirm('Hay cambios sin publicar en la revisión compartida. ¿Descartarlos para abrir el demo?')))return;const fixture=createCompanyDemo();beginDemoSession(fixture);setCompanyDemo(fixture)}:undefined}/>
     <main data-view={currentView} className={`workspace ${currentView!=='review'?'dashboard-workspace':''}`}>
