@@ -8,6 +8,11 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
+# Public store listings shown in the "install extension" prompt; not secrets.
+ARG VITE_RONDA_EXTENSION_STORE_URL=https://chromewebstore.google.com/detail/ronda-%C2%B7-anotaciones-web/gedhmliiecpfcpfiighhlecdfmknnjnk
+ARG VITE_RONDA_EXTENSION_FIREFOX_URL=
+ENV VITE_RONDA_EXTENSION_STORE_URL=$VITE_RONDA_EXTENSION_STORE_URL \
+    VITE_RONDA_EXTENSION_FIREFOX_URL=$VITE_RONDA_EXTENSION_FIREFOX_URL
 RUN pnpm build
 
 FROM docker.io/nginxinc/nginx-unprivileged:1.31-alpine
