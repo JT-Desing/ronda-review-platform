@@ -16,6 +16,7 @@ test('team projects open the review room rather than a second project interface'
   assert.doesNotMatch(grid,/orden manual · almacenamiento del equipo|delivery-upload-help/,'the shared view should not show technical storage instructions');
   assert.match(grid,/Math.max\(reviewMain\?\.scrollTop\|\|0,window\.scrollY\|\|0\)>96/,'the delivery board collapses after scrolling either review container');
   assert.match(grid,/storyboard-card-copy/,'shared cards use the same compact content hierarchy as the local board');
+  assert.match(grid,/import '\.\.\/delivery-grid\.css'/,'the shared project grid uses the same visual rules as the local board');
   assert.match(grid,/Abrir para revisar/,'review cards expose the local review affordance');
   assert.match(grid,/DeliveryPositionPicker/);
   assert.match(grid,/onTrash\(removing\)/);
@@ -36,6 +37,9 @@ test('team projects open the review room rather than a second project interface'
   assert.match(media,/async trashAssets\(space,actor,projectId,\{assets\}\)/);
   assert.match(media,/Una o más piezas cambiaron/);
   const polish=readFileSync(new URL('./delivery-grid-polish.css',import.meta.url),'utf8');
+  const geometry=readFileSync(new URL('../delivery-grid.css',import.meta.url),'utf8');
+  assert.match(geometry,/grid-auto-rows:290px/,'desktop cards keep the local fixed height in both modes');
+  assert.match(geometry,/grid-auto-rows:276px/,'mobile cards keep the local fixed height in both modes');
   assert.match(polish,/animation:delivery-card-select 200ms/,'selected cards receive a subtle selection animation');
   assert.match(polish,/prefers-reduced-motion:reduce\).*li\.bulk-selected\{animation:none\}/,'selection animation respects reduced-motion preferences');
   assert.match(polish,/details\[open\]::details-content\{block-size:auto;opacity:1/,'the shared delivery disclosure should animate open');

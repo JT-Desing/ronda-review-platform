@@ -6,6 +6,7 @@ import Icon from './Icon.jsx';
 import {BrandLoader} from './BrandLoader.jsx';
 import {duplicateAssetNamePositions} from '../domain/duplicate-asset-names.js';
 import './delivery-grid-polish.css';
+import '../delivery-grid.css';
 export function SharedDeliveryGrid({assets,trash,workspaceId,projectName,role,selected,busy,refreshing=false,error,progress,onSelect,onOrder,onTrash,onRestore,onUpload,onRetryUpload,canRetryUpload=false,onLink,onRefresh}){
   const [mode,setMode]=useState('review'),[expanded,setExpanded]=useState(true),[removing,setRemoving]=useState([]),[checked,setChecked]=useState(()=>new Set()),[selectingToDelete,setSelectingToDelete]=useState(false),[dragged,setDragged]=useState(null),[target,setTarget]=useState(null);
   const deleteDialog=useRef(null),detailsRef=useRef(null),restoreFocus=useRef(null);
@@ -25,7 +26,6 @@ export function SharedDeliveryGrid({assets,trash,workspaceId,projectName,role,se
     const collapseAfterScroll=()=>{if(Math.max(reviewMain?.scrollTop||0,window.scrollY||0)>96)setExpanded(false);};
     reviewMain?.addEventListener('scroll',collapseAfterScroll,{passive:true});
     window.addEventListener('scroll',collapseAfterScroll,{passive:true});
-    collapseAfterScroll();
     return()=>{reviewMain?.removeEventListener('scroll',collapseAfterScroll);window.removeEventListener('scroll',collapseAfterScroll);};
   },[]);
   return <div className={`storyboard-disclosure ${expanded?'expanded':'folded'} shared-delivery-controls ${assets.length?'':'is-empty'}`}><details ref={detailsRef} open={expanded} onToggle={event=>setExpanded(event.currentTarget.open)}><summary className="storyboard-toggle"><span className="parrilla-toggle-label"><strong>Parrilla de entrega</strong><span className="parrilla-count">{assets.length}</span></span><span className="parrilla-toggle-action"><span className="parrilla-action-open">Contraer</span><span className="parrilla-action-closed">Expandir</span><svg className="parrilla-disclosure-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary><section className={`delivery-grid storyboard ${mode} ${selectingToDelete?'selecting-delete':''}`} aria-label="Parrilla de piezas del equipo">

@@ -13,7 +13,7 @@ export function DeliveryPositionPicker({name,index,count,onChange}){
     onKeyDown:event=>{if(event.key==='Escape'){event.preventDefault();closeAndFocus();}},
     onBlur:event=>{if(!event.currentTarget.contains(event.relatedTarget))event.currentTarget.open=false;},
   },h('summary',{'aria-label':`Cambiar posición de ${name}. Posición actual ${index+1} de ${count}`},
-    h('span',null,'Posición'),h('strong',null,String(index+1).padStart(2,'0')),
+    h('span',null,'Posición'),h('strong',null,String(index+1).padStart(2,'0')),h('span',{className:'delivery-position-total'},`/ ${String(count).padStart(2,'0')}`),
     h('svg',{width:12,height:12,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.8,'aria-hidden':true},h('path',{d:'m6 9 6 6 6-6'}))),
     h('div',{className:'delivery-position-panel',role:'group','aria-label':`Elegir posición de ${name}`},
       h('span',{className:'delivery-position-heading'},'Mover a posición'),
