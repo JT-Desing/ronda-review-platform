@@ -195,7 +195,12 @@
 
 /* Match the local review shell: toolbar and review columns share one viewport layout. */
 @media(min-width:1051px){
+  .app-shell .workspace:has(.shared-projects[data-mode="project"] .shared-review-room){min-height:0;overflow:hidden}
+  .app-shell .workspace:has(.shared-projects[data-mode="project"] .shared-review-room)>.demo-company-banner{flex:0 0 auto}
   .app-shell .dashboard-page.shared-projects:has(.shared-review-room){display:flex;flex:1 1 0;flex-direction:column;min-height:0;overflow:hidden}
+  .shared-projects:has(.shared-review-room)>.shared-layout{display:flex;flex:1 1 0;min-width:0;min-height:0;overflow:hidden}
+  .shared-projects[data-mode="project"]>.shared-layout{display:flex}
+  .shared-projects:has(.shared-review-room) .shared-conversation{display:flex;flex:1 1 0;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
   .shared-projects .shared-review-room{display:flex;flex:1 1 0;flex-direction:column;min-height:0;overflow:hidden}
   .shared-projects .shared-review-room>.topbar{position:relative;top:auto;flex:0 0 auto}
   .shared-projects .shared-review-room .shared-original-review{flex:1 1 0;grid-template-columns:minmax(0,1fr) var(--panel,350px);min-height:0;overflow:hidden}

@@ -41,7 +41,10 @@ test('team projects open the review room rather than a second project interface'
   const geometry=readFileSync(new URL('../delivery-grid.css',import.meta.url),'utf8');
   const reviewLayout=readFileSync(new URL('./shared-review-layout-fix.css',import.meta.url),'utf8');
   assert.match(reviewLayout,/shared-original-review\{grid-template-columns:minmax\(0,1fr\) var\(--panel,350px\)\}/,'the production comments panel uses the local review panel width');
+  assert.match(reviewLayout,/workspace:has\(\.shared-projects\[data-mode="project"\] \.shared-review-room\)\{min-height:0;overflow:hidden\}/,'the review workspace owns the viewport instead of the document scroll');
   assert.match(reviewLayout,/dashboard-page\.shared-projects:has\(\.shared-review-room\)\{display:flex;flex:1 1 0;flex-direction:column;min-height:0;overflow:hidden\}/,'the shared review fills the available workspace like the local review shell');
+  assert.match(reviewLayout,/shared-projects:has\(\.shared-review-room\)>\.shared-layout\{display:flex;flex:1 1 0;min-width:0;min-height:0;overflow:hidden\}/,'the project content passes its available height through to the review room');
+  assert.match(reviewLayout,/shared-projects:has\(\.shared-review-room\) \.shared-conversation\{display:flex;flex:1 1 0;flex-direction:column;min-width:0;min-height:0;overflow:hidden\}/,'the conversation column does not collapse the review surface');
   assert.match(reviewLayout,/shared-review-room>\.topbar\{position:relative;top:auto;flex:0 0 auto\}/,'the review toolbar stays in the layout above the comments panel');
   assert.match(reviewLayout,/shared-original-comments\{box-sizing:border-box;position:relative;top:auto;right:auto;bottom:auto;left:auto;z-index:auto/,'the comments panel remains in the review grid below the toolbar instead of overlaying it');
   assert.match(reviewLayout,/shared-original-comments>\.comments-scroll\{flex:1 1 0;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain\}/,'only the comment list scrolls inside the stationary panel');
