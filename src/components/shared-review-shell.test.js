@@ -41,6 +41,8 @@ test('team projects open the review room rather than a second project interface'
   const geometry=readFileSync(new URL('../delivery-grid.css',import.meta.url),'utf8');
   const reviewLayout=readFileSync(new URL('./shared-review-layout-fix.css',import.meta.url),'utf8');
   assert.match(reviewLayout,/shared-original-review\{grid-template-columns:minmax\(0,1fr\) var\(--panel,350px\)\}/,'the production comments panel uses the local review panel width');
+  assert.match(reviewLayout,/shared-original-comments\{box-sizing:border-box;position:fixed;z-index:30;top:100px;right:0;bottom:0/,'the comments rail is pinned to the viewport so page scroll cannot move or release it');
+  assert.doesNotMatch(reviewLayout,/shared-original-comments\{[^}]*position:sticky/,'the comments rail must not rely on sticky positioning that can jump at a parent boundary');
   assert.doesNotMatch(reviewLayout,/clamp\(420px,22vw,520px\)/,'the shared comments panel does not expand beyond the local width');
   assert.match(geometry,/shared-delivery-controls li\{position:relative\}/,'the deletion control is positioned against its card without affecting layout');
   assert.match(geometry,/shared-delivery-controls \.asset-delete\{position:absolute/,'the trash action overlays its card and does not change its dimensions');

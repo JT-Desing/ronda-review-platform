@@ -67,7 +67,7 @@
 .shared-projects .shared-review-room>.topbar{position:sticky;top:0;z-index:25;background:var(--surface-1);padding:16px 24px;border-bottom:1px solid var(--line)}
 .shared-review-room .topbar .breadcrumb button{border:0;background:transparent;color:var(--muted);cursor:pointer}
 .shared-projects .shared-review-room .shared-original-review{grid-template-columns:minmax(0,1fr) 350px;min-height:calc(100vh - 130px)}
-.shared-projects .shared-review-room .shared-original-comments{height:calc(100vh - 130px);max-height:none;position:sticky;top:80px}
+.shared-projects .shared-review-room .shared-original-comments{height:calc(100vh - 130px);max-height:none}
 .shared-original-review .asset-bar,.shared-original-review .social-mode-switch{flex-shrink:0}
 .shared-original-review .shared-version-picker select{width:auto;min-height:34px;background:var(--surface-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
 .shared-original-review .storyboard-preview>img,.shared-original-review .storyboard-preview>video{width:100%;height:100%;object-fit:contain}
@@ -195,14 +195,12 @@
 
 /* Keep the comments workspace in the viewport; scrolling belongs to the list. */
 .shared-projects .shared-review-room .shared-original-review{align-items:start}
-.shared-projects .shared-review-room .shared-original-comments{box-sizing:border-box;position:sticky;top:100px;align-self:start;height:calc(100vh - 100px);max-height:none;min-height:0;overflow:hidden}
-@supports (height:100dvh){.shared-projects .shared-review-room .shared-original-comments{height:calc(100dvh - 100px)}}
+.shared-projects .shared-review-room .shared-original-comments{box-sizing:border-box;position:fixed;z-index:30;top:100px;right:0;bottom:0;left:auto;align-self:stretch;width:var(--panel,390px);height:auto;max-height:none;min-height:0;overflow:hidden}
 .shared-projects .shared-review-room .shared-original-comments>.panel-head,.shared-projects .shared-review-room .shared-original-comments>.comment-toolbar{flex:0 0 auto}
 .shared-projects .shared-review-room .shared-original-comments>.comments-scroll{flex:1 1 0;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
 .shared-projects .shared-review-room .shared-original-comments>.shared-original-composer{flex:0 0 auto;max-height:none;overflow:visible}
 @media(max-width:1050px){
-  .shared-projects .shared-review-room .shared-original-comments{position:fixed;z-index:30;top:100px;right:0;bottom:0;left:auto;width:min(500px,calc(100vw - 48px));height:calc(100vh - 100px);max-height:none;border-left:1px solid var(--line);border-top:0;box-shadow:-16px 0 36px #0005}
-  @supports (height:100dvh){.shared-projects .shared-review-room .shared-original-comments{height:calc(100dvh - 100px)}}
+  .shared-projects .shared-review-room .shared-original-comments{width:min(500px,calc(100vw - 48px));height:auto;border-left:1px solid var(--line);border-top:0;box-shadow:-16px 0 36px #0005}
 }
 @media(prefers-reduced-motion:reduce){.shared-projects .shared-piece-card{transition:none}}
 .shared-link-change{display:grid;gap:8px;margin:0 0 12px;padding:12px 14px;border:1px solid #3a3342;border-radius:12px;background:#1a1620;color:#e9e4f0}
