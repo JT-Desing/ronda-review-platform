@@ -90,3 +90,55 @@
 .app-shell .review-layout.shared-original-review:has(>.comments-panel>.panel-head>.comments-collapse-toggle[aria-expanded=false])>.comments-panel .comments-collapse-toggle{position:static;z-index:auto;flex:0 0 40px;width:40px;height:40px;margin:0;padding:0;border-radius:12px;box-shadow:none;transform:none}
 .app-shell .review-layout.shared-original-review:has(>.comments-panel>.panel-head>.comments-collapse-toggle[aria-expanded=false])>.comments-panel .comments-collapse-toggle svg{transform:rotate(180deg)}
 @media(prefers-reduced-motion:reduce){.app-shell .review-layout.shared-original-review:has(>.comments-panel>.panel-head>.comments-collapse-toggle[aria-expanded=false]){transition:none}}
+
+/* Compact message composer: attach, image, text, then record/send. */
+.app-shell .comments-panel .composer-message-bar{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:center;gap:4px;min-height:58px;height:auto;padding:4px;border-color:var(--line);background:var(--surface-2);box-shadow:none}
+.app-shell .comments-panel .composer-message-bar:focus-within{border-color:var(--line-strong);box-shadow:none}
+.app-shell .comments-panel .composer-message-bar .audio-comment-input{display:contents}
+.app-shell .comments-panel .composer-message-bar .audio-attach-button,.app-shell .comments-panel .composer-message-bar .audio-record-button,.app-shell .comments-panel .composer-message-bar .composer-send-button{position:relative;box-sizing:border-box;display:grid;place-items:center;width:38px;height:40px;min-width:0;min-height:40px;margin:0;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer;transition:background-color 130ms ease,color 130ms ease,transform 130ms ease}
+.app-shell .comments-panel .composer-message-bar .audio-attach-button{grid-column:1;grid-row:1}
+.app-shell .comments-panel .composer-message-bar .mention-editor{grid-column:2;grid-row:1;min-width:0;align-self:center}
+.app-shell .comments-panel .composer-message-bar .composer-input{grid-column:2;grid-row:1;position:relative;align-self:center;display:block;min-width:0;width:auto;margin:0;padding:0 4px;border:0;border-radius:0;background:transparent}
+.app-shell .comments-panel .composer-message-bar .composer-input:focus-within{border:0;box-shadow:none}
+.app-shell .comments-panel .composer-message-bar .audio-record-button,.app-shell .comments-panel .composer-message-bar .composer-send-button{grid-column:3;grid-row:1;width:40px;height:40px;min-width:40px;min-height:40px;background:#302a38;color:#d1b8ff}
+.app-shell .comments-panel .composer-message-bar .composer-send-button{display:none;background:#c9a9ff;color:#21182b}
+.app-shell .comments-panel .composer-message-bar:has(.composer-input[data-can-send=true]) .audio-record-button{display:none}
+.app-shell .comments-panel .composer-message-bar:has(.composer-input[data-can-send=true]) .composer-send-button{display:grid}
+.app-shell .comments-panel .composer-message-bar .audio-record-button:hover:not(:disabled),.app-shell .comments-panel .composer-message-bar .composer-send-button:hover:not(:disabled){background:#3b3345;color:#eadfff}
+.app-shell .comments-panel .composer-message-bar .composer-send-button:hover:not(:disabled){background:#d7c0ff;color:#21182b}
+.app-shell .comments-panel .composer-message-bar .audio-record-button.is-recording{background:#d95762;color:#fff;animation:voice-record-pulse 1.5s ease-in-out infinite}
+.app-shell .comments-panel .composer-message-bar .audio-attach-button:hover{background:var(--surface-3);color:var(--text)}
+.app-shell .comments-panel .composer-message-bar .audio-attach-button svg,.app-shell .comments-panel .composer-message-bar .audio-record-button svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.app-shell .comments-panel .composer-message-bar .audio-attach-button input{position:absolute;inset:0;width:100%;height:100%;max-width:none;margin:0;opacity:0;cursor:pointer}
+.app-shell .comments-panel .composer-message-bar textarea,.app-shell .comments-panel .restored-composer .composer-message-bar textarea{display:block;box-sizing:border-box;width:100%;min-width:0;min-height:40px;height:auto;max-height:none;margin:0;padding:8px 3px;border:0;border-radius:0;outline:0;resize:none;overflow:hidden;background:transparent;color:var(--text);font:inherit;font-size:13px;line-height:20px;box-shadow:none}
+.app-shell .comments-panel .composer-message-bar textarea:focus{outline:0;box-shadow:none}
+.app-shell .comments-panel .composer-message-bar textarea::placeholder{color:#a9a1b2;opacity:1}
+.app-shell .comments-panel .composer-message-bar .composer-meta{display:none}
+.app-shell .comments-panel .composer-message-bar .composer-input .reference-strip{display:flex;gap:6px;max-width:100%;overflow-x:auto;padding:4px 0}
+.app-shell .comments-panel .composer-message-bar .composer-input .reference-strip>span{position:relative;flex:0 0 auto}
+.app-shell .comments-panel .composer-message-bar .composer-input .reference-strip img{display:block;width:44px;height:36px;object-fit:cover;border-radius:6px}
+.app-shell .comments-panel .composer-message-bar .audio-recording-status{position:absolute;right:8px;bottom:calc(100% + 8px);z-index:2;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:var(--surface-1);font-size:11px;color:var(--text)}
+.app-shell .comments-panel .composer-message-bar :is(button,label):focus-visible{outline:2px solid var(--accent);outline-offset:2px;box-shadow:none}
+.app-shell .comments-panel .composer-message-bar .audio-record-button:active:not(:disabled),.app-shell .comments-panel .composer-message-bar .composer-send-button:active:not(:disabled),.app-shell .comments-panel .composer-message-bar .audio-attach-button:active{transform:scale(.94)}
+.app-shell .comments-panel .composer .audio-draft{display:flex;align-items:center;gap:8px;width:100%;min-width:0}
+.app-shell .comments-panel .composer .audio-draft .audio-message-player{flex:1;min-width:0;max-width:100%}
+.app-shell .comments-panel .composer .audio-draft>button{flex:0 0 auto;min-height:32px;padding:0 8px}
+.app-shell .comments-panel .comment-attachments{min-width:0;max-width:100%}
+.app-shell .comments-panel .comment-attachments>div:has(.audio-message-player){grid-column:1/-1;justify-self:start;box-sizing:border-box;width:min(300px,calc(100% - 36px));max-width:300px;min-width:0;margin:8px 0 4px 36px}
+.app-shell .comments-panel .comment-attachments.audio-only>div:has(.audio-message-player){width:min(300px,100%);margin:9px 0 6px}
+.app-shell .comments-panel .audio-message-player{display:grid;grid-template-columns:38px minmax(0,1fr) 36px;align-items:center;gap:7px;box-sizing:border-box;width:100%;min-width:0;padding:8px 9px;border:1px solid #ffffff0d;border-radius:13px;background:#211e26;color:var(--text)}
+.app-shell .comments-panel .audio-message-player>audio{display:none}
+.app-shell .comments-panel .audio-message-play{grid-column:1;grid-row:1;display:grid;place-items:center;width:36px;height:36px;padding:0;border:1px solid #ffffff10;border-radius:50%;background:#342d3d;color:#d7c0ff}
+.app-shell .comments-panel .audio-message-play:hover{background:#453a51}
+.app-shell .comments-panel .audio-message-track{grid-column:2;grid-row:1;display:grid;grid-template-rows:20px 14px;align-content:center;gap:3px;width:100%;height:auto;min-width:0;overflow:visible}
+.app-shell .comments-panel .audio-message-waveform{position:relative;display:flex;align-items:center;justify-content:space-between;gap:1px;box-sizing:border-box;width:100%;height:20px;min-width:0;overflow:hidden;padding-inline:1px}
+.app-shell .comments-panel .audio-message-waveform i{display:block;flex:1 1 0;width:auto;min-width:1px;max-width:4px;max-height:18px;border-radius:3px}
+.app-shell .comments-panel .audio-message-waveform input[type=range]{position:absolute;z-index:2;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.app-shell .comments-panel .audio-message-waveform input[type=range]:focus-visible{opacity:.18;outline:2px solid #c9a9ff;outline-offset:1px;border-radius:6px}
+.app-shell .comments-panel .audio-message-duration{display:block;padding:0;overflow:visible;color:#c7bfce;font-size:10px;font-weight:500;font-variant-numeric:tabular-nums;line-height:14px;white-space:nowrap}
+.app-shell .comments-panel .audio-message-avatar{grid-column:3;grid-row:1;display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;font-size:9px}
+.app-shell .comments-panel .audio-message-avatar svg{right:-2px;bottom:-2px;width:15px;height:15px}
+.app-shell .comments-panel .audio-message-player:not(:has(.audio-message-avatar)){grid-template-columns:36px minmax(0,1fr)}
+@keyframes voice-record-pulse{50%{box-shadow:0 0 0 4px #d9576233}}
+@media(max-width:460px){.app-shell .comments-panel .composer-message-bar{grid-template-columns:34px minmax(0,1fr) 38px;min-height:54px;gap:1px;padding:4px}.app-shell .comments-panel .composer-message-bar .audio-attach-button{width:32px;height:38px}.app-shell .comments-panel .composer-message-bar .audio-record-button,.app-shell .comments-panel .composer-message-bar .composer-send-button{width:36px;height:36px;min-width:36px;min-height:36px}.app-shell .comments-panel .composer-message-bar textarea{font-size:12px;line-height:18px}.app-shell .comments-panel .composer .audio-draft{flex-wrap:wrap}.app-shell .comments-panel .composer .audio-draft .audio-message-player{flex-basis:100%}}
+@media(prefers-reduced-motion:reduce){.app-shell .comments-panel .composer-message-bar,.app-shell .comments-panel .composer-message-bar *{transition:none!important}.app-shell .comments-panel .composer-message-bar .audio-record-button.is-recording{animation:none}}

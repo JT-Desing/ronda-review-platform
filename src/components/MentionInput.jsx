@@ -1,10 +1,11 @@
-import React,{useRef,useState,useId} from 'react';
+import React,{useLayoutEffect,useRef,useState,useId} from 'react';
 import {useRonda} from '../state/RondaContext.jsx';
 // people: who can be tagged; defaults to the members of the personal space.
 // inputRef: lets the parent focus the textarea.
 export default function MentionInput({value='',onChange,onKeyDown,people:candidates,inputRef,note='Mención local · sin envío de correo',...props}){
  if(props['aria-label']==='Escribir comentario')props={...props,placeholder:'Escribe un mensaje…',rows:1};
  const {state}=useRonda();const ref=useRef(null),id=useId();const [cursor,setCursor]=useState(0),[active,setActive]=useState(0),[dismissed,setDismissed]=useState(false);
+ useLayoutEffect(()=>{const field=ref.current;if(!field)return;field.style.height='auto';field.style.height=`${field.scrollHeight}px`;field.style.overflowY='hidden'},[value]);
  const match=value.slice(0,cursor).match(/(?:^|\s)@([^@\n]*)$/);const query=match?.[1]||'';
  const people=(candidates||Object.values(state.members)).filter(m=>m.name.toLocaleLowerCase().includes(query.toLocaleLowerCase())).slice(0,6);
  const open=!!match&&!dismissed;
