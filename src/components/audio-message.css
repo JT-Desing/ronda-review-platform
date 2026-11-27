@@ -11,7 +11,7 @@
 .audio-message-avatar{position:relative;grid-column:3;grid-row:1;width:34px;height:34px;display:grid;place-items:center;border-radius:50%;background:var(--audio-avatar-color);color:#15131a;font-size:10px;font-weight:700;letter-spacing:.01em}
 .audio-message-avatar svg{position:absolute;right:-2px;bottom:-2px;width:15px;height:15px;padding:2px;border:2px solid #211e26;border-radius:50%;background:#c9a9ff;color:#21182b;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .comment-attachments{min-width:0;max-width:100%}
-.comment-attachments>div:has(.audio-message-player){width:min(300px,calc(100% - 36px));max-width:300px;margin:9px 0 6px 36px;min-width:0}
+.comment-attachments>div:has(.audio-message-player){grid-column:1/-1;justify-self:start;box-sizing:border-box;width:min(300px,calc(100% - 36px));max-width:300px;margin:9px 0 6px 36px;min-width:0}
 .comment-attachments.audio-only>div:has(.audio-message-player){width:min(300px,100%);margin:9px 0 6px}
 .comment-attachments .audio-message-player{grid-template-columns:34px minmax(0,1fr) 34px;gap:7px;padding:7px 9px}
 .comment-attachments .audio-message-player:not(:has(.audio-message-avatar)){grid-template-columns:34px minmax(0,1fr)}
