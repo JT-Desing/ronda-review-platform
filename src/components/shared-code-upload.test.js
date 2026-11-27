@@ -17,7 +17,7 @@ test('uploaded HTML has a sandboxed review surface while code remains inert and 
   const documentReview=await read('./DocumentReview.jsx');
   const preview=await read('./SharedAssetPreview.jsx');
   const server=await read('../../backend/modules/shared-review.js');
-  assert.match(grid,/HTML se revisa aislado y el código React\/ZIP queda como fuente descargable/);
+  assert.match(grid,/asset\.kind==='html'\?'HTML'/,'HTML assets retain their type in the delivery card');
   assert.match(room,/data\.asset\.kind==='html'.*kind:'html'/);
   assert.match(room,/kind==='file'.*kind:'file'/);
   assert.match(stage,/media\?\.type==='file'.*Descargar archivo local/);
