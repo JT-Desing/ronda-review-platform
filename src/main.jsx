@@ -161,6 +161,7 @@ function CommentsPanel({ onClose, currentTime, setCurrentTime, draft, setDraft, 
   useEffect(()=>{if(focusedComment){setSelected(focusedComment);setFilter('Todos');setSearch('');setTimeout(()=>document.getElementById(`thread-${focusedComment}`)?.scrollIntoView({block:'nearest'}),0)}},[focusedComment,selectedFigure]);
   const [attachments,setAttachments]=useState([]);
   const [attachmentError,setAttachmentError]=useState('');
+  const [recording,setRecording]=useState(false);
   const [priorityFilter,setPriorityFilter]=useState('all');
   const visible = useMemo(()=>comments.filter(c=>(priorityFilter==='all'||c.priority===priorityFilter)&&(filter==='Todos'||(filter==='Abiertos'&&c.status==='open')||(filter==='Resueltos'&&c.status==='resolved'))&&`${c.author} ${c.text} ${(c.replies||[]).map(reply=>reply.text).join(' ')} ${c.frame}`.toLowerCase().includes(search.toLowerCase())),[comments,filter,search,priorityFilter]);
   const emptyState=visible.length===0?(priorityFilter!=='all'?{kind:'priority',title:'No hay comentarios con esta prioridad',detail:'Cambia la prioridad para ver otros comentarios.',action:'Ver todas las prioridades'}:getCommentEmptyState({total:comments.length,filter,search})):null;
@@ -175,9 +176,9 @@ function CommentsPanel({ onClose, currentTime, setCurrentTime, draft, setDraft, 
     <label className="priority-filter">Prioridad<select aria-label="Filtrar por prioridad" value={priorityFilter} onChange={e=>setPriorityFilter(e.target.value)}><option value="all">Todas</option><option value="high">Urgentes</option><option value="blocking">Bloqueantes</option><option value="normal">Normales</option></select></label>
     <div className="comments-scroll">{visible.map(c=><div key={c.id} id={`thread-${c.id}`}><CommentCard item={c} members={state.members} selectedFigure={selectedFigure} annotationContext={annotationContext} selected={selected===c.id} onSelect={()=>{setSelected(c.id);onJumpFigure(c)}} onResolve={resolve} onReply={replyTo} onJump={item=>{setSelected(item.id);setCurrentTime?.(item.timeSeconds ?? (item.frame||0)/24);onJumpFigure(item)}}/></div>)}{emptyState&&<div className="comments-empty"><strong>{emptyState.title}</strong><span>{emptyState.detail}</span>{emptyState.action&&<button onClick={()=>{if(emptyState.kind==='priority')setPriorityFilter('all');else if(emptyState.kind==='search')setSearch('');else setFilter('Todos')}}>{emptyState.action}</button>}</div>}</div>
     <div className="composer">
-      {attachments.filter(file=>file.type?.startsWith('audio/')).map(file=><div className="audio-draft" key={file.id}><span>{file.name}</span><audio controls src={file.dataUrl} aria-label={`Revisar audio ${file.name}`}/><button aria-label={`Eliminar audio ${file.name}`} onClick={()=>setAttachments(current=>current.filter(item=>item.id!==file.id))}>Quitar audio</button></div>)}
+      {attachments.filter(file=>file.type?.startsWith('audio/')).map(file=><div className="audio-draft" key={file.id}><AudioMessagePlayer file={file}/><button aria-label={`Eliminar audio ${file.name}`} onClick={()=>setAttachments(current=>current.filter(item=>item.id!==file.id))}>Quitar</button></div>)}
       {selectedFigure&&<div className="figure-link-status"><span className="figure-linked-label"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/></svg>Figura vinculada</span><button aria-label="Desvincular la figura del nuevo comentario" onClick={()=>setSelectedFigure(null)}>Desvincular <span aria-hidden="true">×</span></button></div>}
-      <div className="composer-message-bar"><AudioCommentInput onAttach={addFiles} onError={setAttachmentError}/><div className="composer-input">{recoveredDraft.current&&draft&&<small className="draft-recovered" role="status">Borrador recuperado</small>}{!!attachments.length&&<div className="reference-strip">{attachments.map(file=><span key={file.id}><img src={file.dataUrl} alt=""/><button aria-label={`Quitar ${file.name}`} onClick={()=>setAttachments(current=>current.filter(item=>item.id!==file.id))}>×</button></span>)}</div>}<MentionInput value={draft} onChange={e=>{recoveredDraft.current=false;setDraft(e.target.value)}} onPaste={e=>{if(e.clipboardData.files.length){e.preventDefault();addFiles(e.clipboardData.files)}}} onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')add()}} aria-label="Escribir comentario" placeholder={documentPage?`Comenta la página / vista ${documentPage}…`:`Comenta o pega una captura sobre ${stamp.time}…`}/><div className="composer-meta"><span>{documentPage?`Página / vista ${documentPage}`:`F${stamp.frame}`} · Ctrl/⌘ + Enter</span></div>{attachmentError&&<small className="attachment-error">{attachmentError}</small>}</div><button className="send" aria-label="Publicar comentario" onClick={add} disabled={!parseCommentCommand(draft).text&&!attachments.length}><Icon name="send"/></button></div>
+      <div className="composer-message-bar"><AudioCommentInput onAttach={addFiles} onError={setAttachmentError} onRecordingChange={setRecording}/><div className="composer-input" data-can-send={Boolean((parseCommentCommand(draft).text||attachments.length)&&!recording)}>{recoveredDraft.current&&draft&&<small className="draft-recovered" role="status">Borrador recuperado</small>}{!!attachments.some(file=>!file.type?.startsWith('audio/'))&&<div className="reference-strip">{attachments.filter(file=>!file.type?.startsWith('audio/')).map(file=><span key={file.id}><img src={file.dataUrl} alt=""/><button aria-label={`Quitar ${file.name}`} onClick={()=>setAttachments(current=>current.filter(item=>item.id!==file.id))}>×</button></span>)}</div>}<MentionInput value={draft} onChange={e=>{recoveredDraft.current=false;setDraft(e.target.value)}} onPaste={e=>{if(e.clipboardData.files.length){e.preventDefault();addFiles(e.clipboardData.files)}}} onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')add()}} aria-label="Escribir comentario" placeholder={documentPage?'Escribe un mensaje para el equipo…':'Escribe un mensaje para el equipo…'}/><div className="composer-meta"><span>{documentPage?`Página / vista ${documentPage}`:`F${stamp.frame}`} · Ctrl/⌘ + Enter</span></div>{attachmentError&&<small className="attachment-error" role="alert">{attachmentError}</small>}</div><button className="composer-send-button" type="button" aria-label="Publicar comentario" title="Publicar comentario" onClick={add} disabled={!parseCommentCommand(draft).text&&!attachments.length||recording}><Icon name="send" size={18}/></button></div>
       <PriorityCommands value={draft} onChange={setDraft}/>
     </div>
   </aside>;
@@ -331,6 +332,7 @@ function App({demo=false,onExitDemo}) {
   const setCommentDraft=value=>setDraftCache(current=>({...current,[draftKey]:typeof value==='function'?value(readDraftForContext(current,draftStorage,draftKey)):value}));
   const recoveredDraft=useRef(Boolean(commentDraft));
   const [collapsed, setCollapsed] = useState(false);
+  const sidebarManualControl=useRef(false);
   const [currentView, setCurrentViewRaw] = useState(()=>{
     const fallback=readStudioView(location.hash)||(location.hash.startsWith('#team/')?'projects':location.hash.startsWith('#review/')?'review':'home');
     return retryRequest?.view||fallback;
@@ -394,6 +396,13 @@ function App({demo=false,onExitDemo}) {
   const [activeColor, setActiveColor] = useState('#ff725e');
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentsPanelCollapsed,setCommentsPanelCollapsed]=useState(false);
+  useEffect(()=>{
+    if(currentView!=='review')return;
+    sidebarManualControl.current=false;
+    const timer=window.setTimeout(()=>{if(!sidebarManualControl.current)setCollapsed(true)},8000);
+    return()=>window.clearTimeout(timer);
+  },[currentView]);
+  const setSidebarCollapsed=value=>{sidebarManualControl.current=true;setCollapsed(value)};
   const [shareOpen, setShareOpen] = useState(false);
   const [shortcutsOpen,setShortcutsOpen]=useState(false);
   const [summaryOpen,setSummaryOpen]=useState(false);
@@ -435,7 +444,7 @@ function App({demo=false,onExitDemo}) {
   return <div className="app-shell">
     {!demo && <ExtensionWelcomeDialog userId={state.currentUserId}/>}
     <DrawingTrail enabled={currentView==='review'&&!socialMode&&activeTool!=='type'&&Boolean(activeTool)} color={activeColor}/>
-    <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} currentView={currentView} onNavigate={setCurrentView} onDemo={canUseCompanyDemo?()=>{if(!canUseCompanyDemo||demo||!canLeaveSharedReview({dirty:sharedDirty,busy:false},()=>window.confirm('Hay cambios sin publicar en la revisión compartida. ¿Descartarlos para abrir el demo?')))return;const fixture=createCompanyDemo();beginDemoSession(fixture);setCompanyDemo(fixture)}:undefined}/>
+    <Sidebar collapsed={collapsed} setCollapsed={setSidebarCollapsed} currentView={currentView} onNavigate={setCurrentView} onDemo={canUseCompanyDemo?()=>{if(!canUseCompanyDemo||demo||!canLeaveSharedReview({dirty:sharedDirty,busy:false},()=>window.confirm('Hay cambios sin publicar en la revisión compartida. ¿Descartarlos para abrir el demo?')))return;const fixture=createCompanyDemo();beginDemoSession(fixture);setCompanyDemo(fixture)}:undefined}/>
     <main data-view={currentView} className={`workspace ${currentView!=='review'?'dashboard-workspace':''}`}>
       {sectionSculptures[currentView]&&<div className="abstract-sculpture-background" aria-hidden="true"><img className="section-sculpture section-sculpture-primary" src={sectionSculptures[currentView]} alt="" draggable={false}/><img className="section-sculpture section-sculpture-companion" src={sectionCompanions[currentView]} alt="" draggable={false}/></div>}
       {demo&&<div className="demo-company-banner" role="status"><span>DEMO · Empresa activa · Datos ficticios. Los cambios se descartan al salir.</span><button onClick={onExitDemo}>Volver a mi cuenta</button></div>}
