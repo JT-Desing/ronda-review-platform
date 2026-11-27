@@ -15,6 +15,7 @@ import {reviewRequest} from './state/sharedReviewApi.js';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 import './components/comment-composer.css';
+import './components/audio-message.css';
 import {ReviewAssetHeader} from './components/ReviewAssetHeader.jsx';
 import AccountAccess,{useAccountActions} from './components/AccountAccess.jsx';
 import {canAccessCompanyDemo,canAccessStudioView} from './domain/platform-access.js';
@@ -77,6 +78,8 @@ import {consumeFeatureRetry} from './domain/feature-retry.js';
 import {GuidedTour} from './components/GuidedTour.jsx';
 import {TeamNotificationCenter} from './components/TeamNotificationCenter.jsx';
 import {revealReviewStage} from './components/reveal-review-stage.js';
+import './delivery-grid.css';
+import './notification-center.css';
 const loadPauta=()=>import('./components/Pauta.jsx');
 const loadPlanning=()=>import('./components/Planning.jsx');
 const loadSocialPreview=()=>import('./components/SocialPreview.jsx');
@@ -104,12 +107,32 @@ function MobileNav({ currentView, onNavigate, user }) {
 
 
 function MediaStage(props){const {state}=useRonda();return <OriginalMediaStage {...props} members={state.members}/>;}
+function AudioMessagePlayer({file,avatar,avatarColor,author}) {
+  const audio=useRef(null);
+  const [duration,setDuration]=useState(0);
+  const [currentTime,setCurrentTime]=useState(0);
+  const [playing,setPlaying]=useState(false);
+  const heights=[6,10,15,8,18,12,7,20,11,16,9,14,19,8,12,17,6,13,20,9,15,11,18,7,14,10,19,8,13,17,6,12];
+  const seed=[...(file.id||file.name||'')].reduce((sum,char)=>sum+char.charCodeAt(0),0)%heights.length;
+  const bars=Array.from({length:32},(_,index)=>heights[(index+seed)%heights.length]);
+  const format=value=>{if(!Number.isFinite(value))return '0:00';const minutes=Math.floor(value/60);const seconds=Math.floor(value%60).toString().padStart(2,'0');return `${minutes}:${seconds}`};
+  const toggle=async()=>{if(!audio.current)return;if(audio.current.paused){try{await audio.current.play();setPlaying(true)}catch{setPlaying(false)}}else{audio.current.pause();setPlaying(false)}};
+  const seek=e=>{const value=Number(e.target.value);setCurrentTime(value);if(audio.current)audio.current.currentTime=value};
+  const progress=duration?currentTime/duration:0;
+  return <div className="audio-message-player" role="group" aria-label={`Nota de voz${author?` de ${author}`:''}`}>
+    <audio ref={audio} src={file.dataUrl} preload="metadata" onLoadedMetadata={e=>setDuration(e.currentTarget.duration||0)} onTimeUpdate={e=>setCurrentTime(e.currentTarget.currentTime)} onPlay={()=>setPlaying(true)} onPause={()=>setPlaying(false)} onEnded={()=>setPlaying(false)}/>
+    <button className="audio-message-play" type="button" aria-label={playing?'Pausar nota de voz':'Reproducir nota de voz'} onClick={toggle}><Icon name={playing?'pause':'play'} size={16}/></button>
+    <div className="audio-message-track"><div className="audio-message-waveform" aria-hidden="true">{bars.map((height,index)=><i key={index} style={{height:`${height}px`,background:index/bars.length<progress?'var(--accent)':'#81798d'}}/>)}<input type="range" min="0" max={duration||1} step="0.1" value={Math.min(currentTime,duration||0)} onChange={seek} aria-label={`Posición en nota de voz ${file.name}`}/></div><span className="audio-message-duration" aria-live="off">{format(playing?currentTime:duration)}</span></div>
+    {avatar&&<span className="audio-message-avatar" aria-hidden="true" style={{'--audio-avatar-color':avatarColor||'#b89be8'}}>{avatar}<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-4 0h8"/></svg></span>}
+  </div>;
+}
 function CommentCard({ item, selected, onSelect, onResolve, onReply, onJump, members, selectedFigure, annotationContext }) {
   const {act}=useRonda();
   const [options,setOptions]=useState(false);
   const [editing,setEditing]=useState(false);
   const [editedText,setEditedText]=useState(item.text);
   const [replying,setReplying]=useState(false); const [reply,setReply]=useState(''); const replies=Array.isArray(item.replies)?item.replies:[];
+  const audioOnly=item.attachments?.some(file=>file.type?.startsWith('audio/'))&&(!item.text||item.text==='Referencia visual adjunta');
   const submitReply=()=>{if(!reply.trim())return;onReply(item.id,reply.trim());setReply('');setReplying(false)};
   return <article className={`comment-card ${selected?'selected':''} ${item.status==='resolved'?'resolved':''}`} onClick={onSelect}>
     <div className="comment-head"><span className="avatar" style={{background:item.color}}>{item.initials}</span><span className="comment-author"><strong>{item.author}</strong><small>{item.author==='Julian Torres'?'Ahora':'Hace unos minutos'}</small></span>{['blocking','high'].includes(item.priority)&&<span className={`priority-label priority-${item.priority}`}>{item.priority==='blocking'?'Bloqueante':'Urgente'}</span>}<button className="icon-button" aria-label="Opciones del comentario" aria-expanded={options} onClick={e=>{e.stopPropagation();setOptions(!options)}}><Icon name="more"/></button></div>
@@ -117,8 +140,8 @@ function CommentCard({ item, selected, onSelect, onResolve, onReply, onJump, mem
     {options&&<div className="comment-foot" onClick={e=>e.stopPropagation()}>{selectedFigure&&<button onClick={()=>{act('comment/update',{id:item.id,changes:{annotationId:selectedFigure,annotationContext}});setOptions(false)}}>Vincular a figura seleccionada</button>}{item.annotationId&&<button onClick={()=>{act('comment/update',{id:item.id,changes:{annotationId:null,annotationContext:null}});setOptions(false)}}>Desvincular figura</button>}</div>}
     {item.annotationId&&<button className="comment-location" onClick={e=>{e.stopPropagation();onJump(item)}}>Ver figura vinculada</button>}
     <button className="comment-location" onClick={e=>{e.stopPropagation();onJump(item)}}><Icon name={item.annotationId?'link':'play'} size={11}/><strong>{item.annotationId?'Anotación':item.time}</strong><span>{item.annotationId?'Punto marcado':item.page?`Página / vista ${item.page}`:`Fotograma ${item.frame}`}</span></button>
-    {editing?<div className="inline-reply" onClick={e=>e.stopPropagation()}><input aria-label="Editar comentario" autoFocus value={editedText} onChange={e=>setEditedText(e.target.value)} onKeyDown={e=>{if(e.key==='Escape')setEditing(false);if(e.key==='Enter'&&editedText.trim()){act('comment/update',{id:item.id,changes:{text:editedText.trim()}});setEditing(false)}}}/><button disabled={!editedText.trim()} onClick={()=>{act('comment/update',{id:item.id,changes:{text:editedText.trim()}});setEditing(false)}}>Guardar</button><button onClick={()=>setEditing(false)}>Cancelar</button></div>:<p className="comment-copy">{item.text}</p>}
-    {!!item.attachments?.length&&<div className="comment-attachments">{item.attachments.map(file=>file.type?.startsWith('audio/')?<div key={file.id} onClick={e=>e.stopPropagation()}><span>{file.name}</span><audio controls preload="metadata" src={file.dataUrl} aria-label={`Escuchar ${file.name}`}/></div>:<button key={file.id} onClick={e=>{e.stopPropagation();window.open(file.dataUrl,'_blank','noopener,noreferrer')}} aria-label={`Abrir referencia ${file.name}`}><img src={file.dataUrl} alt={file.name}/><span>{file.name}</span></button>)}</div>}
+    {editing?<div className="inline-reply" onClick={e=>e.stopPropagation()}><input aria-label="Editar comentario" autoFocus value={editedText} onChange={e=>setEditedText(e.target.value)} onKeyDown={e=>{if(e.key==='Escape')setEditing(false);if(e.key==='Enter'&&editedText.trim()){act('comment/update',{id:item.id,changes:{text:editedText.trim()}});setEditing(false)}}}/><button disabled={!editedText.trim()} onClick={()=>{act('comment/update',{id:item.id,changes:{text:editedText.trim()}});setEditing(false)}}>Guardar</button><button onClick={()=>setEditing(false)}>Cancelar</button></div>:!audioOnly&&<p className="comment-copy">{item.text}</p>}
+    {!!item.attachments?.length&&<div className={`comment-attachments ${audioOnly?'audio-only':''}`}>{item.attachments.map(file=>file.type?.startsWith('audio/')?<div key={file.id} onClick={e=>e.stopPropagation()}><AudioMessagePlayer file={file} avatar={item.initials} avatarColor={item.color} author={item.author}/></div>:<button key={file.id} onClick={e=>{e.stopPropagation();window.open(file.dataUrl,'_blank','noopener,noreferrer')}} aria-label={`Abrir referencia ${file.name}`}><img src={file.dataUrl} alt={file.name}/><span>{file.name}</span></button>)}</div>}
     {!!replies.length&&<div className="reply-list">{replies.slice(-2).map(entry=>{const author=members[entry.authorId]||{name:'Invitado',initials:'IN'};return <div key={entry.id}><span className="avatar">{author.initials}</span><p><strong>{author.name}</strong>{entry.text}</p></div>})}</div>}
     {replying&&<div className="inline-reply" onClick={e=>e.stopPropagation()}><input autoFocus aria-label={`Responder a ${item.author}`} value={reply} onChange={e=>setReply(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')submitReply();if(e.key==='Escape')setReplying(false)}} placeholder="Escribe una respuesta…"/><button onClick={submitReply}>Enviar</button></div>}
     <footer className="comment-foot"><div><button onClick={e=>{e.stopPropagation();setReplying(!replying)}}>Responder{replies.length>0&&` · ${replies.length}`}</button><button onClick={e=>{e.stopPropagation();onJump(item)}}>Ir al cuadro</button></div><button onClick={e=>{e.stopPropagation();onResolve(item.id)}} className={item.status==='resolved'?'done':''}><Icon name="check" size={14}/>{item.status==='resolved'?'Reabrir':'Resolver'}</button></footer>
