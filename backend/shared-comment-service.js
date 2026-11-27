@@ -1,4 +1,5 @@
 import {commentAudio} from './comment-audio.js';
+import {commentImages} from './comment-image.js';
 import {workspaceError} from './workspace-policy.js';
 import {commentInput,requestId,UUID_PATTERN} from './project-policy.js';
 import {validateAnchor,validateAnnotation,requireReviewAction} from './shared-review-policy.js';
@@ -30,21 +31,30 @@ export function sharedCommentService(repository){
         const rows=(await db.query("SELECT c.*,u.name AS author,c.created_at::text AS cursor_time FROM shared_version_comments c JOIN users u ON u.id=c.author_id WHERE c.version_id=$1 AND ($2::text='all' OR c.status=$2) AND ($3::timestamptz IS NULL OR (c.created_at,c.id)>($3::timestamptz,$4::uuid)) ORDER BY c.created_at,c.id LIMIT 51",[c.versionId,status,after?.time||null,after?.id||null])).rows;
         const page=rows.slice(0,50),last=page.at(-1);
         const replies=page.length?(await db.query('SELECT r.*,u.name AS author FROM shared_comment_replies r JOIN users u ON u.id=r.author_id WHERE r.version_id=$1 AND r.comment_id=ANY($2::uuid[]) ORDER BY r.created_at,r.id',[c.versionId,page.map(r=>r.id)])).rows:[];
-        const audio=page.length?(await db.query('SELECT id,comment_id,name,mime FROM shared_comment_audio WHERE comment_id=ANY($1::uuid[]) ORDER BY ordinal',[page.map(r=>r.id)])).rows:[];
-        return {commentStats,comments:page.map(row=>({...dto(row),attachments:audio.filter(a=>a.comment_id===row.id).map(({id,name,mime})=>({id,name,mime})),replies:replies.filter(r=>r.comment_id===row.id).map(r=>({id:r.id,text:r.text,authorId:r.author_id,author:r.author,createdAt:r.created_at}))})),nextCursor:rows.length>50?Buffer.from(JSON.stringify({versionId:c.versionId,status,time:last.cursor_time,id:last.id})).toString('base64url'):null};
+        const audio=page.length?(await db.query('SELECT id,comment_id,name,mime,ordinal FROM shared_comment_audio WHERE comment_id=ANY($1::uuid[])',[page.map(r=>r.id)])).rows:[];
+        const images=page.length?(await db.query('SELECT id,comment_id,name,mime,ordinal FROM shared_comment_images WHERE comment_id=ANY($1::uuid[])',[page.map(r=>r.id)])).rows:[];
+        return {commentStats,comments:page.map(row=>({...dto(row),attachments:[...audio,...images].filter(a=>a.comment_id===row.id).sort((a,b)=>a.ordinal-b.ordinal).map(({id,name,mime})=>({id,name,mime})),replies:replies.filter(r=>r.comment_id===row.id).map(r=>({id:r.id,text:r.text,authorId:r.author_id,author:r.author,createdAt:r.created_at}))})),nextCursor:rows.length>50?Buffer.from(JSON.stringify({versionId:c.versionId,status,time:last.cursor_time,id:last.id})).toString('base64url'):null};
       });
     },
     async addComment(space,actor,c,input){
-      const audio=commentAudio(input.attachments),text=commentInput({...input,text:input.text?.trim()||(audio.length?'Nota de voz':'')}),key=requestId(input.requestId),priority=input.priority??'normal';
+      const attachmentInput=input.attachments??[];
+      if(!Array.isArray(attachmentInput)||attachmentInput.length>3)throw workspaceError(400,'Máximo 3 adjuntos por comentario.');
+      const audioInput=attachmentInput.filter(item=>typeof item?.dataUrl==='string'&&/^data:audio\//i.test(item.dataUrl));
+      const imageInput=attachmentInput.filter(item=>typeof item?.dataUrl==='string'&&/^data:image\//i.test(item.dataUrl));
+      if(audioInput.length+imageInput.length!==attachmentInput.length)throw workspaceError(400,'Adjunto no permitido.');
+      const audio=commentAudio(audioInput),images=commentImages(imageInput),audioQueue=[...audio],imageQueue=[...images];
+      const attachments=attachmentInput.map(item=>{const mime=item.dataUrl.slice(5,item.dataUrl.indexOf(';')),queue=mime.startsWith('audio/')?audioQueue:imageQueue,index=queue.findIndex(file=>file.name===item.name.trim()&&file.mime===mime);return queue.splice(index,1)[0];});
+      if(attachments.some(item=>!item)||attachments.reduce((sum,item)=>sum+item.bytes.length,0)>4194304)throw workspaceError(400,'Máximo 4 MB en adjuntos por comentario.');
+      const text=commentInput({...input,text:input.text?.trim()||(audio.length?'Nota de voz':images.length?'Referencia visual adjunta':'')}),key=requestId(input.requestId),priority=input.priority??'normal';
       if(!['low','normal','high','blocking'].includes(priority))throw workspaceError(400,'Prioridad inválida.');
       return repository.access(space,actor,async(db,role)=>{
         requireReviewAction(role,'comment');const v=await version(db,space,c,true),anchor=validateAnchor(input.anchor,v.kind),annotation=validateAnnotation(input.annotation,v.kind);
         const prior=(await db.query('SELECT * FROM shared_version_comments WHERE version_id=$1 AND author_id=$2 AND request_id=$3',[c.versionId,actor,key])).rows[0];
-        if(prior){const saved=(await db.query('SELECT name,mime,digest FROM shared_comment_audio WHERE comment_id=$1 ORDER BY ordinal',[prior.id])).rows;if(!isDeepStrictEqual(saved,audio.map(({name,mime,digest})=>({name,mime,digest}))))throw workspaceError(409,'Solicitud usada con otro audio.');if(prior.text!==text||prior.priority!==priority||!isDeepStrictEqual(prior.anchor,anchor)||!isDeepStrictEqual(prior.annotation,annotation))throw workspaceError(409,'Solicitud usada con otro contenido.');return {comment:dto(prior)};}
+        if(prior){const savedAudio=(await db.query('SELECT name,mime,digest,ordinal FROM shared_comment_audio WHERE comment_id=$1',[prior.id])).rows,savedImages=(await db.query('SELECT name,mime,digest,ordinal FROM shared_comment_images WHERE comment_id=$1',[prior.id])).rows,saved=[...savedAudio,...savedImages].sort((a,b)=>a.ordinal-b.ordinal).map(({name,mime,digest})=>({name,mime,digest}));if(!isDeepStrictEqual(saved,attachments.map(({name,mime,digest})=>({name,mime,digest}))))throw workspaceError(409,'Solicitud usada con otros adjuntos.');if(prior.text!==text||prior.priority!==priority||!isDeepStrictEqual(prior.anchor,anchor)||!isDeepStrictEqual(prior.annotation,annotation))throw workspaceError(409,'Solicitud usada con otro contenido.');return {comment:dto(prior)};}
         editable(v);
-        if(audio.length){const used=Number((await db.query('SELECT COALESCE(sum(octet_length(a.bytes)),0) AS size FROM shared_comment_audio a JOIN shared_version_comments c ON c.id=a.comment_id WHERE c.workspace_id=$1',[space])).rows[0].size);if(used+audio.reduce((sum,a)=>sum+a.bytes.length,0)>268435456)throw workspaceError(409,'Se alcanzó el límite de 256 MB de audios de comentarios de este espacio.');}
+        if(attachments.length){const usedAudio=Number((await db.query('SELECT COALESCE(sum(octet_length(a.bytes)),0) AS size FROM shared_comment_audio a JOIN shared_version_comments c ON c.id=a.comment_id WHERE c.workspace_id=$1',[space])).rows[0].size),usedImages=Number((await db.query('SELECT COALESCE(sum(octet_length(a.bytes)),0) AS size FROM shared_comment_images a JOIN shared_version_comments c ON c.id=a.comment_id WHERE c.workspace_id=$1',[space])).rows[0].size);if(usedAudio+usedImages+attachments.reduce((sum,a)=>sum+a.bytes.length,0)>268435456)throw workspaceError(409,'Se alcanzó el límite de 256 MB para adjuntos de comentarios de este espacio.');}
         const row=(await db.query('INSERT INTO shared_version_comments(workspace_id,project_id,asset_id,version_id,author_id,text,priority,anchor,annotation,request_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *',[space,c.projectId,c.assetId,c.versionId,actor,text,priority,anchor,annotation,key])).rows[0];
-        for(const [ordinal,a] of audio.entries())await db.query('INSERT INTO shared_comment_audio(comment_id,name,mime,bytes,digest,ordinal) VALUES($1,$2,$3,$4,$5,$6)',[row.id,a.name,a.mime,a.bytes,a.digest,ordinal]);
+        for(const [ordinal,a] of attachments.entries())await db.query(a.mime.startsWith('audio/')?'INSERT INTO shared_comment_audio(comment_id,name,mime,bytes,digest,ordinal) VALUES($1,$2,$3,$4,$5,$6)':'INSERT INTO shared_comment_images(comment_id,name,mime,bytes,digest,ordinal) VALUES($1,$2,$3,$4,$5,$6)',[row.id,a.name,a.mime,a.bytes,a.digest,ordinal]);
         await recordEvent(db,space,actor,'review.comment_created',{...c,commentId:row.id,mentionIds:mentionIds(input.mentionIds)});return {comment:dto(row)};
       },true);
     },
@@ -53,6 +63,13 @@ export function sharedCommentService(repository){
         await version(db,space,c);await target(db,c,commentId);
         const row=(await db.query('SELECT name,mime,bytes FROM shared_comment_audio WHERE comment_id=$1 AND id=$2',[commentId,audioId])).rows[0];
         if(!row)throw workspaceError(404,'Audio no disponible.');return row;
+      });
+    },
+    async readImage(space,actor,c,commentId,imageId){
+      return repository.access(space,actor,async db=>{
+        await version(db,space,c);await target(db,c,commentId);
+        const row=(await db.query('SELECT name,mime,bytes FROM shared_comment_images WHERE comment_id=$1 AND id=$2',[commentId,imageId])).rows[0];
+        if(!row)throw workspaceError(404,'Imagen no disponible.');return row;
       });
     },
     async editComment(space,actor,c,id,input){

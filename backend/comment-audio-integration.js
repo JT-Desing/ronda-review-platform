@@ -20,12 +20,22 @@ try{
  const id=page.comments[0].attachments[0].id;
  assert.equal((await service.readAudio(f.space,f.reviewer,c,added.comment.id,id)).bytes.toString(),'ID3 test audio');
  await assert.rejects(service.readAudio(f.space,f.outsider,c,added.comment.id,id));
- await assert.rejects(service.addComment(f.space,f.admin,c,{...input,attachments:[]}),{status:400});
+ await assert.rejects(service.addComment(f.space,f.admin,c,{...input,requestId:randomUUID(),attachments:[]}),{status:400});
  const origin='http://audio-qa.invalid',server=http.createServer(createApp({pool:f.pool,origin}));
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  try{
   const token=randomUUID();await f.pool.query("INSERT INTO sessions VALUES($1,$2,now()+interval '1 hour')",[digest(token),f.admin]);
   const base=`http://127.0.0.1:${server.address().port}/api/workspaces/${f.space}/projects/${f.project}/assets/${asset.id}/versions/${v.id}/comments`;
+  const png=Buffer.from('89504e470d0a1a0a00000000','hex');
+  const imageResponse=await fetch(base,{method:'POST',headers:{Origin:origin,Cookie:`ronda_session=${token}`,'Content-Type':'application/json'},body:JSON.stringify({text:'Referencia visual',requestId:randomUUID(),attachments:[{name:'referencia.png',dataUrl:'data:image/png;base64,'+png.toString('base64')},{name:'nota.mp3',dataUrl:'data:audio/mpeg;base64,'+Buffer.from('ID3 mixed audio').toString('base64')}]})});
+  assert.equal(imageResponse.status,201);
+  const imageListing=await (await fetch(base,{headers:{Cookie:`ronda_session=${token}`}})).json();
+  const imageComment=imageListing.comments.find(c=>c.text==='Referencia visual');
+  assert.deepEqual(imageComment.attachments.map(a=>a.mime),['image/png','audio/mpeg']);
+  const imageUrl=base+`/${imageComment.id}/image/${imageComment.attachments[0].id}`;
+  assert.equal((await fetch(imageUrl)).status,401);
+  const image=await fetch(imageUrl,{headers:{Cookie:`ronda_session=${token}`}});assert.equal(image.status,200);assert.equal(image.headers.get('content-type'),'image/png');assert.equal((await image.arrayBuffer()).byteLength,png.length);
+  await assert.rejects(service.readImage(f.space,f.outsider,c,imageComment.id,imageComment.attachments[0].id));
   const bytes=Buffer.concat([Buffer.from('ID3'),Buffer.alloc(270000)]);
   const response=await fetch(base,{method:'POST',headers:{Origin:origin,Cookie:`ronda_session=${token}`,'Content-Type':'application/json'},body:JSON.stringify({text:'Transport audio',requestId:randomUUID(),attachments:[{name:'audio.mp3',dataUrl:'data:audio/mpeg;base64,'+bytes.toString('base64')}]})});
   assert.equal(response.status,201);
@@ -37,5 +47,5 @@ try{
  }finally{await new Promise(resolve=>server.close(resolve));}
  await f.pool.query('UPDATE shared_projects SET deleted_at=now() WHERE id=$1',[f.project]);
  await assert.rejects(service.readAudio(f.space,f.admin,c,added.comment.id,id),{status:404});
- console.log('PASS audio comments: persistence, metadata, retry, member access and deleted project isolation.');
+ console.log('PASS audio and reference-image comments: persistence, metadata, retries, member access, protected media routes and deleted project isolation.');
 }finally{await f.close();}
