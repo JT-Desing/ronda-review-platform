@@ -54,6 +54,7 @@ export async function handleSharedReview({req,res,path,account,pool,sharedStorag
     if(parts.length===10&&req.method==='POST')return reply(res,201,await comments.addComment(space,account.id,context,await input(6000000)));
     const id=uuid(parts[10]);
     if(parts.length===13&&parts[11]==='audio'&&req.method==='GET'){const audio=await comments.readAudio(space,account.id,context,id,uuid(parts[12]));res.writeHead(200,{'Content-Type':audio.mime,'Content-Length':audio.bytes.length,'X-Content-Type-Options':'nosniff','Cache-Control':'private, no-store'});res.end(audio.bytes);return;}
+    if(parts.length===13&&parts[11]==='image'&&req.method==='GET'){const image=await comments.readImage(space,account.id,context,id,uuid(parts[12]));res.writeHead(200,{'Content-Type':image.mime,'Content-Length':image.bytes.length,'X-Content-Type-Options':'nosniff','Cache-Control':'private, no-store'});res.end(image.bytes);return;}
     if(parts.length===12&&parts[11]==='text'&&req.method==='PATCH')return reply(res,200,await comments.editComment(space,account.id,context,id,await input()));
     if(parts.length===12&&parts[11]==='status'&&req.method==='PATCH')return reply(res,200,await comments.setStatus(space,account.id,context,id,await input()));
     if(parts.length===12&&parts[11]==='replies'&&req.method==='POST')return reply(res,201,await comments.reply(space,account.id,context,id,await input()));
