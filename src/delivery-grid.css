@@ -44,8 +44,8 @@
   font:400 11px/16px var(--font-ui);
 }
 
-.app-shell .storyboard-actions{display:flex;flex:0 0 auto;align-items:center;gap:8px}
-.app-shell .storyboard-modes{
+.app-shell .delivery-grid.storyboard .storyboard-actions{display:flex;flex:0 0 auto;align-items:center;gap:8px}
+.app-shell .delivery-grid.storyboard .storyboard-modes{
   display:grid;
   grid-template-columns:repeat(2,68px);
   width:146px;
@@ -59,9 +59,9 @@
   border-radius:8px;
   background:var(--canvas);
 }
-.app-shell .storyboard-modes button,
-.app-shell .storyboard-modes button:first-child,
-.app-shell .storyboard-modes button:last-child{
+.app-shell .delivery-grid.storyboard .storyboard-modes button,
+.app-shell .delivery-grid.storyboard .storyboard-modes button:first-child,
+.app-shell .delivery-grid.storyboard .storyboard-modes button:last-child{
   display:flex;
   width:68px;
   min-width:68px;
@@ -83,19 +83,9 @@
   transform:none;
   transition:background-color 140ms ease,color 140ms ease,border-color 140ms ease;
 }
-/* Older workspace rules assign a taller minimum only in Organizar. Pin both modes to one geometry. */
-.app-shell .delivery-grid.storyboard.organize .storyboard-modes button,
-.app-shell .delivery-grid.storyboard.review .storyboard-modes button{
-  width:68px;
-  min-width:68px;
-  max-width:68px;
-  height:32px;
-  min-height:32px;
-  max-height:32px;
-}
-.app-shell .storyboard-modes button:hover:not([aria-pressed=true]){background:var(--surface-2);color:var(--text)}
-.app-shell .storyboard-modes button[aria-pressed=true]{border-color:#a98ad533;background:#332b3d;color:#f4edff;font-weight:500}
-.app-shell .storyboard-modes button:focus-visible{outline:2px solid #d0b5ff;outline-offset:-2px;box-shadow:none}
+.app-shell .delivery-grid.storyboard .storyboard-modes button:hover:not([aria-pressed=true]){background:var(--surface-2);color:var(--text)}
+.app-shell .delivery-grid.storyboard .storyboard-modes button[aria-pressed=true]{border-color:#a98ad533;background:#332b3d;color:#f4edff;font-weight:500}
+.app-shell .delivery-grid.storyboard .storyboard-modes button:focus-visible{outline:2px solid #d0b5ff;outline-offset:-2px;box-shadow:none}
 .app-shell .delivery-grid.storyboard .upload-button{
   display:inline-flex;
   height:38px;
@@ -191,8 +181,6 @@
 }
 .app-shell .delivery-grid.storyboard .storyboard-preview img,
 .app-shell .delivery-grid.storyboard .storyboard-preview video{width:100%;height:100%;object-fit:cover}
-.app-shell .delivery-grid.storyboard .storyboard-preview-action{position:absolute;bottom:11px;left:50%;z-index:2;transform:translate(-50%,4px);padding:5px 9px;border:1px solid #ffffff24;border-radius:999px;background:#100f14d9;color:#f7f3fb;font:500 9px/1.2 var(--font-ui);white-space:nowrap;opacity:0;transition:opacity 140ms ease,transform 140ms ease;pointer-events:none}
-.app-shell .delivery-grid.storyboard li:hover .storyboard-preview-action,.app-shell .delivery-grid.storyboard .delivery-open:focus-visible .storyboard-preview-action{transform:translate(-50%,0);opacity:1}
 .app-shell .delivery-grid.storyboard .storyboard-number,
 .app-shell .delivery-grid.storyboard .storyboard-format{
   z-index:1;
@@ -254,13 +242,19 @@
 .app-shell .delivery-grid.storyboard .storyboard-order label{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;margin:0;color:var(--muted);font:400 10px/1 var(--font-ui);white-space:nowrap}
 .app-shell .delivery-grid.storyboard .storyboard-order select{height:30px;min-width:42px;box-sizing:border-box;padding:0 5px;border:1px solid #ffffff1a;border-radius:5px;background:#211e27;color:var(--text);font:500 11px/1 var(--font-ui);font-variant-numeric:tabular-nums}
 .app-shell .delivery-grid.storyboard .storyboard-position-total{color:var(--faint);font:400 10px/1 var(--font-ui);font-variant-numeric:tabular-nums}
+.app-shell .delivery-grid.storyboard .delivery-position-picker{position:relative;min-width:0;color:var(--muted);font:400 10px/1 var(--font-ui)}
+.app-shell .delivery-grid.storyboard .delivery-position-picker summary{display:flex;min-height:30px;box-sizing:border-box;align-items:center;justify-content:center;gap:5px;padding:0 5px;border:1px solid #ffffff1a;border-radius:5px;background:#211e27;color:var(--muted);font:400 10px/1 var(--font-ui);white-space:nowrap}
+.app-shell .delivery-grid.storyboard .delivery-position-picker summary strong{color:var(--text);font:500 11px/1 var(--font-ui);font-variant-numeric:tabular-nums}
+.app-shell .delivery-grid.storyboard .delivery-position-picker summary .delivery-position-total{color:var(--faint);font:400 10px/1 var(--font-ui);font-variant-numeric:tabular-nums}
+.app-shell .delivery-grid.storyboard .delivery-position-picker summary svg{width:12px;height:12px;flex:0 0 12px}
+.app-shell .delivery-grid.storyboard .delivery-position-picker summary:focus-visible{outline:2px solid #d0b5ff;outline-offset:-2px}
+.app-shell .shared-delivery-controls .storyboard-order{padding-right:50px}
 .app-shell .delivery-grid.storyboard .storyboard-review-footer{grid-template-columns:minmax(0,1fr) 24px;padding-inline:14px;color:#c6c0ce;font:400 10px/1.2 var(--font-ui);letter-spacing:.01em}
 .app-shell .delivery-grid.storyboard .storyboard-review-footer svg{width:16px;height:16px;fill:none;stroke:#b89be8;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .app-shell .delivery-grid.storyboard>small{display:block;margin-top:8px;color:var(--faint);font:400 10px/14px var(--font-ui)}
 .app-shell .delivery-grid.storyboard .delivery-open:focus-visible,
 .app-shell .delivery-grid.storyboard .storyboard-order button:focus-visible,
 .app-shell .delivery-grid.storyboard .storyboard-order select:focus-visible{outline:2px solid #d0b5ff;outline-offset:-2px}
-@media(prefers-reduced-motion:reduce){.app-shell .delivery-grid.storyboard .storyboard-preview-action{transition:none}}
 
 @media(max-width:780px){
   .app-shell .delivery-grid.storyboard.organize,
@@ -269,7 +263,7 @@
   .app-shell .delivery-grid.storyboard.review>header{height:auto;min-height:86px;flex-wrap:wrap;gap:10px;margin-bottom:8px;padding-bottom:8px}
   .app-shell .delivery-grid.storyboard.organize>header>div:first-child,
   .app-shell .delivery-grid.storyboard.review>header>div:first-child{flex-basis:100%}
-  .app-shell .storyboard-actions{width:100%;justify-content:flex-end}
+  .app-shell .delivery-grid.storyboard .storyboard-actions{width:100%;justify-content:flex-end}
   .app-shell .delivery-grid.storyboard.organize ol,
   .app-shell .delivery-grid.storyboard.review ol{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-auto-rows:276px;min-height:0;max-height:none;gap:10px}
   .app-shell .delivery-grid.storyboard.organize li,
@@ -280,15 +274,4 @@
   .app-shell .delivery-grid.storyboard.organize ol,
   .app-shell .delivery-grid.storyboard.review ol{grid-template-columns:minmax(0,1fr)!important}
 }
-@media(prefers-reduced-motion:reduce){.app-shell .delivery-grid.storyboard li,.app-shell .storyboard-modes button{transition:none}}
-
-/* Keep the link action aligned with the board controls and prevent it from adding a stray row. */
-.app-shell .delivery-grid.storyboard .link-import{position:relative;flex:0 0 auto}
-.app-shell .delivery-grid.storyboard .link-import>button{display:inline-flex;height:38px;min-height:38px;box-sizing:border-box;align-items:center;justify-content:center;gap:7px;margin:0;padding:0 11px;border:1px solid var(--line);border-radius:7px;background:transparent;color:var(--text);font:500 11px/1 var(--font-ui);white-space:nowrap;box-shadow:none;transform:none}
-.app-shell .delivery-grid.storyboard .link-import>button:hover:not(:disabled){border-color:#a98ad566;background:#ffffff08}
-.app-shell .delivery-grid.storyboard .link-import>form{position:absolute;top:calc(100% + 8px);right:0;z-index:5;margin:0;box-shadow:0 14px 36px #0008}
-.app-shell .delivery-grid.storyboard .asset-delete{position:absolute;right:8px;bottom:7px;z-index:2;display:grid;width:34px;height:34px;min-width:34px;min-height:34px;box-sizing:border-box;place-items:center;margin:0;padding:0;border:1px solid #795965;border-radius:7px;background:#21191f;color:#e2aeb9;cursor:pointer;transition:background-color 150ms ease,border-color 150ms ease,transform 150ms ease}
-.app-shell .delivery-grid.storyboard .asset-delete:hover:not(:disabled){border-color:#a46f7b;background:#df6b7918}
-.app-shell .delivery-grid.storyboard .asset-delete:active:not(:disabled){transform:scale(.96)}
-@media(max-width:520px){.app-shell .delivery-grid.storyboard .link-import>form{position:fixed;top:auto;right:12px;bottom:12px;left:12px;min-width:0;width:auto;max-height:calc(100dvh - 24px);overflow:auto}.app-shell .delivery-grid.storyboard .link-import>button{width:38px;padding:0;font-size:0}.app-shell .delivery-grid.storyboard .link-import>button svg{flex:0 0 auto}}
-.app-shell .delivery-grid.storyboard .storyboard-card-copy>strong{display:block!important;visibility:visible;opacity:1;flex:0 0 17px;color:#f5f2f8!important}
+@media(prefers-reduced-motion:reduce){.app-shell .delivery-grid.storyboard li,.app-shell .delivery-grid.storyboard .storyboard-modes button{transition:none}}

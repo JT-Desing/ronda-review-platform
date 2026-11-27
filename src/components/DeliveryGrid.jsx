@@ -6,6 +6,7 @@ import {duplicateAssetNamePositions} from '../domain/duplicate-asset-names.js';
 import {demoSession} from '../state/demoSession.js';
 import './delivery-grid-polish.css';
 import './delivery-grid-stability.css';
+import '../delivery-grid.css';
 import {LinkImport} from './LinkImport.jsx';
 import {DeletedAssets} from './DeletedAssets.jsx';
 
@@ -46,6 +47,13 @@ export function DeliveryGrid({onSelect,onNotify,onRemove,projectId='project-amar
   const select=async asset=>{try{onSelect({...asset,identity:asset.identity||asset.id,url:await assetReviewUrl(asset),duration:asset.type==='image'||asset.type==='web'?1:0})}catch{onNotify('No se pudo abrir la pieza o enlace')}};
   const move=(id,offset)=>{const from=assets.findIndex(a=>a.id===id);const to=Math.max(0,Math.min(assets.length-1,from+offset));const order=assets.map(a=>a.id);order.splice(to,0,...order.splice(from,1));act('asset/order',{order:projectAssetOrder(state.assets||[],projectId,order)})};
   const [expanded,setExpanded]=useState(true);
+  useEffect(()=>{
+    const reviewMain=document.querySelector('.review-main');
+    const collapseAfterScroll=()=>{if(Math.max(reviewMain?.scrollTop||0,window.scrollY)>96)setExpanded(false)};
+    reviewMain?.addEventListener('scroll',collapseAfterScroll,{passive:true});
+    window.addEventListener('scroll',collapseAfterScroll,{passive:true});
+    return()=>{reviewMain?.removeEventListener('scroll',collapseAfterScroll);window.removeEventListener('scroll',collapseAfterScroll)};
+  },[]);
   useEffect(()=>{
     const reviewMain=document.querySelector('.review-main');
     const collapseAfterScroll=()=>{if((reviewMain?.scrollTop||window.scrollY)>96)setExpanded(false)};

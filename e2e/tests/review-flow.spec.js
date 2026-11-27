@@ -39,6 +39,8 @@ test('registro, subir pieza y comentar; todo sigue ahí al volver a entrar', asy
   };
   const reviewMetrics = await modeMetrics();
   const reviewCard = await cardBounds();
+  const expectedCardHeight = await page.evaluate(() => matchMedia('(max-width: 780px)').matches ? 276 : 290);
+  expect(reviewCard.height).toBe(expectedCardHeight);
   await page.getByRole('button', { name: 'Organizar', exact: true }).click();
   const organizeMetrics = await modeMetrics();
   const organizeCard = await cardBounds();
