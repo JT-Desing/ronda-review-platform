@@ -5,6 +5,7 @@ import {resolveAssetVersion} from '../domain/asset-versions.js';
 import {duplicateAssetNamePositions} from '../domain/duplicate-asset-names.js';
 import {demoSession} from '../state/demoSession.js';
 import './delivery-grid-polish.css';
+import './delivery-grid-stability.css';
 import {DeliveryPositionPicker} from './DeliveryPositionPicker.js';
 import {LinkImport} from './LinkImport.jsx';
 import {DeletedAssets} from './DeletedAssets.jsx';
