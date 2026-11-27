@@ -16,7 +16,8 @@ test('signup password can be inspected accessibly without clearing it and resets
   assert.match(access,/const \[passwordVisible,setPasswordVisible\]=useState\(false\)/);
   assert.match(access,/type=\{passwordVisible\?'text':'password'\}/);
   assert.match(access,/aria-describedby=\{mode === 'register'\?'signup-password-hint':undefined\}/);
-  assert.match(access,/<small id="signup-password-hint">Usa al menos 12 caracteres/);
+  assert.match(access,/<small id="signup-password-hint">Usa una contraseña de al menos 12 caracteres/);
+  assert.match(access,/¿Aún no tienes cuenta\?/,'login should invite people to create an account');
   assert.match(access,/type="button" aria-label=\{passwordVisible\?'Ocultar contraseña':'Mostrar contraseña'\} aria-pressed=\{passwordVisible\}/);
   assert.equal((access.match(/setPasswordVisible\(false\)/g)||[]).length,3,'switching login/register or using the duplicate-account shortcut hides the password');
   assert.match(css,/\.account-password-toggle\{[^}]*min-height:44px/);

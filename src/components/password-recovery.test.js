@@ -23,9 +23,11 @@ test('login exposes a recovery path and reset links bypass the ordinary session 
   assert.match(recovery, /role="alert"/);
 });
 
-test('password recovery explains its dependency on a configured server mail transport', () => {
+test('password recovery confirms delivery without exposing mail-server implementation details', () => {
   const access = readFileSync(new URL('./AccountAccess.jsx', import.meta.url), 'utf8');
   const recovery = readFileSync(new URL('./PasswordRecovery.jsx', import.meta.url), 'utf8');
-  assert.match(access, /La recuperación de cuenta depende de que el correo esté configurado en el servidor/);
-  assert.match(recovery, /cuando el servicio de correo esté disponible/);
+  assert.match(access, /Crea proyectos, comparte piezas y deja comentarios justo donde hacen falta/);
+  assert.doesNotMatch(access, /Los datos viven en el PC que aloja Ronda|servidor; si está apagado/);
+  assert.match(recovery, /recibirás instrucciones para crear una contraseña nueva/);
+  assert.doesNotMatch(recovery, /servicio de correo esté disponible/);
 });

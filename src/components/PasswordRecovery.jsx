@@ -48,7 +48,7 @@ export function PasswordRecovery({ token = '', invalidLink = false, initialEmail
         {error && <p role="alert" className="account-error">{error}</p>}
         <button className="account-primary" disabled={busy || password.length < 12 || !confirmation}>{busy ? <BrandLoader size="inline" label="Actualizando contraseña…"/> : 'Actualizar contraseña'}</button>
       </form>
-    </> : requested ? <><p role="status">Si el correo corresponde a una cuenta, recibirás instrucciones cuando el servicio de correo esté disponible. Revisa también la carpeta de spam.</p><p>El enlace es de un solo uso y vence en 30 minutos.</p><button className="account-primary" type="button" onClick={onBack}>Volver a iniciar sesión</button></> : <>
+    </> : requested ? <><p role="status">Si el correo corresponde a una cuenta, recibirás instrucciones para crear una contraseña nueva. Revisa también la carpeta de spam.</p><p>El enlace es de un solo uso y vence en 30 minutos.</p><button className="account-primary" type="button" onClick={onBack}>Volver a iniciar sesión</button></> : <>
       <p>Escribe el correo de tu cuenta. Si existe, enviaremos un enlace de un solo uso que vence en 30 minutos.</p>
       <form onSubmit={submit}>
         <label>Correo<input autoFocus type="email" autoComplete="email" required maxLength={254} value={email} onChange={event => setEmail(event.target.value)}/></label>

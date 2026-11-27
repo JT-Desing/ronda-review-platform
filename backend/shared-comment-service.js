@@ -18,19 +18,20 @@ export function sharedCommentService(repository){
   const editable=v=>{if(v.status!=='reviewing')throw workspaceError(409,'La versión aprobada es de solo lectura.');};
   async function target(db,c,id){const row=(await db.query('SELECT * FROM shared_version_comments WHERE version_id=$1 AND id=$2',[c.versionId,id])).rows[0];if(!row)throw workspaceError(404,'Comentario no disponible.');return row;}
   return {
-    async listComments(space,actor,c,{cursor}={}){
+    async listComments(space,actor,c,{cursor,status='open'}={}){
+      if(!['all','open','resolved'].includes(status))throw workspaceError(400,'Filtro de comentarios inválido.');
       let after=null;
-      if(cursor){try{if(typeof cursor!=='string'||cursor.length>512)throw 0;after=JSON.parse(Buffer.from(cursor,'base64url'));if(after.versionId!==c.versionId||!UUID_PATTERN.test(after.id)||!validCommentCursorTime(after.time))throw 0;}catch{throw workspaceError(400,'Cursor inválido.');}}
+      if(cursor){try{if(typeof cursor!=='string'||cursor.length>512)throw 0;after=JSON.parse(Buffer.from(cursor,'base64url'));if(after.versionId!==c.versionId||(after.status||'open')!==status||!UUID_PATTERN.test(after.id)||!validCommentCursorTime(after.time))throw 0;}catch{throw workspaceError(400,'Cursor inválido.');}}
       return repository.access(space,actor,async db=>{
         await version(db,space,c);
         const commentStats=(await db.query("SELECT count(*)::integer AS total,count(*) FILTER(WHERE status='open')::integer AS open,count(*) FILTER(WHERE status='resolved')::integer AS resolved,count(*) FILTER(WHERE status='open' AND priority='blocking')::integer AS blocking FROM shared_version_comments WHERE version_id=$1",[c.versionId])).rows[0];
-        // Resolved comments remain in storage and workspace_events for audit/history,
-        // but this endpoint is the active review queue and must not return them.
-        const rows=(await db.query("SELECT c.*,u.name AS author,c.created_at::text AS cursor_time FROM shared_version_comments c JOIN users u ON u.id=c.author_id WHERE c.version_id=$1 AND c.status='open' AND ($2::timestamptz IS NULL OR (c.created_at,c.id)>($2::timestamptz,$3::uuid)) ORDER BY c.created_at,c.id LIMIT 51",[c.versionId,after?.time||null,after?.id||null])).rows;
+        // The default remains the active queue for existing API consumers. The
+        // shared review panel can request all/open/resolved without losing history.
+        const rows=(await db.query("SELECT c.*,u.name AS author,c.created_at::text AS cursor_time FROM shared_version_comments c JOIN users u ON u.id=c.author_id WHERE c.version_id=$1 AND ($2::text='all' OR c.status=$2) AND ($3::timestamptz IS NULL OR (c.created_at,c.id)>($3::timestamptz,$4::uuid)) ORDER BY c.created_at,c.id LIMIT 51",[c.versionId,status,after?.time||null,after?.id||null])).rows;
         const page=rows.slice(0,50),last=page.at(-1);
         const replies=page.length?(await db.query('SELECT r.*,u.name AS author FROM shared_comment_replies r JOIN users u ON u.id=r.author_id WHERE r.version_id=$1 AND r.comment_id=ANY($2::uuid[]) ORDER BY r.created_at,r.id',[c.versionId,page.map(r=>r.id)])).rows:[];
         const audio=page.length?(await db.query('SELECT id,comment_id,name,mime FROM shared_comment_audio WHERE comment_id=ANY($1::uuid[]) ORDER BY ordinal',[page.map(r=>r.id)])).rows:[];
-        return {commentStats,comments:page.map(row=>({...dto(row),attachments:audio.filter(a=>a.comment_id===row.id).map(({id,name,mime})=>({id,name,mime})),replies:replies.filter(r=>r.comment_id===row.id).map(r=>({id:r.id,text:r.text,authorId:r.author_id,author:r.author,createdAt:r.created_at}))})),nextCursor:rows.length>50?Buffer.from(JSON.stringify({versionId:c.versionId,time:last.cursor_time,id:last.id})).toString('base64url'):null};
+        return {commentStats,comments:page.map(row=>({...dto(row),attachments:audio.filter(a=>a.comment_id===row.id).map(({id,name,mime})=>({id,name,mime})),replies:replies.filter(r=>r.comment_id===row.id).map(r=>({id:r.id,text:r.text,authorId:r.author_id,author:r.author,createdAt:r.created_at}))})),nextCursor:rows.length>50?Buffer.from(JSON.stringify({versionId:c.versionId,status,time:last.cursor_time,id:last.id})).toString('base64url'):null};
       });
     },
     async addComment(space,actor,c,input){
