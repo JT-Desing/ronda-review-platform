@@ -27,6 +27,7 @@
 - Playwright CLI inició Edge en perfiles separados y obtuvo snapshots de local y producción sin reutilizar la sesión personal.
 - Local: cuatro piezas del demo, alternancia de modos, panel de comentarios, estados y compositor visibles. Se aplicó el CSS del build al preview aislado para validar la geometría: Organizar y Revisar quedaron ambos en 68 × 32 px, peso 500; tarjetas 260 × 290 px; títulos 17 px en una línea. Sin overflow horizontal a 1920 px ni a 390 px. Compositor pegado al borde inferior del panel (0 px medido en escritorio).
 - Compilación del cambio: correcta. Suite local: 321/323 pasan; fallan dos comprobaciones preexistentes de HTML legal generado (`public/legal/tratamiento-de-datos.html` y `public/legal/privacidad.html`) contra sus fuentes. Esta migración no toca esos documentos.
+- E2E enfocado posterior a la corrección: `pnpm e2e:local e2e/tests/review-flow.spec.js --grep "registro, subir pieza y comentar"` pasó en escritorio y móvil (2/2). La prueba ahora exige botones 68 × 32 px en ambos modos y que las tarjetas mantengan las mismas dimensiones.
 - Producción: sitio responde saludable; bundle y etiqueta OCI reportan `e221b6b`; el navegador aislado solo mostró la pantalla de acceso. Los eventos CSP de Cloudflare en consola no afectaron la carga de la app.
 - No se realizaron comentarios, ordenamientos, aprobaciones, invitaciones ni cambios de datos reales.
 
