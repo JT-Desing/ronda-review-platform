@@ -1,7 +1,8 @@
 import {BrandLoader} from './BrandLoader.jsx';
 import React, { useEffect, useRef, useState } from 'react';
+import Icon from './Icon.jsx';
 
-export function AudioCommentInput({ onAttach, onError, onRecordingChange, disabled=false }) {
+export function AudioCommentInput({ onAttach, onError, onRecordingChange, disabled=false, canSend=false, onSend }) {
   const recorder=useRef(null);const stream=useRef(null);const timer=useRef(null);const mounted=useRef(true);
   const [recording,setRecording]=useState(false);const [pending,setPending]=useState(false);
   useEffect(()=>{onRecordingChange?.(recording||pending);},[recording,pending,onRecordingChange]);
@@ -21,7 +22,7 @@ export function AudioCommentInput({ onAttach, onError, onRecordingChange, disabl
   };
   return <div className="audio-comment-input" aria-label="Acciones del mensaje">
     <label className="audio-attach-button" title="Adjuntar audio"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m8.5 12.5 6.2-6.2a3.4 3.4 0 0 1 4.8 4.8l-8.7 8.7a5.2 5.2 0 0 1-7.4-7.4l8.2-8.2"/><path d="m7.2 15.7 8.5-8.5"/></svg><span className="visually-hidden">Adjuntar MP3 u otro audio</span><input disabled={disabled||pending||recording} aria-label="Adjuntar MP3 u otro audio" type="file" accept="audio/*,.mp3" onChange={e=>{onAttach(e.target.files);e.target.value=''}}/></label>
-    <button className={`audio-record-button ${recording?'is-recording':''}`} type="button" disabled={pending||disabled} aria-pressed={recording} aria-label={recording?'Detener y adjuntar grabación':pending?'Solicitando micrófono…':'Grabar nota de voz'} title={recording?'Detener y adjuntar grabación':pending?'Solicitando micrófono…':'Grabar nota de voz'} onClick={()=>recording?recorder.current?.stop():start()}>{pending?<BrandLoader size="inline" label="Solicitando micrófono…"/>:recording?<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>:<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-4 0h8"/></svg>}</button>
+    {canSend&&!recording&&onSend?<button className="composer-send-button" type="button" disabled={disabled} aria-label="Publicar comentario" title="Publicar comentario" onClick={onSend}><Icon name="send" size={18}/></button>:<button className={`audio-record-button ${recording?'is-recording':''}`} type="button" disabled={pending||disabled} aria-pressed={recording} aria-label={recording?'Detener y adjuntar grabación':pending?'Solicitando micrófono…':'Grabar nota de voz'} title={recording?'Detener y adjuntar grabación':pending?'Solicitando micrófono…':'Grabar nota de voz'} onClick={()=>recording?recorder.current?.stop():start()}>{pending?<BrandLoader size="inline" label="Solicitando micrófono…"/>:recording?<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>:<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-4 0h8"/></svg>}</button>}
     {recording&&<small role="status">Grabando · máximo 60 segundos. Detén para revisar antes de enviar.</small>}
   </div>;
 }

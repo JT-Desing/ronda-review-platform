@@ -37,6 +37,7 @@ import {ExternalWeb} from './components/ExternalWeb.jsx';
 import AssetVersionControl from './components/AssetVersionControl.jsx';
 import {resolveAssetVersion} from './domain/asset-versions.js';
 import { AudioCommentInput } from './components/AudioCommentInput.jsx';
+import AudioMessagePlayer from './components/AudioMessagePlayer.jsx';
 import {parseCommentCommand} from './domain/comment-commands.js';
 import {PriorityCommands} from './components/PriorityCommands.jsx';
 import { DocumentReview } from './components/DocumentReview.jsx';
@@ -107,25 +108,6 @@ function MobileNav({ currentView, onNavigate, user }) {
 
 
 function MediaStage(props){const {state}=useRonda();return <OriginalMediaStage {...props} members={state.members}/>;}
-function AudioMessagePlayer({file,avatar,avatarColor,author}) {
-  const audio=useRef(null);
-  const [duration,setDuration]=useState(0);
-  const [currentTime,setCurrentTime]=useState(0);
-  const [playing,setPlaying]=useState(false);
-  const heights=[6,10,15,8,18,12,7,20,11,16,9,14,19,8,12,17,6,13,20,9,15,11,18,7,14,10,19,8,13,17,6,12];
-  const seed=[...(file.id||file.name||'')].reduce((sum,char)=>sum+char.charCodeAt(0),0)%heights.length;
-  const bars=Array.from({length:32},(_,index)=>heights[(index+seed)%heights.length]);
-  const format=value=>{if(!Number.isFinite(value))return '0:00';const minutes=Math.floor(value/60);const seconds=Math.floor(value%60).toString().padStart(2,'0');return `${minutes}:${seconds}`};
-  const toggle=async()=>{if(!audio.current)return;if(audio.current.paused){try{await audio.current.play();setPlaying(true)}catch{setPlaying(false)}}else{audio.current.pause();setPlaying(false)}};
-  const seek=e=>{const value=Number(e.target.value);setCurrentTime(value);if(audio.current)audio.current.currentTime=value};
-  const progress=duration?currentTime/duration:0;
-  return <div className="audio-message-player" role="group" aria-label={`Nota de voz${author?` de ${author}`:''}`}>
-    <audio ref={audio} src={file.dataUrl} preload="metadata" onLoadedMetadata={e=>setDuration(e.currentTarget.duration||0)} onTimeUpdate={e=>setCurrentTime(e.currentTarget.currentTime)} onPlay={()=>setPlaying(true)} onPause={()=>setPlaying(false)} onEnded={()=>setPlaying(false)}/>
-    <button className="audio-message-play" type="button" aria-label={playing?'Pausar nota de voz':'Reproducir nota de voz'} onClick={toggle}><Icon name={playing?'pause':'play'} size={16}/></button>
-    <div className="audio-message-track"><div className="audio-message-waveform" aria-hidden="true">{bars.map((height,index)=><i key={index} style={{height:`${height}px`,background:index/bars.length<progress?'var(--accent)':'#81798d'}}/>)}<input type="range" min="0" max={duration||1} step="0.1" value={Math.min(currentTime,duration||0)} onChange={seek} aria-label={`Posición en nota de voz ${file.name}`}/></div><span className="audio-message-duration" aria-live="off">{format(playing?currentTime:duration)}</span></div>
-    {avatar&&<span className="audio-message-avatar" aria-hidden="true" style={{'--audio-avatar-color':avatarColor||'#b89be8'}}>{avatar}<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-4 0h8"/></svg></span>}
-  </div>;
-}
 function CommentCard({ item, selected, onSelect, onResolve, onReply, onJump, members, selectedFigure, annotationContext }) {
   const {act}=useRonda();
   const [options,setOptions]=useState(false);
@@ -160,6 +142,7 @@ function CommentsPanel({ onClose, currentTime, setCurrentTime, draft, setDraft, 
   const [search,setSearch]=useState('');
   useEffect(()=>{if(focusedComment){setSelected(focusedComment);setFilter('Todos');setSearch('');setTimeout(()=>document.getElementById(`thread-${focusedComment}`)?.scrollIntoView({block:'nearest'}),0)}},[focusedComment,selectedFigure]);
   const [attachments,setAttachments]=useState([]);
+  const attachmentInput=useRef(null);
   const [attachmentError,setAttachmentError]=useState('');
   const [recording,setRecording]=useState(false);
   const [priorityFilter,setPriorityFilter]=useState('all');
@@ -178,7 +161,7 @@ function CommentsPanel({ onClose, currentTime, setCurrentTime, draft, setDraft, 
     <div className="composer">
       {attachments.filter(file=>file.type?.startsWith('audio/')).map(file=><div className="audio-draft" key={file.id}><AudioMessagePlayer file={file}/><button aria-label={`Eliminar audio ${file.name}`} onClick={()=>setAttachments(current=>current.filter(item=>item.id!==file.id))}>Quitar</button></div>)}
       {selectedFigure&&<div className="figure-link-status"><span className="figure-linked-label"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/></svg>Figura vinculada</span><button aria-label="Desvincular la figura del nuevo comentario" onClick={()=>setSelectedFigure(null)}>Desvincular <span aria-hidden="true">×</span></button></div>}
-      <div className="composer-message-bar"><AudioCommentInput onAttach={addFiles} onError={setAttachmentError} onRecordingChange={setRecording}/><div className="composer-input" data-can-send={Boolean((parseCommentCommand(draft).text||attachments.length)&&!recording)}>{recoveredDraft.current&&draft&&<small className="draft-recovered" role="status">Borrador recuperado</small>}{!!attachments.some(file=>!file.type?.startsWith('audio/'))&&<div className="reference-strip">{attachments.filter(file=>!file.type?.startsWith('audio/')).map(file=><span key={file.id}><img src={file.dataUrl} alt=""/><button aria-label={`Quitar ${file.name}`} onClick={()=>setAttachments(current=>current.filter(item=>item.id!==file.id))}>×</button></span>)}</div>}<MentionInput value={draft} onChange={e=>{recoveredDraft.current=false;setDraft(e.target.value)}} onPaste={e=>{if(e.clipboardData.files.length){e.preventDefault();addFiles(e.clipboardData.files)}}} onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')add()}} aria-label="Escribir comentario" placeholder={documentPage?'Escribe un mensaje para el equipo…':'Escribe un mensaje para el equipo…'}/><div className="composer-meta"><span>{documentPage?`Página / vista ${documentPage}`:`F${stamp.frame}`} · Ctrl/⌘ + Enter</span></div>{attachmentError&&<small className="attachment-error" role="alert">{attachmentError}</small>}</div><button className="composer-send-button" type="button" aria-label="Publicar comentario" title="Publicar comentario" onClick={add} disabled={!parseCommentCommand(draft).text&&!attachments.length||recording}><Icon name="send" size={18}/></button></div>
+      <div className="composer-message-bar has-reference"><AudioCommentInput onAttach={addFiles} onError={setAttachmentError} onRecordingChange={setRecording} canSend={Boolean(parseCommentCommand(draft).text||attachments.length)} onSend={add}/><input ref={attachmentInput} className="visually-hidden" type="file" accept="image/*" multiple onChange={e=>{addFiles(e.target.files);e.target.value=''}}/><button className="composer-reference-button" type="button" onClick={()=>attachmentInput.current?.click()} title="Agregar imagen o captura" aria-label="Agregar imagen o captura"><Icon name="image" size={18}/></button><div className="composer-input" data-can-send={Boolean((parseCommentCommand(draft).text||attachments.length)&&!recording)}>{recoveredDraft.current&&draft&&<small className="draft-recovered" role="status">Borrador recuperado</small>}{!!attachments.some(file=>!file.type?.startsWith('audio/'))&&<div className="reference-strip">{attachments.filter(file=>!file.type?.startsWith('audio/')).map(file=><span key={file.id}><img src={file.dataUrl} alt=""/><button aria-label={`Quitar ${file.name}`} onClick={()=>setAttachments(current=>current.filter(item=>item.id!==file.id))}>×</button></span>)}</div>}<MentionInput value={draft} onChange={e=>{recoveredDraft.current=false;setDraft(e.target.value)}} onPaste={e=>{if(e.clipboardData.files.length){e.preventDefault();addFiles(e.clipboardData.files)}}} onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')add()}} aria-label="Escribir comentario" placeholder="Escribe un mensaje para el equipo…"/><div className="composer-meta"><span>{documentPage?`Página / vista ${documentPage}`:`F${stamp.frame}`} · Ctrl/⌘ + Enter</span></div>{attachmentError&&<small className="attachment-error" role="alert">{attachmentError}</small>}</div></div>
       <PriorityCommands value={draft} onChange={setDraft}/>
     </div>
   </aside>;

@@ -7,10 +7,10 @@ const component = name => readFileSync(new URL(`./${name}`, import.meta.url), 'u
 test('personal and shared review composers keep audio, text and send actions in one message bar', () => {
   const personal = component('../main.jsx');
   const shared = component('SharedReviewRoom.jsx');
-  assert.match(personal, /<div className="composer-message-bar"><AudioCommentInput/);
-  assert.match(personal, /composer-message-bar[\s\S]*?aria-label="Escribir comentario"[\s\S]*?aria-label="Publicar comentario"/);
+  assert.match(personal, /<div className="composer-message-bar has-reference"><AudioCommentInput/);
+  assert.match(personal, /composer-message-bar[\s\S]*?onSend=\{add\}[\s\S]*?aria-label="Escribir comentario"/);
   assert.match(shared, /<div className="composer-message-bar"><AudioCommentInput/);
-  assert.match(shared, /composer-message-bar[\s\S]*?aria-label="Publicar comentario"/);
+  assert.match(shared, /composer-message-bar[\s\S]*?canSend=\{Boolean\([\s\S]*?requestSubmit\(\)/);
   assert.doesNotMatch(shared, /Prioridad del comentario|composer-bottom/);
   assert.match(shared, /<PriorityCommands value=\{draft\.text\}/);
   assert.match(shared, /priority:parsed\.priority/);
@@ -67,11 +67,11 @@ test('focused composer keeps metadata out of normal flow and uses one focus trea
  assert.match(css,/composer-input:has\(.composer-meta>button\) textarea\{padding-right:32px\}/);
 });
 
-test('priority commands are connected to both persistence paths and the reference button is removed',()=>{
+test('priority commands remain connected and reference attachments stay available in personal review',()=>{
  const personal=component('../main.jsx'),shared=component('SharedReviewRoom.jsx');
  assert.match(personal,/priority:parsed.priority,text:parsed.text/);
  assert.match(shared,/text:parsed.text,[\s\S]*?attachments:[\s\S]*?priority:parsed.priority/);
- assert.doesNotMatch(personal,/title="Agregar imagen o captura"|<span>Referencia<\/span>/);
+ assert.match(personal,/title="Agregar imagen o captura"/);
  assert.match(personal,/aria-label="Filtrar por prioridad"/);
  assert.match(shared,/aria-label="Filtrar por prioridad"/);
  for(const command of ['/urgente','/bloqueo','/normal'])assert.ok(component('ShortcutHelp.jsx').includes(command));
