@@ -1,73 +1,34 @@
-.extension-promo-layer{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:24px;box-sizing:border-box}
-.extension-promo-backdrop{position:absolute;inset:0;width:100%;height:100%;border:0;background:rgba(7,6,10,.76);backdrop-filter:blur(7px);animation:extension-promo-fade .2s ease both}
-.extension-promo{--promo-accent:#d4c1fb;position:relative;display:grid;grid-template-columns:minmax(180px,.78fr) minmax(0,1.22fr);width:min(760px,100%);max-height:min(690px,calc(100dvh - 48px));overflow:auto;border:1px solid #51465f;border-radius:22px;background:linear-gradient(145deg,#19151f 0%,#111016 65%);box-shadow:0 34px 100px #000a;animation:extension-promo-rise .3s cubic-bezier(.2,.8,.2,1) both;outline:none}
-.extension-promo-close{position:absolute;z-index:2;right:14px;top:14px;width:36px;height:36px;display:grid;place-items:center;border:1px solid #484052;border-radius:50%;background:#17141d;color:#c6bdd1;cursor:pointer;transition:background .16s ease,color .16s ease,transform .16s ease}
-.extension-promo-close:hover{background:#282230;color:#fff;transform:rotate(4deg)}
-.extension-promo-visual{position:relative;display:grid;place-items:center;min-height:100%;padding:30px 16px;background:radial-gradient(ellipse at 18% 12%,#493865 0,transparent 48%),linear-gradient(155deg,#211a2a,#16131b 68%);border-right:1px solid #342d3c;overflow:hidden}
-.extension-promo-visual:before,.extension-promo-visual:after{content:"";position:absolute;border:1px solid #c8b1f526;border-radius:50%;pointer-events:none}
-.extension-promo-visual:before{width:320px;height:320px;right:-205px;top:-118px}
-.extension-promo-visual:after{width:230px;height:230px;left:-160px;bottom:-102px}
-.extension-promo-browser{position:relative;z-index:1;width:min(100%,245px);height:254px;border:1px solid #665b74;border-radius:14px;background:#f1edf5;box-shadow:0 20px 48px #08060d70;transform:rotate(-3deg);overflow:hidden}
-.extension-promo-browserbar{height:36px;display:flex;align-items:center;gap:5px;padding:0 10px;background:#211d27;border-bottom:1px solid #4b4352}
-.extension-promo-browserbar>span{width:6px;height:6px;border-radius:50%;background:#746984}
-.extension-promo-browserbar>span:first-child{background:#e58e9b}.extension-promo-browserbar>span:nth-child(2){background:#e8bb78}.extension-promo-browserbar>span:nth-child(3){background:#9bc7a2}
-.extension-promo-browserbar i{min-width:0;margin-left:5px;padding:4px 7px;border:1px solid #47404e;border-radius:5px;background:#302a36;color:#d7cfdf;font:500 8px/1.2 var(--font-ui);font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.extension-promo-webpage{position:relative;height:calc(100% - 36px);padding:24px 18px;background:linear-gradient(180deg,#f5eff8,#e7dff0);overflow:hidden}
-.extension-promo-webpage:before{content:"Ronda · Revisión web";display:block;margin-bottom:24px;color:#55466b;font:700 10px/1 var(--font-ui);letter-spacing:.08em}
-.extension-promo-webpage>b{display:block;height:7px;margin:11px 0;border-radius:99px;background:#c9bfd3}
-.extension-promo-webpage>b:nth-of-type(1){width:76%;height:13px;background:#746082}.extension-promo-webpage>b:nth-of-type(2){width:94%}.extension-promo-webpage>b:nth-of-type(3){width:83%}.extension-promo-webpage>b:nth-of-type(4){width:61%}
-.extension-promo-selection{position:absolute;left:34px;top:130px;width:132px;height:44px;border:2px solid #8f70c3;border-radius:5px;background:#d4c1fb35;box-shadow:0 0 0 5px #8f70c326}
-.extension-promo-note{position:absolute;right:12px;bottom:34px;display:flex;align-items:center;gap:5px;padding:7px 9px;border:1px solid #c9b6e6;border-radius:8px;background:#fbf8ff;color:#453657;font:600 9px/1 var(--font-ui);box-shadow:0 5px 16px #31213a24}
-.extension-promo-note .icon{color:#79609f}
-.extension-promo-mark{position:absolute;z-index:2;right:calc(50% - 134px);bottom:calc(50% - 124px);width:42px;height:42px;display:grid;place-items:center;border:1px solid #78638d;border-radius:13px;background:#2d2536;color:#e1d1ff;box-shadow:0 9px 24px #09070e80}
-.extension-promo-copy{padding:42px 42px 34px}
+.extension-promo-layer{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:24px;box-sizing:border-box;isolation:isolate}
+.extension-promo-backdrop{position:absolute;inset:0;width:100%;height:100%;border:0;background:rgba(7,6,10,.78);backdrop-filter:blur(8px);animation:extension-promo-fade .2s ease both}
+.extension-promo{--promo-accent:#d4c1fb;position:relative;display:grid;grid-template-columns:minmax(230px,.76fr) minmax(0,1.24fr);width:min(880px,100%);max-height:min(700px,calc(100dvh - 48px));overflow:hidden;border:1px solid #51465f;border-radius:24px;background:#111016;box-shadow:0 34px 100px #000a;animation:extension-promo-rise .3s cubic-bezier(.2,.8,.2,1) both;outline:none}
+.extension-promo-close{position:absolute;z-index:3;right:15px;top:15px;width:38px;height:38px;display:grid;place-items:center;border:1px solid #ffffff30;border-radius:50%;background:#17141dcc;color:#e5dfeb;cursor:pointer;transition:background .16s ease,color .16s ease,transform .16s ease}
+.extension-promo-close:hover{background:#30283a;color:#fff;transform:rotate(4deg)}
+.extension-promo-visual{position:relative;min-height:100%;overflow:hidden;background:#201a27;border-right:1px solid #342d3c}
+.extension-promo-visual:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#16111a00 48%,#17121dcc 100%),linear-gradient(90deg,#211a2a33,#211a2a00 42%);pointer-events:none}
+.extension-promo-visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:48% center}
+.extension-promo-visual-caption{position:absolute;z-index:1;left:24px;right:18px;bottom:24px;display:flex;align-items:center;gap:9px;color:#f1eaf8;font-size:9px;font-weight:750;letter-spacing:.14em;text-shadow:0 1px 8px #0008}
+.extension-promo-visual-caption>span:first-child{width:7px;height:7px;border-radius:50%;background:#d4c1fb;box-shadow:0 0 0 4px #d4c1fb32}
+.extension-promo-copy{min-width:0;padding:46px 46px 34px;overflow-y:auto;overscroll-behavior:contain}
 .extension-promo-eyebrow{display:flex;align-items:center;gap:8px;color:#cbb6ef;font-size:9px;font-weight:750;letter-spacing:.14em}
 .extension-promo-eyebrow>span{width:7px;height:7px;border-radius:50%;background:#cbb6ef;box-shadow:0 0 0 4px #cbb6ef19}
-.extension-promo-copy h2{max-width:390px;margin:15px 42px 10px 0;color:#f8f5fb;font-size:clamp(24px,3vw,32px);font-weight:650;line-height:1.12;letter-spacing:-.045em}
-.extension-promo-copy>p:not(.extension-promo-note-text){max-width:410px;margin:0;color:#b9b0c4;font-size:13px;line-height:1.6}
-.extension-promo-benefits{list-style:none;margin:22px 0 0;padding:0;border-top:1px solid #332c3a}
-.extension-promo-benefits li{display:grid;grid-template-columns:34px minmax(0,1fr);align-items:start;gap:11px;padding:14px 0;border-bottom:1px solid #332c3a}
-.extension-promo-benefits li>span{width:32px;height:32px;display:grid;place-items:center;border:1px solid #51455f;border-radius:10px;background:#292231;color:#d4c1fb}
-.extension-promo-benefits li>div{display:flex;flex-direction:column;gap:4px;min-width:0;padding-top:1px}
-.extension-promo-benefits strong{color:#f1edf5;font-size:11px;font-weight:650;line-height:1.4}
-.extension-promo-benefits small{color:#aaa1b4;font-size:10px;line-height:1.45}
-.extension-promo-footer{display:flex;align-items:center;gap:13px;margin-top:22px}
-.extension-promo-install{min-height:43px;display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:0 17px;border:1px solid #d4c1fb;border-radius:11px;background:#d4c1fb;color:#20182c;font-size:11px;font-weight:750;text-decoration:none;transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
+.extension-promo-copy h2{max-width:420px;margin:16px 42px 10px 0;color:#f8f5fb;font-size:clamp(25px,3vw,34px);font-weight:650;line-height:1.12;letter-spacing:-.045em}
+.extension-promo-copy>p:not(.extension-promo-note-text){max-width:430px;margin:0;color:#b9b0c4;font-size:14px;line-height:1.6}
+.extension-promo-benefits{list-style:none;margin:23px 0 0;padding:0;border-top:1px solid #332c3a}
+.extension-promo-benefits li{display:grid;grid-template-columns:36px minmax(0,1fr);align-items:start;gap:12px;padding:15px 0;border-bottom:1px solid #332c3a}
+.extension-promo-benefits li>span{width:34px;height:34px;display:grid;place-items:center;border:1px solid #51455f;border-radius:11px;background:#292231;color:#d4c1fb}
+.extension-promo-benefits li>div{display:flex;flex-direction:column;gap:4px;min-width:0;padding-top:2px}
+.extension-promo-benefits strong{color:#f1edf5;font-size:12px;font-weight:650;line-height:1.4}
+.extension-promo-benefits small{color:#aaa1b4;font-size:11px;line-height:1.5}
+.extension-promo-footer{display:flex;align-items:center;gap:14px;margin-top:23px}
+.extension-promo-install{min-height:46px;display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:0 18px;border:1px solid #d4c1fb;border-radius:12px;background:#d4c1fb;color:#20182c;font-size:12px;font-weight:750;text-decoration:none;transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
 .extension-promo-install:hover{transform:translateY(-1px);background:#e0d3ff;box-shadow:0 8px 22px #c7abf333}
-.extension-promo-install span{font-size:15px;line-height:1}
-.extension-promo-later{min-height:42px;padding:0 9px;border:0;background:transparent;color:#b9b0c4;font:600 10px var(--font-ui);cursor:pointer}
+.extension-promo-install span{font-size:16px;line-height:1}
+.extension-promo-later{min-height:42px;padding:0 9px;border:0;background:transparent;color:#b9b0c4;font:600 11px var(--font-ui);cursor:pointer}
 .extension-promo-later:hover{color:#fff}
-.extension-promo-note-text{margin:14px 0 0;color:#8f8799;font-size:9px;line-height:1.5}
+.extension-promo-note-text{margin:14px 0 0;color:#8f8799;font-size:10px;line-height:1.5}
 .extension-promo :focus-visible{outline:2px solid #e7d9ff;outline-offset:3px}
 @keyframes extension-promo-fade{from{opacity:0}to{opacity:1}}
 @keyframes extension-promo-rise{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
-@media(max-width:640px){.extension-promo-layer{padding:12px}.extension-promo{display:block;width:min(460px,100%);max-height:calc(100dvh - 24px);border-radius:18px}.extension-promo-visual{min-height:150px;height:150px;padding:12px;border-right:0;border-bottom:1px solid #342d3c}.extension-promo-browser{width:185px;height:139px;border-radius:10px;transform:rotate(-2deg)}.extension-promo-browserbar{height:25px;padding:0 7px;gap:4px}.extension-promo-browserbar>span{width:5px;height:5px}.extension-promo-browserbar i{font-size:6px;padding:3px 5px}.extension-promo-webpage{height:calc(100% - 25px);padding:13px 12px}.extension-promo-webpage:before{margin-bottom:11px;font-size:7px}.extension-promo-webpage>b{height:4px;margin:6px 0}.extension-promo-webpage>b:nth-of-type(1){height:8px}.extension-promo-selection{left:23px;top:75px;width:90px;height:24px}.extension-promo-note{right:7px;bottom:13px;padding:4px 6px;font-size:7px}.extension-promo-note .icon{width:10px;height:10px}.extension-promo-mark{right:calc(50% - 103px);bottom:calc(50% - 68px);width:32px;height:32px;border-radius:10px}.extension-promo-mark .icon{width:17px;height:17px}.extension-promo-copy{padding:22px 22px 20px}.extension-promo-close{top:10px;right:10px;width:32px;height:32px}.extension-promo-copy h2{font-size:25px;margin-top:12px}.extension-promo-benefits{margin-top:16px}.extension-promo-benefits li{padding:10px 0}.extension-promo-footer{margin-top:16px;gap:9px}.extension-promo-install{flex:1;padding:0 11px;font-size:10px}.extension-promo-note-text{margin-top:10px}}
-@media(max-height:620px) and (min-width:641px){.extension-promo{max-height:calc(100dvh - 24px)}.extension-promo-copy{padding:28px 34px 24px}.extension-promo-visual{padding:20px 14px}.extension-promo-browser{height:220px}.extension-promo-benefits{margin-top:14px}.extension-promo-benefits li{padding:10px 0}.extension-promo-footer{margin-top:14px}}
+@media(max-width:680px){.extension-promo-layer{padding:12px}.extension-promo{display:flex;flex-direction:column;width:min(480px,100%);max-height:calc(100dvh - 24px);border-radius:20px}.extension-promo-visual{flex:0 0 142px;min-height:142px;border-right:0;border-bottom:1px solid #342d3c}.extension-promo-visual img{object-position:center 46%}.extension-promo-visual-caption{left:17px;bottom:14px;font-size:8px}.extension-promo-copy{padding:24px 22px 20px}.extension-promo-close{top:10px;right:10px;width:34px;height:34px;background:#17141dcc}.extension-promo-copy h2{font-size:26px;margin-top:13px}.extension-promo-benefits{margin-top:16px}.extension-promo-benefits li{padding:11px 0}.extension-promo-footer{margin-top:17px;gap:9px}.extension-promo-install{flex:1;padding:0 11px;font-size:11px}.extension-promo-note-text{margin-top:10px}}
+@media(max-height:620px) and (min-width:681px){.extension-promo{max-height:calc(100dvh - 24px)}.extension-promo-copy{padding:28px 34px 24px}.extension-promo-visual img{object-position:48% center}.extension-promo-benefits{margin-top:14px}.extension-promo-benefits li{padding:10px 0}.extension-promo-footer{margin-top:14px}}
 @media(prefers-reduced-motion:reduce){.extension-promo-backdrop,.extension-promo{animation:none}.extension-promo-close,.extension-promo-install{transition:none}}
-
-/* Keep the extension invitation discoverable without blocking normal work. */
-.extension-promo-layer{inset:82px 18px auto auto;width:min(500px,calc(100vw - 24px));max-height:calc(100dvh - 100px);padding:0;display:block;pointer-events:none}
-.extension-promo-backdrop{display:none}
-.extension-promo{width:100%;max-height:inherit;grid-template-columns:138px minmax(0,1fr);pointer-events:auto}
-.extension-promo{pointer-events:none}
-.extension-promo :is(a,button){pointer-events:auto}
-.extension-promo-visual{padding:18px 10px}
-.extension-promo-browser{width:min(100%,116px);height:174px}
-.extension-promo-browserbar{gap:3px;padding:0 7px}
-.extension-promo-browserbar i{font-size:6px}
-.extension-promo-webpage{padding:17px 11px}
-.extension-promo-webpage:before{font-size:7px;margin-bottom:18px}
-.extension-promo-selection{left:18px;top:92px;width:78px;height:34px}
-.extension-promo-note{right:6px;bottom:21px;font-size:7px;padding:5px 6px}
-.extension-promo-mark{right:calc(50% - 68px);bottom:calc(50% - 86px);width:34px;height:34px}
-.extension-promo-copy{padding:30px 22px 22px}
-.extension-promo-copy h2{font-size:23px;margin-right:22px}
-.extension-promo-benefits{margin-top:12px}
-.extension-promo-benefits li{padding:9px 0;gap:8px;grid-template-columns:30px minmax(0,1fr)}
-.extension-promo-benefits li>span{width:28px;height:28px}
-.extension-promo-benefits strong{font-size:10px}
-.extension-promo-benefits small{font-size:9px}
-.extension-promo-footer{margin-top:14px;gap:8px;flex-wrap:wrap}
-.extension-promo-install{min-height:39px;padding:0 12px;font-size:10px}
-.extension-promo-note-text{font-size:8px;margin-top:9px}
-@media(max-width:640px){.extension-promo-layer{inset:12px 12px auto;width:calc(100vw - 24px);max-height:56dvh}.extension-promo{display:block;max-height:inherit}.extension-promo-visual{min-height:82px;height:82px;padding:8px;border-right:0;border-bottom:1px solid #342d3c}.extension-promo-browser{width:128px;height:102px}.extension-promo-browserbar{height:21px}.extension-promo-webpage{height:calc(100% - 21px);padding:10px 9px}.extension-promo-webpage:before{font-size:6px;margin-bottom:9px}.extension-promo-webpage>b{height:4px;margin:5px 0}.extension-promo-webpage>b:nth-of-type(1){height:7px}.extension-promo-selection{left:18px;top:62px;width:82px;height:22px}.extension-promo-note{right:6px;bottom:11px}.extension-promo-mark{right:calc(50% - 78px);bottom:calc(50% - 50px);width:29px;height:29px}.extension-promo-copy{padding:16px 18px 14px}.extension-promo-close{top:8px;right:8px;width:30px;height:30px}.extension-promo-copy h2{font-size:22px;margin-top:10px}.extension-promo-benefits{margin-top:10px}.extension-promo-benefits li{padding:7px 0}.extension-promo-footer{margin-top:10px}.extension-promo-install{flex:initial}.extension-promo-note-text{margin-top:7px}}

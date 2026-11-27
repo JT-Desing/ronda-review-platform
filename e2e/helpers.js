@@ -31,6 +31,9 @@ async function skipTour(page) {
   const skip = page.getByRole('button', { name: 'Saltar guía' });
   await expect(page.getByRole('heading', { name: 'Proyectos personales' })).toBeVisible();
   if (await skip.isVisible()) await skip.click();
+  const extensionDismiss = page.getByRole('button', { name: 'Ahora no', exact: true });
+  await extensionDismiss.waitFor({ state: 'visible', timeout: 2000 }).catch(() => {});
+  if (await extensionDismiss.isVisible()) await extensionDismiss.click();
 }
 
 // The profile button says when the account snapshot reached the server.

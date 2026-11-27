@@ -1,0 +1,110 @@
+.app-shell .notification-popover{
+  position:absolute;
+  z-index:80;
+  top:calc(100% + 12px);
+  right:0;
+  display:flex;
+  width:min(390px,calc(100vw - 24px));
+  max-height:min(590px,calc(100dvh - 82px));
+  box-sizing:border-box;
+  flex-direction:column;
+  overflow:hidden;
+  padding:0;
+  border:1px solid #ffffff18;
+  border-radius:16px;
+  background:#19171f;
+  box-shadow:0 20px 54px #0009,0 2px 10px #0005;
+  color:#f4f0f8;
+  animation:notification-panel-in 150ms ease-out both;
+}
+.app-shell .notification-header{
+  display:flex;
+  min-height:68px;
+  box-sizing:border-box;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 16px 12px;
+  border-bottom:1px solid #ffffff12;
+}
+.app-shell .notification-header>div{display:flex;min-width:0;flex-direction:column;gap:3px}
+.app-shell .notification-header strong{color:#f4f0f8;font:600 14px/19px var(--font-ui);letter-spacing:-.015em}
+.app-shell .notification-header span{color:#aaa2b4;font:400 11px/15px var(--font-ui)}
+.app-shell .notification-header button,
+.app-shell .notification-footer button{
+  display:inline-flex;
+  min-height:30px;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:0 8px;
+  border:0;
+  border-radius:6px;
+  background:transparent;
+  color:#c9a9ff;
+  font:500 11px/1.2 var(--font-ui);
+  white-space:nowrap;
+  cursor:pointer;
+}
+.app-shell .notification-header button:hover,
+.app-shell .notification-footer button:hover{background:#ffffff0b;color:#e4d4ff}
+.app-shell .notification-list{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 8px}
+.app-shell .notification-item{
+  position:relative;
+  display:grid;
+  width:100%;
+  min-height:74px;
+  grid-template-columns:34px minmax(0,1fr) 7px;
+  align-items:start;
+  gap:10px;
+  box-sizing:border-box;
+  margin:0;
+  padding:12px 9px;
+  border:0;
+  border-bottom:1px solid #ffffff0c;
+  border-radius:8px;
+  background:transparent;
+  color:#f4f0f8;
+  text-align:left;
+  cursor:pointer;
+  transition:background-color 130ms ease;
+}
+.app-shell .notification-item:last-child{border-bottom-color:transparent}
+.app-shell .notification-item:hover{background:#ffffff08}
+.app-shell .notification-item:focus-visible,
+.app-shell .notification-header button:focus-visible,
+.app-shell .notification-footer button:focus-visible{outline:2px solid #c9a9ff;outline-offset:-2px}
+.app-shell .notification-avatar{
+  display:grid;
+  width:32px;
+  height:32px;
+  box-sizing:border-box;
+  place-items:center;
+  border:1px solid #c9a9ff38;
+  border-radius:50%;
+  background:#352b42;
+  color:#ddcaff;
+  font:600 10px/1 var(--font-ui);
+}
+.app-shell .notification-item-body{display:flex;min-width:0;flex-direction:column;gap:3px}
+.app-shell .notification-item-title{display:flex;min-width:0;flex-wrap:wrap;column-gap:4px;color:#bdb5c7;font:400 11px/16px var(--font-ui)}
+.app-shell .notification-item-title strong{color:#f2eef6;font-weight:600}
+.app-shell .notification-context{overflow:hidden;color:#c9a9ff;font:500 10px/15px var(--font-ui);text-overflow:ellipsis;white-space:nowrap}
+.app-shell .notification-detail{display:-webkit-box;overflow:hidden;color:#aaa2b4;font:400 11px/15px var(--font-ui);-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.app-shell .notification-time{margin-top:1px;color:#817b89;font:400 10px/14px var(--font-ui)}
+.app-shell .notification-unread-dot{width:7px;height:7px;align-self:center;border-radius:50%;background:#c9a9ff;box-shadow:0 0 0 3px #c9a9ff18}
+.app-shell .notification-empty{display:flex;min-height:190px;box-sizing:border-box;align-items:center;justify-content:center;flex-direction:column;gap:7px;padding:24px;text-align:center}
+.app-shell .notification-empty-icon{display:grid;width:36px;height:36px;place-items:center;margin-bottom:3px;border:1px solid #ffffff14;border-radius:50%;background:#ffffff08;color:#c9a9ff}
+.app-shell .notification-empty strong{color:#f4f0f8;font:600 13px/18px var(--font-ui)}
+.app-shell .notification-empty p{max-width:230px;margin:0;color:#aaa2b4;font:400 11px/16px var(--font-ui)}
+.app-shell .notification-footer{display:flex;min-height:46px;box-sizing:border-box;align-items:center;justify-content:center;margin-top:auto;padding:6px 10px;border-top:1px solid #ffffff12;background:#17151c}
+.app-shell .notification-footer button{min-height:30px}
+.app-shell .notification-trigger:focus-visible{outline:2px solid #c9a9ff;outline-offset:2px}
+@keyframes notification-panel-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:520px){
+  .app-shell .notification-popover{position:fixed;top:72px;right:12px;left:12px;width:auto;max-height:calc(100dvh - 86px);border-radius:14px}
+  .app-shell .notification-header{min-height:64px;padding:12px 14px}
+  .app-shell .notification-list{padding:4px 6px}
+  .app-shell .notification-item{min-height:70px;padding:10px 8px}
+}
+@media(prefers-reduced-motion:reduce){.app-shell .notification-popover{animation:none}.app-shell .notification-item{transition:none}}
