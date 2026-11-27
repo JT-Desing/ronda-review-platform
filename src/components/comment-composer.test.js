@@ -1,9 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-
 const component = name => readFileSync(new URL(`./${name}`, import.meta.url), 'utf8');
-
 test('personal and shared review composers keep audio, text and send actions in one message bar', () => {
   const personal = component('../main.jsx');
   const shared = component('SharedReviewRoom.jsx');
@@ -15,7 +13,6 @@ test('personal and shared review composers keep audio, text and send actions in 
   assert.match(shared, /<PriorityCommands value=\{draft\.text\}/);
   assert.match(shared, /priority:parsed\.priority/);
 });
-
 test('WhatsApp-style icon controls remain accessible and retain recording status', () => {
   const audio = component('AudioCommentInput.jsx');
   assert.match(audio, /aria-label="Adjuntar MP3 u otro audio"/);
@@ -24,7 +21,6 @@ test('WhatsApp-style icon controls remain accessible and retain recording status
   assert.match(audio, /role="status">Grabando/);
   assert.match(audio, /aria-hidden="true" viewBox="0 0 24 24"/);
 });
-
 test('composer bar maintains keyboard focus and 44px touch controls', () => {
   const css = component('comment-composer.css');
   assert.match(css, /composer-message-bar:focus-within/);
@@ -32,7 +28,6 @@ test('composer bar maintains keyboard focus and 44px touch controls', () => {
   assert.match(css, /@media\(pointer:coarse\)[\s\S]*?height:44px;min-height:44px/);
   assert.doesNotMatch(css, /transition:\s*all/);
 });
-
 test('review comments panel can be collapsed and reopened with an accessible toggle',()=>{
  const source=component('../main.jsx'),shared=component('SharedReviewRoom.jsx'),css=component('comment-composer.css');
  assert.match(source,/comments-collapse-toggle[\s\S]*?aria-expanded=\{!collapsed\}/);
@@ -47,7 +42,6 @@ test('review comments panel can be collapsed and reopened with an accessible tog
  assert.doesNotMatch(css,/top:130px;right:14px/,'the old overlay position must not return');
  assert.match(css,/@media\(max-width:780px\)[\s\S]*?comments-panel\.comments-collapsed/);
 });
-
 test('composer starts compact and reveals contextual help during composition',()=>{
  const css=component('comment-composer.css');
  assert.match(css,/composer-message-bar textarea:placeholder-shown\{height:52px;min-height:52px;max-height:52px;padding-block:4px;overflow-y:hidden\}/);
@@ -58,7 +52,6 @@ test('composer starts compact and reveals contextual help during composition',()
  assert.match(css,/resize:none/);
  assert.match(component('MentionInput.jsx'),/placeholder:'Escribe un mensaje…',rows:1/);
 });
-
 test('focused composer keeps metadata out of normal flow and uses one focus treatment',()=>{
  const css=component('comment-composer.css');
  assert.match(css,/composer-meta\{display:flex;position:absolute/);
@@ -66,7 +59,6 @@ test('focused composer keeps metadata out of normal flow and uses one focus trea
  assert.match(css,/box-shadow:inset 0 0 0 2px var\(--accent\)/);
  assert.match(css,/composer-input:has\(.composer-meta>button\) textarea\{padding-right:32px\}/);
 });
-
 test('priority commands remain connected and reference attachments stay available in personal review',()=>{
  const personal=component('../main.jsx'),shared=component('SharedReviewRoom.jsx');
  assert.match(personal,/priority:parsed.priority,text:parsed.text/);
@@ -75,4 +67,17 @@ test('priority commands remain connected and reference attachments stay availabl
  assert.match(personal,/aria-label="Filtrar por prioridad"/);
  assert.match(shared,/aria-label="Filtrar por prioridad"/);
  for(const command of ['/urgente','/bloqueo','/normal'])assert.ok(component('ShortcutHelp.jsx').includes(command));
+});
+
+test('shared review rail matches the compact local panel geometry',()=>{
+ const css=component('review-comments-restored.css');
+ assert.match(css,/shared-original-review\{--panel:390px\}/);
+ assert.match(css,/shared-original-comments>\.panel-head\{[^}]*min-height:84px/);
+ assert.match(css,/shared-original-comments \.comment-card\{padding:16px 0\}/);
+ assert.match(css,/shared-original-comments \.restored-composer>\.composer-message-bar\{[^}]*display:grid;grid-template-columns:40px minmax\(0,1fr\) 40px/);
+ assert.match(css,/shared-original-comments \.restored-composer>\.composer-message-bar \.audio-comment-input\{display:contents/);
+ assert.match(css,/shared-original-comments \.restored-composer>\.composer-message-bar textarea\{[^}]*height:52px;min-height:52px/);
+ assert.match(component('SharedReviewRoom.jsx'),/comment-toolbar"><div className="comment-tabs"[\s\S]*?comment-search/);
+ assert.match(component('SharedReviewRoom.jsx'),/comment-toolbar">[\s\S]*?<label className="priority-filter">Prioridad/);
+ assert.doesNotMatch(component('SharedReviewRoom.jsx'),/priorityMenuOpen/);
 });
