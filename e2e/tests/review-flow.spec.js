@@ -43,7 +43,10 @@ test('registro, subir pieza y comentar; todo sigue ahí al volver a entrar', asy
   const organizeMetrics = await modeMetrics();
   const organizeCard = await cardBounds();
   await page.getByRole('button', { name: 'Revisar', exact: true }).click();
-  expect(organizeMetrics.map(item => item.width)).toEqual([74, 62]);
+  expect(organizeMetrics.map(item => item.width)).toEqual([68, 68]);
+  expect(organizeMetrics.map(item => item.height)).toEqual([32, 32]);
+  expect(reviewMetrics.map(item => item.width)).toEqual([68, 68]);
+  expect(reviewMetrics.map(item => item.height)).toEqual([32, 32]);
   expect(organizeMetrics.map(item => item.weight)).toEqual(reviewMetrics.map(item => item.weight));
   expect(organizeCard).toEqual(reviewCard);
 
