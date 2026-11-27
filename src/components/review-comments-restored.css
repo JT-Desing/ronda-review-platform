@@ -70,6 +70,7 @@
 .app-shell .comments-panel.shared-original-comments .comment-card .comment-foot{margin-left:36px;padding:0}
 .app-shell .comments-panel.shared-original-comments .comment-card .comment-foot button{min-height:32px;padding:0 4px;font-size:10px}
 .app-shell .comments-panel.shared-original-comments .restored-composer{padding:10px 16px 16px;max-height:none;overflow:visible}
+.app-shell .comments-panel.shared-original-comments .restored-composer{padding-bottom:6px}
 .app-shell .comments-panel.shared-original-comments .restored-composer>.composer-message-bar{box-sizing:border-box;display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:center;gap:4px;width:100%;min-width:0;min-height:58px;height:auto;padding:4px;border:1px solid var(--line);border-radius:26px;background:var(--surface-2);box-shadow:none;overflow:visible}
 .app-shell .comments-panel.shared-original-comments .restored-composer>.composer-message-bar:focus-within{border-color:var(--line-strong);box-shadow:none}
 .app-shell .comments-panel.shared-original-comments .restored-composer>.composer-message-bar .audio-comment-input{display:contents;flex:none;width:auto;margin:0;padding:0;border:0}
