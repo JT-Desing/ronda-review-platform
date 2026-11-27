@@ -18,7 +18,8 @@ test('team projects open the review room rather than a second project interface'
   assert.match(grid,/storyboard-card-copy/,'shared cards use the same compact content hierarchy as the local board');
   assert.match(grid,/import '\.\.\/delivery-grid\.css'/,'the shared project grid uses the same visual rules as the local board');
   assert.match(grid,/Abrir para revisar/,'review cards expose the local review affordance');
-  assert.match(grid,/DeliveryPositionPicker/);
+  assert.match(grid,/<select aria-label=\{`Posición de \$\{asset\.name\}`\}/,'shared cards use the same compact native position selector as the local board');
+  assert.doesNotMatch(grid,/DeliveryPositionPicker/,'the shared cards do not use the wider custom position popover');
   assert.match(grid,/onTrash\(removing\)/);
   assert.match(grid,/onRestore\(asset\)/);
   assert.match(grid,/beginDeleteSelection\(asset\.id\)/,'the card trash action should begin multi-piece selection with that piece checked');
@@ -38,6 +39,11 @@ test('team projects open the review room rather than a second project interface'
   assert.match(media,/Una o más piezas cambiaron/);
   const polish=readFileSync(new URL('./delivery-grid-polish.css',import.meta.url),'utf8');
   const geometry=readFileSync(new URL('../delivery-grid.css',import.meta.url),'utf8');
+  const reviewLayout=readFileSync(new URL('./shared-review-layout-fix.css',import.meta.url),'utf8');
+  assert.match(reviewLayout,/shared-original-review\{grid-template-columns:minmax\(0,1fr\) var\(--panel,350px\)\}/,'the production comments panel uses the local review panel width');
+  assert.doesNotMatch(reviewLayout,/clamp\(420px,22vw,520px\)/,'the shared comments panel does not expand beyond the local width');
+  assert.match(geometry,/shared-delivery-controls li\{position:relative\}/,'the deletion control is positioned against its card without affecting layout');
+  assert.match(geometry,/shared-delivery-controls \.asset-delete\{position:absolute/,'the trash action overlays its card and does not change its dimensions');
   assert.match(geometry,/grid-auto-rows:290px/,'desktop cards keep the local fixed height in both modes');
   assert.match(geometry,/grid-auto-rows:276px/,'mobile cards keep the local fixed height in both modes');
   assert.match(polish,/animation:delivery-card-select 200ms/,'selected cards receive a subtle selection animation');

@@ -242,13 +242,7 @@
 .app-shell .delivery-grid.storyboard .storyboard-order label{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;margin:0;color:var(--muted);font:400 10px/1 var(--font-ui);white-space:nowrap}
 .app-shell .delivery-grid.storyboard .storyboard-order select{height:30px;min-width:42px;box-sizing:border-box;padding:0 5px;border:1px solid #ffffff1a;border-radius:5px;background:#211e27;color:var(--text);font:500 11px/1 var(--font-ui);font-variant-numeric:tabular-nums}
 .app-shell .delivery-grid.storyboard .storyboard-position-total{color:var(--faint);font:400 10px/1 var(--font-ui);font-variant-numeric:tabular-nums}
-.app-shell .delivery-grid.storyboard .delivery-position-picker{position:relative;min-width:0;color:var(--muted);font:400 10px/1 var(--font-ui)}
-.app-shell .delivery-grid.storyboard .delivery-position-picker summary{display:flex;min-height:30px;box-sizing:border-box;align-items:center;justify-content:center;gap:5px;padding:0 5px;border:1px solid #ffffff1a;border-radius:5px;background:#211e27;color:var(--muted);font:400 10px/1 var(--font-ui);white-space:nowrap}
-.app-shell .delivery-grid.storyboard .delivery-position-picker summary strong{color:var(--text);font:500 11px/1 var(--font-ui);font-variant-numeric:tabular-nums}
-.app-shell .delivery-grid.storyboard .delivery-position-picker summary .delivery-position-total{color:var(--faint);font:400 10px/1 var(--font-ui);font-variant-numeric:tabular-nums}
-.app-shell .delivery-grid.storyboard .delivery-position-picker summary svg{width:12px;height:12px;flex:0 0 12px}
-.app-shell .delivery-grid.storyboard .delivery-position-picker summary:focus-visible{outline:2px solid #d0b5ff;outline-offset:-2px}
-.app-shell .shared-delivery-controls .storyboard-order{padding-right:50px}
+.app-shell .delivery-grid.storyboard .storyboard-order{min-inline-size:0;border:0;margin:0;padding:6px 8px}
 .app-shell .delivery-grid.storyboard .storyboard-review-footer{grid-template-columns:minmax(0,1fr) 24px;padding-inline:14px;color:#c6c0ce;font:400 10px/1.2 var(--font-ui);letter-spacing:.01em}
 .app-shell .delivery-grid.storyboard .storyboard-review-footer svg{width:16px;height:16px;fill:none;stroke:#b89be8;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .app-shell .delivery-grid.storyboard>small{display:block;margin-top:8px;color:var(--faint);font:400 10px/14px var(--font-ui)}
@@ -275,3 +269,11 @@
   .app-shell .delivery-grid.storyboard.review ol{grid-template-columns:minmax(0,1fr)!important}
 }
 @media(prefers-reduced-motion:reduce){.app-shell .delivery-grid.storyboard li,.app-shell .delivery-grid.storyboard .storyboard-modes button{transition:none}}
+
+/* Keep shared-project actions available without changing the local card geometry. */
+.app-shell .shared-delivery-controls li{position:relative}
+.app-shell .shared-delivery-controls .asset-delete{position:absolute;top:44px;right:8px;z-index:2;display:grid;width:32px;height:32px;min-width:32px;min-height:32px;box-sizing:border-box;place-items:center;margin:0;padding:0;border:1px solid #795965;border-radius:7px;background:#211a22;color:#d8aeba;opacity:0;pointer-events:none;transition:opacity 140ms ease}
+.app-shell .shared-delivery-controls li:hover .asset-delete,.app-shell .shared-delivery-controls li:focus-within .asset-delete{opacity:1;pointer-events:auto}
+.app-shell .shared-delivery-controls .asset-delete:focus-visible{outline:2px solid #d0b5ff;outline-offset:2px}
+@media(hover:none){.app-shell .shared-delivery-controls .asset-delete{opacity:1;pointer-events:auto}}
+@media(prefers-reduced-motion:reduce){.app-shell .shared-delivery-controls .asset-delete{transition:none}}

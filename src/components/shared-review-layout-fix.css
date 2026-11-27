@@ -159,7 +159,7 @@
 @media(max-width:680px){.shared-projects .shared-delivery-grid{grid-template-columns:1fr}.shared-projects[data-mode="gallery"]>.shared-layout>.shared-list.studio-project-grid{grid-template-columns:1fr}}
 
 /* Shared review comments follow the flatter, denser local review panel. */
-@media(min-width:1051px){.shared-projects .shared-review-room .shared-original-review{grid-template-columns:minmax(0,1fr) clamp(420px,22vw,520px)}}
+@media(min-width:1051px){.shared-projects .shared-review-room .shared-original-review{grid-template-columns:minmax(0,1fr) var(--panel,350px)}}
 .shared-projects .shared-original-comments{background:var(--surface-1);}
 .shared-projects .shared-original-comments .comment-toolbar{position:relative;display:flex;align-items:center;gap:8px;padding:12px 18px;border-bottom:1px solid var(--line)}
 .shared-projects .shared-original-comments .comment-search{flex:1;min-width:0}
