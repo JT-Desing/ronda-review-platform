@@ -8,9 +8,10 @@ export async function reviewRequest(path,options={}){
   return jsonRequest(path,options);
 }
 export const reviewSend=(path,method,input)=>reviewRequest(path,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});
-export async function getRoom(c){
-  const [room,feedback]=await Promise.all([reviewRequest(versionPath(c)),reviewRequest(versionPath(c)+'/comments')]);return {...room,...feedback};
+export async function getRoom(c,{status='open'}={}){
+  const [room,feedback]=await Promise.all([reviewRequest(versionPath(c)),reviewRequest(versionPath(c)+`/comments?status=${encodeURIComponent(status)}`)]);return {...room,...feedback};
 }
+export const getRoomComments=(c,{status='open',cursor}={})=>reviewRequest(versionPath(c)+`/comments?status=${encodeURIComponent(status)}${cursor?`&cursor=${encodeURIComponent(cursor)}`:''}`);
 export const postComment=(c,input)=>reviewSend(versionPath(c)+'/comments','POST',input);
 export const postDecision=(c,input)=>reviewSend(versionPath(c)+'/decisions','POST',input);
 export async function uploadFile(c,file,requestId,onProgress,signal){

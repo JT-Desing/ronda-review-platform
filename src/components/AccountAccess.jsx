@@ -245,16 +245,21 @@ export default function AccountAccess({ children }) {
     {!signupRecovery&&invitation?.oneClick&&<InvitationEntryCard invitation={invitation} busy={busy} error={error} onEnter={enterByInvitation} onManual={()=>setInvitation({...invitation,oneClick:false})}/>}
     {!signupRecovery&&!invitation?.oneClick&&<>
     {invitation&&<p className="account-invitation-note" role="status">Te invitaron a <strong>{invitation.workspaceName}</strong> como {ROLE_LABELS[invitation.role]}. {invitation.accountExists?'Inicia sesión con tu cuenta para aceptar.':'Completa tus datos para crear la cuenta y entrar.'}</p>}
-    <h1>{mode === 'login' ? 'Tu próxima ronda empieza aquí.' : 'Crea tu espacio de revisión.'}</h1>
-    <p>Proyectos, archivos y comentarios guardados en tu servidor.</p>
+    <h1>{mode === 'login' ? 'Revisa, comenta y avanza en equipo.' : 'Empieza tu próxima ronda.'}</h1>
+    <p>{mode === 'login'
+      ? 'Ronda reúne tus proyectos, piezas y comentarios para que cada entrega avance con claridad.'
+      : 'Crea proyectos, comparte piezas y deja comentarios justo donde hacen falta.'}</p>
     <div className="account-tabs"><button aria-pressed={mode === 'login'} onClick={() => { setMode('login'); setPasswordVisible(false); setError(''); setDuplicateRegistration(false); }}>Iniciar sesión</button><button aria-pressed={mode === 'register'} onClick={() => { setMode('register'); setPasswordVisible(false); setError(''); setDuplicateRegistration(false); }}>Crear cuenta</button></div>
+    <p className="account-mode-hint">{mode === 'login'
+      ? <>¿Aún no tienes cuenta? <button type="button" onClick={() => { setMode('register'); setError(''); setDuplicateRegistration(false); }}>Crea una y empieza a revisar con tu equipo.</button></>
+      : <>¿Ya tienes cuenta? <button type="button" onClick={() => { setMode('login'); setError(''); setDuplicateRegistration(false); }}>Inicia sesión.</button></>}</p>
     {google && <button className="account-primary" onClick={() => location.assign('/api/auth/google')}>Continuar con Google</button>}
     <form onSubmit={submit}>
       {mode === 'register' && <label>Nombre<input name="name" autoComplete="name" required maxLength={100} defaultValue={invitation?.name||''}/></label>}
       <label>Correo<input name="email" type="email" autoComplete="email" required maxLength={254} value={email} onChange={event=>setEmail(event.target.value)} readOnly={Boolean(invitation)} aria-describedby={invitation?'invited-email-hint':undefined}/>{invitation&&<small id="invited-email-hint">La invitación es para este correo.</small>}</label>
       <label className="account-password-label">Contraseña<span className="account-password-field"><input name="password" type={passwordVisible?'text':'password'} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} aria-describedby={mode === 'register'?'signup-password-hint':undefined} required minLength={12} maxLength={128}/><button className="account-password-toggle" type="button" aria-label={passwordVisible?'Ocultar contraseña':'Mostrar contraseña'} aria-pressed={passwordVisible} onClick={()=>setPasswordVisible(value=>!value)}>{passwordVisible?'Ocultar':'Mostrar'}</button></span></label>
       {mode === 'register' && <>
-        <small id="signup-password-hint">Usa al menos 12 caracteres. La recuperación de cuenta depende de que el correo esté configurado en el servidor.</small>{mode==='register'&&<PrivacyCheckbox name="acceptPrivacy"/>}
+        <small id="signup-password-hint">Usa una contraseña de al menos 12 caracteres.</small>{mode==='register'&&<PrivacyCheckbox name="acceptPrivacy"/>}
         <fieldset className="signup-workspace-choice" hidden={Boolean(invitation)}>
           <legend>¿Cómo quieres empezar?</legend>
           <small>Tu espacio personal es privado. Si creas o aceptas una invitación, entraremos a ese equipo al terminar.</small>
@@ -270,14 +275,13 @@ export default function AccountAccess({ children }) {
       <button className="account-primary" disabled={busy||(mode==='register'&&signupWorkspace.choice==='create'&&!isValidTeamName(signupWorkspace.name))||(mode==='register'&&signupWorkspace.choice==='join'&&!isValidInvitationCode(signupWorkspace.code))}>{busy ? <BrandLoader size="inline" label="Conectando…"/> : mode === 'login' ? 'Entrar a Ronda' : signupWorkspace.choice==='create'?'Crear cuenta y equipo':signupWorkspace.choice==='join'?'Crear cuenta y unirme':'Crear cuenta'}</button>
     </form>
     {mode==='login'&&<button className="account-text-button" type="button" onClick={()=>{setError('');setRecoveryMode(true);}}>¿Olvidaste tu contraseña?</button>}
-    <p className="account-note">{!google && 'Google pendiente de configuración. '}Los datos viven en el PC que aloja Ronda; si está apagado, el servicio no estará disponible.</p>
     </>}
   </section></main>;
   if(!user.privacyAccepted)return <PrivacyConsent user={user} onAccepted={()=>setUser(current=>({...current,privacyAccepted:true}))} onLogout={logout}/>;
   return <>
     {recovery}
     {error && <div className="account-alert" role="alert">{error}</div>}
-    {pending ? <div className="account-alert">Hay una copia local con cambios pendientes.
+    {pending ? <div className="account-alert">Hay una copia del navegador con cambios pendientes.
       <button disabled={busy} onClick={async () => { try { recoverCopy(pending); await flushAccount(); setMount(v => v + 1); setPending(null); } catch (e) { setError(e.message); } }}>Recuperar copia</button>
       <button onClick={useServerVersion}>Usar versión del servidor</button>
       <button onClick={() => { const url=URL.createObjectURL(new Blob([JSON.stringify(pending)],{type:'application/json'})); const link=document.createElement('a'); link.href=url;link.download='ronda-cambios-pendientes.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000); }}>Descargar copia pendiente</button>

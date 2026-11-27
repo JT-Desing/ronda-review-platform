@@ -28,6 +28,13 @@ try{
  do{const page=await json(commentsPath+(cursor?'?cursor='+encodeURIComponent(cursor):''));pages.push(page);seen.push(...page.comments.map(c=>c.id));cursor=page.nextCursor;assert.ok(pages.length<=3,'cursor must terminate');}while(cursor);
  assert.deepEqual(pages.map(p=>p.comments.length),[50,50,20]);assert.equal(new Set(seen).size,120);assert.deepEqual(seen,expected);assert.ok(pages.every(page=>page.comments.every(comment=>comment.status==='open')));
  assert.deepEqual((await json(commentsPath+'?cursor='+encodeURIComponent(pages[0].nextCursor))).comments.map(c=>c.id),pages[1].comments.map(c=>c.id),'cursor replay is stable');
+ const resolvedPage=await json(commentsPath+'?status=resolved');assert.equal(resolvedPage.comments.length,3);assert.ok(resolvedPage.comments.every(comment=>comment.status==='resolved'));assert.equal(resolvedPage.nextCursor,null);
+ const allExpected=(await f.pool.query("SELECT id FROM shared_version_comments WHERE version_id=$1 ORDER BY created_at,id",[version.id])).rows.map(r=>r.id);
+ cursor=null;const allPages=[],allSeen=[];
+ do{const suffix=`?status=all${cursor?'&cursor='+encodeURIComponent(cursor):''}`;const page=await json(commentsPath+suffix);allPages.push(page);allSeen.push(...page.comments.map(c=>c.id));cursor=page.nextCursor;assert.ok(allPages.length<=3,'all-status cursor must terminate');}while(cursor);
+ assert.deepEqual(allPages.map(p=>p.comments.length),[50,50,23]);assert.deepEqual(allSeen,allExpected);assert.equal(new Set(allSeen).size,123);
+ assert.equal((await call(commentsPath+`?status=resolved&cursor=${encodeURIComponent(pages[0].nextCursor)}`)).status,400,'a cursor cannot cross comment filters');
+ assert.equal((await call(commentsPath+'?status=archived')).status,400,'unknown status filters are rejected');
  const last=expected.at(-1),terminal=Buffer.from(JSON.stringify({versionId:version.id,time:'2026-01-01 12:00:00.123456+00',id:last})).toString('base64url');
  const terminalPage=await json(commentsPath+'?cursor='+terminal);
  assert.deepEqual(terminalPage.comments,[]);assert.equal(terminalPage.nextCursor,null);
@@ -40,5 +47,5 @@ try{
  // Invalid calendar dates pass Date.parse by rollover but must not become server errors.
  const invalidDate=Buffer.from(JSON.stringify({versionId:version.id,id:last,time:'2026-02-30T00:00:00Z'})).toString('base64url');
  assert.equal((await call(commentsPath+'?cursor='+invalidDate)).status,400);
- console.log('PASS HTTP pagination: only 120 open comments returned across 50/50/20 pages; three resolved rows remain counted and hidden; cursor ties/replay/end, role/scope and malformed cursor rejection.');
+ console.log('PASS HTTP pagination: open (50/50/20), resolved (3), and all (50/50/23) filters return correct rows; cursors are stable and filter-bound; role/scope and malformed cursor rejection.');
 }finally{if(server)await new Promise(r=>server.close(r));await f.close();}

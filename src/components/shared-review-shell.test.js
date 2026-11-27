@@ -42,5 +42,8 @@ test('shared room preserves the original review shell and asset controls',()=>{
   assert.match(source,/className="asset-bar"/);
   assert.match(source,/className="social-mode-switch"/);
   assert.match(source,/OriginalMediaStage/);
+  assert.match(source,/role="tablist" aria-label="Estado de comentarios"/,'the shared comments panel exposes the three local review filters');
+  assert.match(source,/getRoomComments/,'changing comment status fetches its own correctly paginated result set');
+  assert.match(source,/pendientes de \{counts\.total\}/,'the panel count includes open and total comments');
   assert.doesNotMatch(source,/className="shared-review-heading"/);
 });

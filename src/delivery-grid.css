@@ -89,12 +89,6 @@
 /* Keep the two mode controls the same size in both states; the longer label gets a little more room. */
 .app-shell .storyboard-modes button:first-child{width:74px;min-width:74px;max-width:74px}
 .app-shell .storyboard-modes button:last-child{width:62px;min-width:62px;max-width:62px}
-/* The component-level stability sheet has higher specificity; override it here so
-   the labels keep their intended 74/62 split in both Organizar and Revisar. */
-.app-shell .delivery-grid.storyboard .storyboard-modes{grid-template-columns:74px 62px}
-.app-shell .delivery-grid.storyboard .storyboard-modes button{width:100%;min-width:0;max-width:none}
-.app-shell .delivery-grid.storyboard .storyboard-modes button:first-child,
-.app-shell .delivery-grid.storyboard .storyboard-modes button:last-child{width:100%;min-width:0;max-width:none}
 .app-shell .delivery-grid.storyboard .upload-button{
   display:inline-flex;
   height:38px;

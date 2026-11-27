@@ -50,7 +50,7 @@ export async function handleSharedReview({req,res,path,account,pool,sharedStorag
   if(parts[9]==='decisions'&&parts.length===10&&req.method==='POST')return reply(res,200,await sharedDecisionService(repository).decide(space,account.id,context,await input()));
   if(parts[9]==='comments'){
     const comments=sharedCommentService(repository);
-    if(parts.length===10&&req.method==='GET')return reply(res,200,await comments.listComments(space,account.id,context,{cursor:new URL(req.url,'https://local').searchParams.get('cursor')}));
+    if(parts.length===10&&req.method==='GET'){const query=new URL(req.url,'https://local').searchParams;return reply(res,200,await comments.listComments(space,account.id,context,{cursor:query.get('cursor'),status:query.get('status')||'open'}));}
     if(parts.length===10&&req.method==='POST')return reply(res,201,await comments.addComment(space,account.id,context,await input(6000000)));
     const id=uuid(parts[10]);
     if(parts.length===13&&parts[11]==='audio'&&req.method==='GET'){const audio=await comments.readAudio(space,account.id,context,id,uuid(parts[12]));res.writeHead(200,{'Content-Type':audio.mime,'Content-Length':audio.bytes.length,'X-Content-Type-Options':'nosniff','Cache-Control':'private, no-store'});res.end(audio.bytes);return;}
