@@ -6,12 +6,17 @@ test('team projects open the review room rather than a second project interface'
   assert.match(source,/setSelected\(current=>active\.assets\.some\(asset=>asset\.id===current\)\?current:active\.assets\[0\]\?\.id/);
   assert.match(source,/<SharedDeliveryGrid/);
   const grid=readFileSync(new URL('./SharedDeliveryGrid.jsx',import.meta.url),'utf8');
-  assert.match(grid,/storyboard-disclosure expanded shared-delivery-controls/);
+  assert.match(grid,/storyboard-disclosure \$\{expanded\?'expanded':'folded'\} shared-delivery-controls/);
   assert.match(grid,/parrilla-disclosure-chevron/,'the disclosure affordance should show an explicit chevron');
   assert.match(grid,/parrilla-action-open/);
   assert.match(grid,/parrilla-action-closed/);
   assert.match(grid,/delivery-empty-state/);
   assert.match(grid,/assets.length>0&&<div className="storyboard-modes"/);
+  assert.match(grid,/<small>\{assets.length\} \{assets.length===1\?'pieza':'piezas'\} en esta entrega<\/small>/,'the delivery header uses the concise local count');
+  assert.doesNotMatch(grid,/orden manual · almacenamiento del equipo|delivery-upload-help/,'the shared view should not show technical storage instructions');
+  assert.match(grid,/Math.max\(reviewMain\?\.scrollTop\|\|0,window\.scrollY\|\|0\)>96/,'the delivery board collapses after scrolling either review container');
+  assert.match(grid,/storyboard-card-copy/,'shared cards use the same compact content hierarchy as the local board');
+  assert.match(grid,/Abrir para revisar/,'review cards expose the local review affordance');
   assert.match(grid,/DeliveryPositionPicker/);
   assert.match(grid,/onTrash\(removing\)/);
   assert.match(grid,/onRestore\(asset\)/);
