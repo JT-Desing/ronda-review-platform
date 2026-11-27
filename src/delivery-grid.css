@@ -47,7 +47,7 @@
 .app-shell .storyboard-actions{display:flex;flex:0 0 auto;align-items:center;gap:8px}
 .app-shell .storyboard-modes{
   display:grid;
-  grid-template-columns:74px 62px;
+  grid-template-columns:repeat(2,68px);
   width:146px;
   height:40px;
   box-sizing:border-box;
@@ -83,12 +83,19 @@
   transform:none;
   transition:background-color 140ms ease,color 140ms ease,border-color 140ms ease;
 }
+/* Older workspace rules assign a taller minimum only in Organizar. Pin both modes to one geometry. */
+.app-shell .delivery-grid.storyboard.organize .storyboard-modes button,
+.app-shell .delivery-grid.storyboard.review .storyboard-modes button{
+  width:68px;
+  min-width:68px;
+  max-width:68px;
+  height:32px;
+  min-height:32px;
+  max-height:32px;
+}
 .app-shell .storyboard-modes button:hover:not([aria-pressed=true]){background:var(--surface-2);color:var(--text)}
 .app-shell .storyboard-modes button[aria-pressed=true]{border-color:#a98ad533;background:#332b3d;color:#f4edff;font-weight:500}
 .app-shell .storyboard-modes button:focus-visible{outline:2px solid #d0b5ff;outline-offset:-2px;box-shadow:none}
-/* Keep the two mode controls the same size in both states; the longer label gets a little more room. */
-.app-shell .storyboard-modes button:first-child{width:74px;min-width:74px;max-width:74px}
-.app-shell .storyboard-modes button:last-child{width:62px;min-width:62px;max-width:62px}
 .app-shell .delivery-grid.storyboard .upload-button{
   display:inline-flex;
   height:38px;
@@ -204,24 +211,19 @@
 .app-shell .delivery-grid.storyboard.review .storyboard-card-copy{display:flex;width:100%;min-width:0;box-sizing:border-box;flex:1 1 auto;flex-direction:column;gap:7px;min-height:0;overflow:hidden;padding:11px 12px 10px}
 .app-shell .delivery-grid.storyboard.organize .storyboard-card-copy>strong,
 .app-shell .delivery-grid.storyboard.review .storyboard-card-copy>strong{
-  display:-webkit-box;
+  display:block;
   width:100%;
   max-width:100%;
   min-width:0;
-  height:auto;
-  min-height:17px;
-  max-height:34px;
+  height:17px;
   margin:0;
   padding:0;
   overflow:hidden;
   color:var(--text);
-  font:600 12px/1.4 var(--font-ui);
+  font:600 12px/17px var(--font-ui);
   letter-spacing:0;
   text-overflow:ellipsis;
-  white-space:normal;
-  overflow-wrap:anywhere;
-  -webkit-box-orient:vertical;
-  -webkit-line-clamp:2;
+  white-space:nowrap;
 }
 .app-shell .delivery-grid.storyboard.organize .storyboard-meta,
 .app-shell .delivery-grid.storyboard.review .storyboard-meta{display:flex;align-items:center;gap:5px;color:var(--muted);font:400 10px/1.2 var(--font-ui)}
