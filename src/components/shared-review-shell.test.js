@@ -41,8 +41,11 @@ test('team projects open the review room rather than a second project interface'
   const geometry=readFileSync(new URL('../delivery-grid.css',import.meta.url),'utf8');
   const reviewLayout=readFileSync(new URL('./shared-review-layout-fix.css',import.meta.url),'utf8');
   assert.match(reviewLayout,/shared-original-review\{grid-template-columns:minmax\(0,1fr\) var\(--panel,350px\)\}/,'the production comments panel uses the local review panel width');
-  assert.match(reviewLayout,/shared-original-comments\{box-sizing:border-box;position:fixed;z-index:30;top:100px;right:0;bottom:0/,'the comments rail is pinned to the viewport so page scroll cannot move or release it');
-  assert.doesNotMatch(reviewLayout,/shared-original-comments\{[^}]*position:sticky/,'the comments rail must not rely on sticky positioning that can jump at a parent boundary');
+  assert.match(reviewLayout,/dashboard-page\.shared-projects:has\(\.shared-review-room\)\{display:flex;flex:1 1 0;flex-direction:column;min-height:0;overflow:hidden\}/,'the shared review fills the available workspace like the local review shell');
+  assert.match(reviewLayout,/shared-review-room>\.topbar\{position:relative;top:auto;flex:0 0 auto\}/,'the review toolbar stays in the layout above the comments panel');
+  assert.match(reviewLayout,/shared-original-comments\{box-sizing:border-box;position:relative;top:auto;right:auto;bottom:auto;left:auto;z-index:auto/,'the comments panel remains in the review grid below the toolbar instead of overlaying it');
+  assert.match(reviewLayout,/shared-original-comments>\.comments-scroll\{flex:1 1 0;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain\}/,'only the comment list scrolls inside the stationary panel');
+  assert.doesNotMatch(reviewLayout,/shared-review-room \.shared-original-comments\{[^}]*position:fixed/,'the comments panel must not escape its local workspace layout');
   assert.doesNotMatch(reviewLayout,/clamp\(420px,22vw,520px\)/,'the shared comments panel does not expand beyond the local width');
   assert.match(geometry,/shared-delivery-controls li\{position:relative\}/,'the deletion control is positioned against its card without affecting layout');
   assert.match(geometry,/shared-delivery-controls \.asset-delete\{position:absolute/,'the trash action overlays its card and does not change its dimensions');

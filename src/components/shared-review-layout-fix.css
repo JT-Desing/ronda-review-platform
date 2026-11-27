@@ -193,14 +193,17 @@
 .shared-projects .shared-original-comments .shared-original-composer{padding:14px 18px;border-top:1px solid var(--line);background:var(--surface-1)}
 @media(max-width:1050px){.shared-projects .shared-original-review{grid-template-columns:minmax(0,1fr)}.shared-projects .shared-original-comments{height:650px;max-height:none}.shared-projects .shared-original-comments .comment-toolbar{padding:12px 16px}}
 
-/* Keep the comments workspace in the viewport; scrolling belongs to the list. */
-.shared-projects .shared-review-room .shared-original-review{align-items:start}
-.shared-projects .shared-review-room .shared-original-comments{box-sizing:border-box;position:fixed;z-index:30;top:100px;right:0;bottom:0;left:auto;align-self:stretch;width:var(--panel,390px);height:auto;max-height:none;min-height:0;overflow:hidden}
-.shared-projects .shared-review-room .shared-original-comments>.panel-head,.shared-projects .shared-review-room .shared-original-comments>.comment-toolbar{flex:0 0 auto}
-.shared-projects .shared-review-room .shared-original-comments>.comments-scroll{flex:1 1 0;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
-.shared-projects .shared-review-room .shared-original-comments>.shared-original-composer{flex:0 0 auto;max-height:none;overflow:visible}
-@media(max-width:1050px){
-  .shared-projects .shared-review-room .shared-original-comments{width:min(500px,calc(100vw - 48px));height:auto;border-left:1px solid var(--line);border-top:0;box-shadow:-16px 0 36px #0005}
+/* Match the local review shell: toolbar and review columns share one viewport layout. */
+@media(min-width:1051px){
+  .app-shell .dashboard-page.shared-projects:has(.shared-review-room){display:flex;flex:1 1 0;flex-direction:column;min-height:0;overflow:hidden}
+  .shared-projects .shared-review-room{display:flex;flex:1 1 0;flex-direction:column;min-height:0;overflow:hidden}
+  .shared-projects .shared-review-room>.topbar{position:relative;top:auto;flex:0 0 auto}
+  .shared-projects .shared-review-room .shared-original-review{flex:1 1 0;grid-template-columns:minmax(0,1fr) var(--panel,350px);min-height:0;overflow:hidden}
+  .shared-projects .shared-review-room .shared-original-review>.review-main{min-height:0;overflow:auto}
+  .shared-projects .shared-review-room .shared-original-comments{box-sizing:border-box;position:relative;top:auto;right:auto;bottom:auto;left:auto;z-index:auto;align-self:stretch;width:100%;height:auto;min-height:0;max-height:none;overflow:hidden}
+  .shared-projects .shared-review-room .shared-original-comments>.panel-head,.shared-projects .shared-review-room .shared-original-comments>.comment-toolbar{flex:0 0 auto}
+  .shared-projects .shared-review-room .shared-original-comments>.comments-scroll{flex:1 1 0;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+  .shared-projects .shared-review-room .shared-original-comments>.shared-original-composer{flex:0 0 auto;max-height:none;overflow:visible}
 }
 @media(prefers-reduced-motion:reduce){.shared-projects .shared-piece-card{transition:none}}
 .shared-link-change{display:grid;gap:8px;margin:0 0 12px;padding:12px 14px;border:1px solid #3a3342;border-radius:12px;background:#1a1620;color:#e9e4f0}
