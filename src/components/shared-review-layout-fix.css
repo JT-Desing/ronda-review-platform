@@ -23,10 +23,12 @@
 .shared-conversation:has(.shared-project-media)>.shared-general-conversation{margin:24px 0 0;padding:20px;border:1px solid var(--line);border-radius:14px;background:var(--surface-1)}
 .shared-conversation:has(.shared-project-media) .shared-general-conversation .shared-empty{min-height:0;padding:16px 0;margin:0;text-align:left}
 @media(max-width:680px){.shared-conversation:has(.shared-project-media){padding:16px!important}.app-shell .shared-delivery-controls.is-empty .delivery-grid{padding:16px}.delivery-empty-state{padding:28px 8px}.delivery-empty-state h3{font-size:18px}.shared-conversation:has(.shared-project-media)>header{align-items:flex-start}}
-.shared-conversation:has(.shared-media-opening)>.shared-all-projects,.shared-conversation:has(.shared-media-opening)>header,.shared-conversation:has(.shared-media-opening)>form,.shared-conversation:has(.shared-media-opening)>.shared-general-conversation{display:none}
 .review-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;box-sizing:border-box;min-height:calc(100vh - 100px);padding:40px;background:var(--canvas);color:var(--muted);font-size:13px}
 .review-loading strong{font-weight:500;font-size:13px}
-.shared-projects .shared-room-opening,.shared-projects .shared-media-opening{margin:0;padding:0;background:var(--canvas)}
+.shared-projects .shared-room-opening{margin:0;padding:0;background:var(--canvas)}
+.shared-projects .shared-media-opening{box-sizing:border-box;display:grid;place-content:center;gap:12px;min-width:0;min-height:clamp(220px,32vh,340px);margin:20px 0;padding:24px;border:1px solid var(--line);border-radius:14px;background:var(--surface-1);text-align:center}
+.shared-projects .shared-media-opening p[role=alert]{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
+.shared-projects .shared-media-opening button{justify-self:center;min-height:38px;padding:0 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--text);cursor:pointer}
 .workspace:has(.shared-projects[data-mode="project"])>.studio-topbar,.workspace:has(.shared-projects[data-mode="project"])>.abstract-sculpture-background{display:none}
 .app-shell .dashboard-page.shared-projects[data-mode="project"]{padding:0;max-width:none;margin:0}
 .shared-projects .shared-original-review .review-summary{box-sizing:border-box;max-width:960px;margin:16px auto 12px;padding:20px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;border-top:1px solid var(--line)}
@@ -201,7 +203,10 @@
   .shared-projects:has(.shared-review-room)>.shared-layout{display:flex;flex:1 1 0;min-width:0;min-height:0;overflow:hidden}
   .shared-projects[data-mode="project"]>.shared-layout{display:flex}
   .shared-projects:has(.shared-review-room) .shared-conversation{display:flex;flex:1 1 0;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
+  .shared-projects:has(.shared-review-room) .project-invitations,
+  .shared-projects:has(.shared-review-room) .project-access-panel{display:none}
   .shared-projects .shared-review-room{display:flex;flex:1 1 0;flex-direction:column;min-height:0;overflow:hidden}
+  .shared-projects .shared-review-room.shared-room-opening{min-width:0;flex:1 1 0}
   .shared-projects .shared-review-room>.topbar{position:relative;top:auto;flex:0 0 auto}
   .shared-projects .shared-review-room .shared-original-review{flex:1 1 0;grid-template-columns:minmax(0,1fr) var(--panel,350px);min-height:0;overflow:hidden}
   .shared-projects .shared-review-room .shared-original-review>.review-main{min-height:0;overflow:auto}
@@ -210,6 +215,9 @@
   .shared-projects .shared-review-room .shared-original-comments>.comments-scroll{flex:1 1 0;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
   .shared-projects .shared-review-room .shared-original-comments>.shared-original-composer{flex:0 0 auto;max-height:none;overflow:visible}
 }
+.shared-review-open-error{box-sizing:border-box;display:grid;gap:10px;place-content:center;min-height:180px;margin:16px;padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--surface-1);color:var(--text);text-align:center}
+.shared-review-open-error p{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
+.shared-review-open-error button{justify-self:center;min-height:36px;padding:0 14px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface-2);color:var(--text);cursor:pointer}
 @media(prefers-reduced-motion:reduce){.shared-projects .shared-piece-card{transition:none}}
 .shared-link-change{display:grid;gap:8px;margin:0 0 12px;padding:12px 14px;border:1px solid #3a3342;border-radius:12px;background:#1a1620;color:#e9e4f0}
 .shared-link-change label{display:grid;gap:6px;font-size:12px;color:#c9c2d3}

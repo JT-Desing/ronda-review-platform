@@ -19,3 +19,11 @@ Estas eliminaciones no forman parte del cambio visual solicitado. La migración 
 ## Corrección visual en curso
 
 La barra superior y el panel de comentarios deben ocupar filas y columnas del layout del espacio de revisión. Solo la lista de comentarios tendrá scroll propio; el panel no se fija al viewport ni salta al desplazar el contenido. La vista principal conserva su scroll independiente para la parrilla y la pieza.
+
+## Diagnóstico de la vista vacía de Proyectos — 28 de noviembre
+
+La captura que muestra únicamente «Invitar a un cliente» y «Participantes y roles del proyecto» coincide con el estado `.shared-media-opening`: `SharedProjectMedia` lo presenta mientras consulta las piezas y también cuando falla la carga. Una regla anterior ocultaba el encabezado del proyecto, el acceso a todos los proyectos y la conversación general en cuanto aparecía ese estado. El panel de carga/error no tenía altura ni tratamiento visual propios. Por eso una carga prolongada o fallida podía parecer una pantalla vacía, aunque los contenedores de invitación siguieran visibles.
+
+Se retiró esa regla y se dio al estado de carga/error un panel visible y acotado. El estado de error conserva su botón de reintento y el contexto del proyecto permanece en pantalla. En `SharedReviewRoom`, si no llega la pieza después de cargar, también se conserva la parrilla y se muestra un error con reintento.
+
+La comprobación aislada de producción llega al inicio de sesión, no a la sesión autenticada del proyecto. Por eso no afirma que el estado de esa captura haya sido reproducido dentro de la cuenta. La API de salud devolvió `200` y los registros recientes disponibles muestran respuestas `200` para las solicitudes de proyectos, piezas, versiones y comentarios; no se modificaron ni borraron datos.

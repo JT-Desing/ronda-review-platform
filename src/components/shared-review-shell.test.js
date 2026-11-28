@@ -45,6 +45,10 @@ test('team projects open the review room rather than a second project interface'
   assert.match(reviewLayout,/dashboard-page\.shared-projects:has\(\.shared-review-room\)\{display:flex;flex:1 1 0;flex-direction:column;min-height:0;overflow:hidden\}/,'the shared review fills the available workspace like the local review shell');
   assert.match(reviewLayout,/shared-projects:has\(\.shared-review-room\)>\.shared-layout\{display:flex;flex:1 1 0;min-width:0;min-height:0;overflow:hidden\}/,'the project content passes its available height through to the review room');
   assert.match(reviewLayout,/shared-projects:has\(\.shared-review-room\) \.shared-conversation\{display:flex;flex:1 1 0;flex-direction:column;min-width:0;min-height:0;overflow:hidden\}/,'the conversation column does not collapse the review surface');
+  assert.match(reviewLayout,/shared-projects:has\(\.shared-review-room\) \.project-invitations,[\s\S]*?\.project-access-panel\{display:none\}/,'project management accordions stay out of the active review surface');
+  assert.doesNotMatch(reviewLayout,/\.shared-conversation:has\(\.shared-media-opening\)[^}]*display:none/,'project context stays visible while its delivery is loading or retrying');
+  assert.match(reviewLayout,/\.shared-projects \.shared-media-opening\{[^}]*display:grid;[^}]*min-height:clamp\(220px,32vh,340px\)/,'loading and error states use a visible, bounded project panel');
+  assert.match(reviewLayout,/shared-review-open-error\{[^}]*place-content:center/,'a failed review render shows a visible retry state instead of an empty project');
   assert.match(reviewLayout,/shared-review-room>\.topbar\{position:relative;top:auto;flex:0 0 auto\}/,'the review toolbar stays in the layout above the comments panel');
   assert.match(reviewLayout,/shared-original-comments\{box-sizing:border-box;position:relative;top:auto;right:auto;bottom:auto;left:auto;z-index:auto/,'the comments panel remains in the review grid below the toolbar instead of overlaying it');
   assert.match(reviewLayout,/shared-original-comments>\.comments-scroll\{flex:1 1 0;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain\}/,'only the comment list scrolls inside the stationary panel');
@@ -61,8 +65,11 @@ test('team projects open the review room rather than a second project interface'
 });
 test('shared room preserves the original review shell and asset controls',()=>{
   const source=readFileSync(new URL('./SharedReviewRoom.jsx',import.meta.url),'utf8');
+  const media=readFileSync(new URL('./SharedProjectMedia.jsx',import.meta.url),'utf8');
   assert.match(source,/className="topbar"/);
   assert.match(source,/className="asset-bar"/);
+  assert.match(source,/if\(!room\)return <section className="shared-review-room shared-room-opening"[\s\S]*?Reintentar revisión/,'a missing review payload keeps the delivery grid visible and offers retry');
+  assert.match(media,/if\(error&&!assets\.length&&!trash\.length\)return <section className="shared-media-opening"><p role="alert">\{error\}<\/p><button onClick=\{\(\)=>setRefresh\(r=>r\+1\)\}>Reintentar<\/button>/,'failed asset loading keeps a visible, retryable project state');
   assert.match(source,/className="social-mode-switch"/);
   assert.match(source,/OriginalMediaStage/);
   assert.match(source,/role="tablist" aria-label="Estado de comentarios"/,'the shared comments panel exposes the three local review filters');

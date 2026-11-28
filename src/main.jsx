@@ -379,12 +379,14 @@ function App({demo=false,onExitDemo}) {
   const [activeColor, setActiveColor] = useState('#ff725e');
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentsPanelCollapsed,setCommentsPanelCollapsed]=useState(false);
+  const sharedProjectForSidebar=currentView==='projects'?readSharedProjectLink(sharedLinkKey)?.projectId||'':'';
+  const sidebarAutoFoldKey=currentView==='review'?'review':sharedProjectForSidebar?`team:${sharedProjectForSidebar}`:'';
   useEffect(()=>{
-    if(currentView!=='review')return;
+    if(!sidebarAutoFoldKey)return;
     sidebarManualControl.current=false;
     const timer=window.setTimeout(()=>{if(!sidebarManualControl.current)setCollapsed(true)},8000);
     return()=>window.clearTimeout(timer);
-  },[currentView]);
+  },[sidebarAutoFoldKey]);
   const setSidebarCollapsed=value=>{sidebarManualControl.current=true;setCollapsed(value)};
   const [shareOpen, setShareOpen] = useState(false);
   const [shortcutsOpen,setShortcutsOpen]=useState(false);
