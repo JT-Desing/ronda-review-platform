@@ -65,11 +65,13 @@ async function start() {
   await showAccess();
   button.addEventListener('click', async () => {
     button.disabled = true;
+    // Firefox only allows permissions.request while the click is still the user
+    // gesture, so nothing may be awaited before it. It may also close this popup
+    // when the prompt opens; the pending request lets the background finish.
+    chrome.runtime.sendMessage({ type: 'ronda:pending-connect', tabId: tab.id, origin: site.origin }).catch(() => {});
     try {
-      if (!await chrome.permissions.contains({ origins: [pattern] })) {
-        const granted = await chrome.permissions.request({ origins: [pattern] });
-        if (!granted) throw new Error('No se concedió permiso. Puedes intentarlo de nuevo cuando quieras.');
-      }
+      const granted = await chrome.permissions.request({ origins: [pattern] });
+      if (!granted) throw new Error('No se concedió permiso. Puedes intentarlo de nuevo cuando quieras.');
       const result = await chrome.runtime.sendMessage({ type: 'ronda:connect-current-site', tabId: tab.id });
       if (!result?.ok) throw new Error(result?.error || 'No se pudo activar el sitio.');
       status.textContent = `Listo. Actualizando ${result.host} dentro de Ronda…`;
